@@ -1,0 +1,18 @@
+dist: xenial
+language: python
+cache:
+- pip
+python:
+- '3.5'
+- '3.6'
+- '3.7'
+- '3.8'
+- 3.8-dev
+before_install:
+- pip install -U pip
+- pip install -U setuptools
+- pip install -U wheel
+install:
+- pip install tox-travis .[devel]
+script:
+- tox

@@ -1,0 +1,7 @@
+aenum
+colorama
+pyasn1
+pyasn1-modules
+requests
+sseclient-py
+urllib3
