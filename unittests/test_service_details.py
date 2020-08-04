@@ -1729,7 +1729,7 @@ class ServiceDetails(TestCase):
         self.assertEqual(Result.PASS, result['result'])
 
     @mock.patch('assertions.service_details.utils.discover_ssdp')
-    def test_test_security_details_cover(self, mock_discover_ssdp):
+    def test_test_service_details_cover(self, mock_discover_ssdp):
         service.test_service_details(self.sut)
 
 

@@ -1,0 +1,283 @@
+# Copyright Notice:
+# Copyright 2020 DMTF. All rights reserved.
+# License: BSD 3-Clause License. For full text see link:
+#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+
+import requests
+
+from assertions.constants import Assertion, RequestType, Result
+from assertions.system_under_test import SystemUnderTest
+
+
+def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
+                stream=False):
+    """Perform test for a particular header value"""
+    for val in header_values:
+        response = sut.session.get(sut.rhost + uri, headers={header: val},
+                                   stream=stream)
+        if response.ok:
+            msg = 'Test passed for header %s: %s' % (header, val)
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    assertion, msg)
+            if stream:
+                response.close()
+        elif response.status_code == requests.codes.NOT_FOUND:
+            msg = ('Resource at URI %s not found; unable to test this '
+                   'assertion for header %s' % (uri, header))
+            sut.log(Result.NOT_TESTED, 'GET', response.status_code, uri,
+                    assertion, msg)
+            break
+        else:
+            msg = ('GET request to %s failed with status code %s using header '
+                   '%s: %s' % (uri, response.status_code, header, val))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    assertion, msg)
+
+
+def test_accept_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_ACCEPT."""
+    header = 'Accept'
+    assertion = Assertion.REQ_HEADERS_ACCEPT
+
+    # JSON
+    uri = '/redfish/v1/'
+    header_values = ['application/json', 'application/json;charset=utf-8',
+                     'application/*', 'application/*;charset=utf-8',
+                     '*/*', '*/*;charset=utf-8']
+    test_header(sut, header, header_values, uri, assertion)
+
+    # XML
+    uri = '/redfish/v1/$metadata'
+    header_values = ['application/xml', 'application/xml;charset=utf-8',
+                     'application/*', 'application/*;charset=utf-8',
+                     '*/*', '*/*;charset=utf-8']
+    test_header(sut, header, header_values, uri, assertion)
+
+    # YAML
+    uri = '/redfish/v1/openapi.yaml'
+    header_values = ['application/yaml', 'application/yaml;charset=utf-8',
+                     'application/*', 'application/*;charset=utf-8',
+                     '*/*', '*/*;charset=utf-8']
+    test_header(sut, header, header_values, uri, assertion)
+
+    # SSE
+    uri = sut.server_sent_event_uri
+    header_values = ['text/event-stream', 'text/event-stream;charset=utf-8']
+    if uri:
+        test_header(sut, header, header_values, uri, assertion, stream=True)
+
+
+def test_authorization_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_AUTHORIZATION."""
+    response = sut.get_response('GET', sut.sessions_uri,
+                                request_type=RequestType.BASIC_AUTH)
+    if response is None:
+        msg = ('No response using a basic authentication header found; unable '
+               'to test this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_HEADERS_AUTHORIZATION, msg)
+        return
+
+    if 'Authorization' not in response.request.headers:
+        msg = ('Expected basic authentication request to include an '
+               'Authorization header, but it was not found in the request')
+        sut.log(Result.WARN, 'GET', response.status_code,
+                sut.sessions_uri, Assertion.REQ_HEADERS_AUTHORIZATION, msg)
+        return
+
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, sut.sessions_uri,
+                Assertion.REQ_HEADERS_AUTHORIZATION,
+                'Test passed for header Authorization')
+    else:
+        msg = ('Basic authentication request with Authorization header to '
+               'protected URI failed')
+        sut.log(Result.FAIL, 'GET', response.status_code,
+                sut.sessions_uri, Assertion.REQ_HEADERS_AUTHORIZATION, msg)
+
+
+def test_content_type_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_CONTENT_TYPE."""
+    def test_content_type(val):
+        for method in ['PATCH', 'POST']:
+            for uri, response in sut.get_responses_by_method(method).items():
+                if response.ok:
+                    if val == response.request.headers.get('Content-Type'):
+                        sut.log(Result.PASS, method, response.status_code, uri,
+                                Assertion.REQ_HEADERS_CONTENT_TYPE,
+                                'Test passed for header Content-Type: %s'
+                                % val)
+                        return
+        msg = ('No successful PATCH or POST response found using header '
+               'Content-Type: %s; unable to test this assertion for that '
+               'Content-Type' % val)
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_HEADERS_CONTENT_TYPE, msg)
+
+    for content_type in ['application/json', 'application/json;charset=utf-8']:
+        test_content_type(content_type)
+
+
+def test_host_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_HOST."""
+    uri = '/redfish/v1/'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response for GET request to URI %s found; unable '
+               'to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.REQ_HEADERS_HOST, msg)
+        return
+
+    # Note: We cannot confirm that the Host header was sent by looking at
+    # response.request.headers. That is because the requests package doesn't
+    # add the Host header; the lower-level http.client package does. But rest
+    # assured that it is added.
+
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_HOST, 'Test passed for header Host')
+    else:
+        msg = ('GET request to URI %s was not successful; unable '
+               'to test this assertion for header Host' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_HOST, msg)
+
+
+def test_if_match_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_IF_MATCH."""
+    def test_good_if_match():
+        method = 'PATCH'
+        for uri, response in sut.get_responses_by_method(method).items():
+            if response.ok:
+                if 'If-Match' in response.request.headers:
+                    sut.log(Result.PASS, method, response.status_code, uri,
+                            Assertion.REQ_HEADERS_IF_MATCH,
+                            'Test passed for successful If-Match header')
+                    return
+        msg = ('No successful PATCH response using If-Match header '
+               'was found; unable to test this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_HEADERS_IF_MATCH, msg)
+
+    def test_bad_if_match():
+        method = 'PATCH'
+        for uri, response in sut.get_responses_by_method(
+                method, request_type=RequestType.BAD_ETAG).items():
+            if response.status_code == requests.codes.PRECONDITION_FAILED:
+                if 'If-Match' in response.request.headers:
+                    sut.log(Result.PASS, method, response.status_code, uri,
+                            Assertion.REQ_HEADERS_IF_MATCH,
+                            'Test passed for unsuccessful If-Match header')
+                    return
+        msg = ('No PATCH response using incorrect If-Match header '
+               'that returned status %s was found; unable to test this '
+               'assertion' % requests.codes.PRECONDITION_FAILED)
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_HEADERS_IF_MATCH, msg)
+
+    test_good_if_match()
+    test_bad_if_match()
+
+
+def test_odata_version_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_ODATA_VERSION."""
+    uri = '/redfish/v1/'
+
+    # supported OData-Version
+    response = sut.session.get(sut.rhost + uri,
+                               headers={'OData-Version': '4.0'})
+    if response.ok:
+        msg = ('Test passed for supported header OData-Version: %s'
+               % response.request.headers.get('OData-Version'))
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_ODATA_VERSION, msg)
+    else:
+        msg = ('Request failed with supported header OData-Version: %s'
+               % response.request.headers.get('OData-Version'))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_ODATA_VERSION, msg)
+
+    # unsupported OData-Version
+    response = sut.session.get(sut.rhost + uri,
+                               headers={'OData-Version': '4.1'})
+    if response.status_code == requests.codes.PRECONDITION_FAILED:
+        msg = ('Test passed for unsupported header OData-Version: %s'
+               % response.request.headers.get('OData-Version'))
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_ODATA_VERSION, msg)
+    else:
+        msg = ('Request with unsupported header OData-Version: %s returned '
+               'status %s; expected status %s' % (
+                response.request.headers.get('OData-Version'),
+                response.status_code, requests.codes.PRECONDITION_FAILED))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_ODATA_VERSION, msg)
+
+
+def test_origin_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_ORIGIN."""
+    # TODO(bdodd): How can we test this?
+    pass
+
+
+def test_user_agent_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_USER_AGENT."""
+    uri = '/redfish/v1/'
+    response = sut.get_response('GET', uri)
+    if response is None or not response.ok:
+        msg = ('No successful response for GET request to URI %s found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                uri, Assertion.REQ_HEADERS_USER_AGENT, msg)
+    elif 'User-Agent' in response.request.headers:
+        msg = ('Test passed for header User-Agent: %s' %
+               response.request.headers.get('User-Agent'))
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_HEADERS_USER_AGENT,  msg)
+    else:
+        msg = ('No User-Agent header found in request; unable to test this '
+               'assertion')
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                uri, Assertion.REQ_HEADERS_USER_AGENT, msg)
+
+
+def test_x_auth_token_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEADERS_X_AUTH_TOKEN."""
+    response = sut.get_response('GET', sut.sessions_uri)
+    if response is None or not response.ok:
+        msg = ('No successful response for GET request to URI %s found; '
+               'unable to test this assertion' % sut.sessions_uri)
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                sut.sessions_uri, Assertion.REQ_HEADERS_X_AUTH_TOKEN, msg)
+    elif 'X-Auth-Token' in response.request.headers:
+        msg = 'Test passed for header X-Auth-Token'
+        sut.log(Result.PASS, 'GET', response.status_code, sut.sessions_uri,
+                Assertion.REQ_HEADERS_X_AUTH_TOKEN, msg)
+    else:
+        msg = ('No X-Auth-Token header found in request; unable to test this '
+               'assertion')
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                sut.sessions_uri, Assertion.REQ_HEADERS_X_AUTH_TOKEN, msg)
+
+
+def test_request_headers(sut: SystemUnderTest):
+    """Perform tests from the 'Request headers' sub-section of the spec."""
+    test_accept_header(sut)
+    test_authorization_header(sut)
+    test_content_type_header(sut)
+    test_host_header(sut)
+    test_if_match_header(sut)
+    test_odata_version_header(sut)
+    test_origin_header(sut)
+    test_user_agent_header(sut)
+    test_x_auth_token_header(sut)
+
+
+def test_service_requests(sut: SystemUnderTest):
+    """Perform tests from the 'Service requests' section of the spec."""
+    test_request_headers(sut)

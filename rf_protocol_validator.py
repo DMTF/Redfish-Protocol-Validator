@@ -11,11 +11,13 @@ from pathlib import Path
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 
-from assertions import service_details as service
-from assertions import protocol_details as proto
+from assertions import protocol_details
 from assertions import report
 from assertions import resources
-from assertions import security_details as sec
+from assertions import security_details
+from assertions import service_details
+from assertions import service_requests
+from assertions import service_responses
 from assertions import sessions
 from assertions import utils
 from assertions.system_under_test import SystemUnderTest
@@ -25,11 +27,11 @@ tool_version = '0.9.0'
 
 def perform_tests(sut: SystemUnderTest):
     """Perform the protocol validation tests on the resources."""
-    proto.test_protocol_details(sut)
-    # req.test_service_requests(sut)
-    # resp.test_service_responses(sut)
-    service.test_service_details(sut)
-    sec.test_security_details(sut)
+    protocol_details.test_protocol_details(sut)
+    service_requests.test_service_requests(sut)
+    service_responses.test_service_responses(sut)
+    service_details.test_service_details(sut)
+    security_details.test_security_details(sut)
 
 
 def main():

@@ -88,11 +88,65 @@ class Assertion(NoValue):
         '//mgmt.vendor.com/redfish/v1/Systems, or a single forward slash (/) '
         'and include the absolute-path, such as /redfish/v1/Systems.')
     # Service requests assertions (prefix of "REQ_")
-    REQ_HEADERS = (
-        'Redfish Services shall process the headers in the following table as '
-        'defined by the HTTP 1.1 specification if the value in the Service '
-        'Requirement column is set to "Yes", or if the value is "Conditional" '
-        'under the conditions noted in the Description column.'
+    REQ_HEADERS_ACCEPT = (
+        'Redfish Services shall process the [Accept header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_AUTHORIZATION = (
+        'Redfish Services shall process the [Authorization header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_CONTENT_TYPE = (
+        'Redfish Services shall process the [Content-Type header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_HOST = (
+        'Redfish Services shall process the [Host header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_IF_MATCH = (
+        'Redfish Services shall process the [If-Match header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_ODATA_VERSION = (
+        'Redfish Services shall process the [OData-Version header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_ORIGIN = (
+        'Redfish Services shall process the [Origin header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_USER_AGENT = (
+        'Redfish Services shall process the [User-Agent header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_X_AUTH_TOKEN = (
+        'Redfish Services shall process the [X-Auth-Token header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
     )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
