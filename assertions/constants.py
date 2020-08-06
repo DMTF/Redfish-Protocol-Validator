@@ -148,6 +148,22 @@ class Assertion(NoValue):
         'value is "Conditional" under the conditions noted in the Description '
         'column.'
     )
+    REQ_GET_NO_ACCEPT_HEADER = (
+        'If the Accept header is absent, the service shall return the '
+        'resource\'s representation as application/json.'
+    )
+    REQ_GET_IGNORE_BODY = (
+        'The service shall ignore the content of the body on a GET.'
+    )
+    REQ_GET_COLLECTION_COUNT_PROP_REQUIRED = (
+        'Retrieved resource collections shall always include the count '
+        'property to specify the total number of entries in its Members array.'
+    )
+    REQ_GET_COLLECTION_COUNT_PROP_TOTAL = (
+        'Regardless of the next link property or paging, the count property '
+        'shall return the total number of resources that the Members array '
+        'references.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

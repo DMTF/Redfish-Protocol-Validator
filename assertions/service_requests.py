@@ -5,6 +5,7 @@
 
 import requests
 
+from assertions import utils
 from assertions.constants import Assertion, RequestType, Result
 from assertions.system_under_test import SystemUnderTest
 
@@ -265,6 +266,132 @@ def test_x_auth_token_header(sut: SystemUnderTest):
                 sut.sessions_uri, Assertion.REQ_HEADERS_X_AUTH_TOKEN, msg)
 
 
+def test_get_no_accept_header(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_NO_ACCEPT_HEADER."""
+    uri = '/redfish/v1/'
+    headers = {'Accept': None}
+    response = sut.session.get(sut.rhost + uri, headers=headers)
+    if response.ok:
+        if utils.get_response_media_type(response) == 'application/json':
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_NO_ACCEPT_HEADER, 'Test passed')
+        else:
+            msg = ('Response from GET request to URI %s with no Accept header '
+                   'contained a Content-Type of %s; expected %s' %
+                   (uri, response.headers.get('Content-Type'),
+                    'application/json'))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_NO_ACCEPT_HEADER, msg)
+    else:
+        msg = ('GET request to URI %s with no Accept header failed' % uri)
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_NO_ACCEPT_HEADER, msg)
+
+
+def test_get_ignore_body(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_IGNORE_BODY."""
+    uri = '/redfish/v1/'
+    payload = {}
+    response = sut.session.get(sut.rhost + uri, json=payload)
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_IGNORE_BODY, 'Test passed')
+    else:
+        msg = ('GET request to URI %s that included a body failed' % uri)
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_IGNORE_BODY, msg)
+
+
+def test_get_collection_count_prop_required(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED."""
+    uri = sut.sessions_uri
+    response = sut.get_response('GET', uri)
+    if response is None or not response.ok:
+        msg = ('Successful response for GET request to URI %s not found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                uri, Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED, msg)
+        return
+
+    data = response.json()
+    if 'Members@odata.count' in data:
+        count = data.get('Members@odata.count')
+        if not isinstance(count, int):
+            msg = ('The count property was present but the type was %s; '
+                   'expected int' % count.__class__.__name__)
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED, msg)
+        else:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED,
+                    'Test passed')
+    else:
+        msg = ('The collection resource at URI %s did not include the '
+               'required count property (Members@odata.count)' % uri)
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED, msg)
+
+
+def test_get_collection_count_prop_total(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL."""
+    # TODO(bdodd): Try to find a collection resource with more members
+    uri = sut.sessions_uri
+    response = sut.get_response('GET', uri)
+    if response is None or not response.ok:
+        msg = ('Successful response for GET request to URI %s not found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET',
+                response.status_code if response is not None else '',
+                uri, Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL, msg)
+        return
+
+    data = response.json()
+    if 'Members@odata.count' not in data:
+        msg = ('The collection resource at URI %s did not include the '
+               'required count property' % uri)
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL, msg)
+        return
+
+    if 'Members' not in data:
+        msg = ('The collection resource at URI %s did not include the '
+               'Members property' % uri)
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL, msg)
+        return
+
+    count = data.get('Members@odata.count')
+    members = len(data.get('Members'))
+    if data.get('Members@odata.nextLink'):
+        # TODO(bdodd): Loop through all next links and count the actual members
+        if count > members:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL,
+                    'Test passed')
+        else:
+            msg = ('Collection resource %s contained a next link property but '
+                   'the count property (%s) was less than or equal to the '
+                   'number of members in the original resource (%s)'
+                   % (uri, count, members))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL,
+                    msg)
+    else:
+        if count == members:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL,
+                    'Test passed')
+        else:
+            msg = ('Collection resource %s did not contain a next link '
+                   'property but the count property (%s) was not equal to the '
+                   'number of members in the resource (%s)'
+                   % (uri, count, members))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL,
+                    msg)
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -278,6 +405,73 @@ def test_request_headers(sut: SystemUnderTest):
     test_x_auth_token_header(sut)
 
 
+def test_get(sut: SystemUnderTest):
+    """Perform tests from the 'GET (read requests)' sub-section of the spec."""
+    test_get_no_accept_header(sut)
+    test_get_ignore_body(sut)
+    test_get_collection_count_prop_required(sut)
+    test_get_collection_count_prop_total(sut)
+
+
+def test_query_params(sut: SystemUnderTest):
+    """Perform tests from the 'Query parameters' sub-section of the spec."""
+
+
+def test_head(sut: SystemUnderTest):
+    """Perform tests from the 'HEAD' sub-section of the spec."""
+
+
+def test_data_modification(sut: SystemUnderTest):
+    """Perform tests from the 'Data modification requests' sub-section of the
+    spec."""
+
+
+def test_patch_update(sut: SystemUnderTest):
+    """Perform tests from the 'PATCH (update)' sub-section of the spec."""
+
+
+def test_patch_array_props(sut: SystemUnderTest):
+    """Perform tests from the 'PATCH on array properties' sub-section of the
+    spec."""
+
+
+def test_put(sut: SystemUnderTest):
+    """Perform tests from the 'PUT (replace)' sub-section of the spec."""
+
+
+def test_post_create(sut: SystemUnderTest):
+    """Perform tests from the 'POST (create)' sub-section of the spec."""
+
+
+def test_delete(sut: SystemUnderTest):
+    """Perform tests from the 'DELETE (delete)' sub-section of the spec."""
+
+
+def test_post_action(sut: SystemUnderTest):
+    """Perform tests from the 'POST (Action)' sub-section of the spec."""
+
+
+def test_operation_apply_time(sut: SystemUnderTest):
+    """Perform tests from the 'Operation apply time' sub-section of the
+    spec."""
+
+
+def test_deep_operations(sut: SystemUnderTest):
+    """Perform tests from the 'Deep operations' sub-section of the spec."""
+
+
 def test_service_requests(sut: SystemUnderTest):
     """Perform tests from the 'Service requests' section of the spec."""
     test_request_headers(sut)
+    test_get(sut)
+    test_query_params(sut)
+    test_head(sut)
+    test_data_modification(sut)
+    test_patch_update(sut)
+    test_patch_array_props(sut)
+    test_put(sut)
+    test_post_create(sut)
+    test_delete(sut)
+    test_post_action(sut)
+    test_operation_apply_time(sut)
+    test_deep_operations(sut)
