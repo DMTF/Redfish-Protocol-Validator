@@ -522,6 +522,190 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
+    def test_test_get_service_root_url_not_tested(self):
+        uri = '/redfish/v1/'
+        req.test_get_service_root_url(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_URL,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Response for GET request to Service Root URL %s not '
+                      'found' % uri, result['msg'])
+
+    def test_test_get_service_root_url_fail(self):
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.NOT_FOUND)
+        req.test_get_service_root_url(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_URL,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request to Service Root URL %s failed with status '
+                      'code %s' % (uri, requests.codes.NOT_FOUND),
+                      result['msg'])
+
+    def test_test_get_service_root_url_pass(self):
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.OK)
+        req.test_get_service_root_url(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_URL,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_get_service_root_no_auth_not_tested(self):
+        uri = '/redfish/v1/'
+        req.test_get_service_root_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Response for GET request with no authentication to '
+                      'URL %s not found' % uri, result['msg'])
+
+    def test_test_get_service_root_no_auth_fail(self):
+        uri = '/redfish'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.UNAUTHORIZED,
+                     request_type=RequestType.NO_AUTH)
+        req.test_get_service_root_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request with no authentication to URL '
+                      '%s failed with status code %s' %
+                      (uri, requests.codes.UNAUTHORIZED), result['msg'])
+
+    def test_test_get_service_root_no_auth_pass(self):
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.NO_AUTH)
+        req.test_get_service_root_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_get_metadata_uri_not_tested(self):
+        uri = '/redfish/v1/$metadata'
+        req.test_get_metadata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Response for GET request to metadata URI %s not '
+                      'found' % uri, result['msg'])
+
+    def test_test_get_metadata_uri_fail(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.NOT_FOUND)
+        req.test_get_metadata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request to metadata URI %s failed with status '
+                      'code %s' % (uri, requests.codes.NOT_FOUND),
+                      result['msg'])
+
+    def test_test_get_metadata_uri_pass(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.OK)
+        req.test_get_metadata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_get_odata_uri_not_tested(self):
+        uri = '/redfish/v1/odata'
+        req.test_get_odata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_ODATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Response for GET request to OData URI %s not '
+                      'found' % uri, result['msg'])
+
+    def test_test_get_odata_uri_fail(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.NOT_FOUND)
+        req.test_get_odata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_ODATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request to OData URI %s failed with status '
+                      'code %s' % (uri, requests.codes.NOT_FOUND),
+                      result['msg'])
+
+    def test_test_get_odata_uri_pass(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.OK)
+        req.test_get_odata_uri(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_ODATA_URI,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_get_metadata_odata_no_auth_not_tested(self):
+        uri = '/redfish/v1/$metadata'
+        req.test_get_metadata_odata_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_ODATA_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Response for GET request with no authentication to '
+                      'URI %s not found' % uri, result['msg'])
+
+    def test_test_get_metadata_odata_no_auth_fail(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.UNAUTHORIZED,
+                     request_type=RequestType.NO_AUTH)
+        req.test_get_metadata_odata_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_ODATA_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request with no authentication to URI '
+                      '%s failed with status code %s' %
+                      (uri, requests.codes.UNAUTHORIZED), result['msg'])
+
+    def test_test_get_metadata_odata_no_auth_pass(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, method='GET',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.NO_AUTH)
+        req.test_get_metadata_odata_no_auth(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_GET_METADATA_ODATA_NO_AUTH,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)
 

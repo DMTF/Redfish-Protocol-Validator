@@ -164,6 +164,25 @@ class Assertion(NoValue):
         'shall return the total number of resources that the Members array '
         'references.'
     )
+    REQ_GET_SERVICE_ROOT_URL = (
+        'The root URL for Redfish version 1.x services shall be /redfish/v1/.'
+    )
+    REQ_GET_SERVICE_ROOT_NO_AUTH = (
+        'Services shall not require authentication to retrieve the Service '
+        'Root and /redfish resources.'
+    )
+    REQ_GET_METADATA_URI = (
+        'Service shall expose an OData metadata document at the '
+        '/redfish/v1/$metadata URI.'
+    )
+    REQ_GET_ODATA_URI = (
+        'Service shall expose an OData service document at the '
+        '/redfish/v1/odata URI.'
+    )
+    REQ_GET_METADATA_ODATA_NO_AUTH = (
+        'Service shall not require authentication to retrieve the OData '
+        'metadata document or the OData service document.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

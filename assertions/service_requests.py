@@ -392,6 +392,109 @@ def test_get_collection_count_prop_total(sut: SystemUnderTest):
                     msg)
 
 
+def test_get_service_root_url(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_SERVICE_ROOT_URL."""
+    uri = '/redfish/v1/'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('Response for GET request to Service Root URL %s not found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.REQ_GET_SERVICE_ROOT_URL, msg)
+        return
+
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_SERVICE_ROOT_URL, 'Test passed')
+    else:
+        msg = ('GET request to Service Root URL %s failed with status code %s'
+               % (uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_SERVICE_ROOT_URL, msg)
+
+
+def test_get_service_root_no_auth(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH."""
+    for uri in ['/redfish', '/redfish/v1/']:
+        response = sut.get_response(
+            'GET', uri, request_type=RequestType.NO_AUTH)
+        if response is None:
+            msg = ('Response for GET request with no authentication to '
+                   'URL %s not found; unable to test this assertion' % uri)
+            sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                    Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH, msg)
+        elif response.ok:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH, 'Test passed')
+        else:
+            msg = ('GET request with no authentication to URL %s '
+                   'failed with status code %s' % (uri, response.status_code))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_SERVICE_ROOT_NO_AUTH, msg)
+
+
+def test_get_metadata_uri(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_METADATA_URI."""
+    uri = '/redfish/v1/$metadata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('Response for GET request to metadata URI %s not found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.REQ_GET_METADATA_URI, msg)
+        return
+
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_METADATA_URI, 'Test passed')
+    else:
+        msg = ('GET request to metadata URI %s failed with status code %s'
+               % (uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_METADATA_URI, msg)
+
+
+def test_get_odata_uri(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_ODATA_URI."""
+    uri = '/redfish/v1/odata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('Response for GET request to OData URI %s not found; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.REQ_GET_ODATA_URI, msg)
+        return
+
+    if response.ok:
+        sut.log(Result.PASS, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_ODATA_URI, 'Test passed')
+    else:
+        msg = ('GET request to OData URI %s failed with status code %s'
+               % (uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_GET_ODATA_URI, msg)
+
+
+def test_get_metadata_odata_no_auth(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_GET_METADATA_ODATA_NO_AUTH."""
+    for uri in ['/redfish/v1/$metadata', '/redfish/v1/odata']:
+        response = sut.get_response(
+            'GET', uri, request_type=RequestType.NO_AUTH)
+        if response is None:
+            msg = ('Response for GET request with no authentication to '
+                   'URI %s not found; unable to test this assertion' % uri)
+            sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                    Assertion.REQ_GET_METADATA_ODATA_NO_AUTH, msg)
+        elif response.ok:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_METADATA_ODATA_NO_AUTH, 'Test passed')
+        else:
+            msg = ('GET request with no authentication to URI %s '
+                   'failed with status code %s' % (uri, response.status_code))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_GET_METADATA_ODATA_NO_AUTH, msg)
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -411,6 +514,11 @@ def test_get(sut: SystemUnderTest):
     test_get_ignore_body(sut)
     test_get_collection_count_prop_required(sut)
     test_get_collection_count_prop_total(sut)
+    test_get_service_root_url(sut)
+    test_get_service_root_no_auth(sut)
+    test_get_metadata_uri(sut)
+    test_get_odata_uri(sut)
+    test_get_metadata_odata_no_auth(sut)
 
 
 def test_query_params(sut: SystemUnderTest):
