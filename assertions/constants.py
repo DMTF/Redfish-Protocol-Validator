@@ -183,6 +183,22 @@ class Assertion(NoValue):
         'Service shall not require authentication to retrieve the OData '
         'metadata document or the OData service document.'
     )
+    REQ_QUERY_PROTOCOL_FEATURES_SUPPORTED = (
+        'Services shall include the ProtocolFeaturesSupported object in the '
+        'Service Root, if the service supports query parameters.'
+    )
+    REQ_QUERY_IGNORE_UNSUPPORTED = (
+        'Services shall ignore unknown or unsupported query parameters that '
+        'do not begin with $.'
+    )
+    REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS = (
+        'Services shall return the HTTP 501 Not Implemented status code for '
+        'any unsupported query parameters that start with $.'
+    )
+    REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR = (
+        'Services shall return an extended error that indicates the '
+        'unsupported query parameters for this resource.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

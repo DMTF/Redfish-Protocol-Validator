@@ -50,13 +50,24 @@ def get_response_etag(response):
 
 
 def get_extended_info_message_keys(body: dict):
+    data = []
     if 'error' in body and '@Message.ExtendedInfo' in body['error']:
         data = body['error']['@Message.ExtendedInfo']
     elif '@Message.ExtendedInfo' in body:
         data = body['@Message.ExtendedInfo']
-    else:
-        data = []
     return {d['MessageId'].split('.')[-1] for d in data if 'MessageId' in d}
+
+
+def is_text_in_extended_error(text: str, body: dict):
+    data = []
+    if 'error' in body and '@Message.ExtendedInfo' in body['error']:
+        data = body['error']['@Message.ExtendedInfo']
+    elif '@Message.ExtendedInfo' in body:
+        data = body['@Message.ExtendedInfo']
+    for d in data:
+        if text in d.get('Message', '') or text in d.get('Resolution', ''):
+            return True
+    return False
 
 
 def get_sse_stream(sut):

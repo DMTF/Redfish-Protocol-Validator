@@ -24,6 +24,7 @@ class ServiceRequests(TestCase):
         self.sut._set_session(self.mock_session)
         self.sse_uri = '/redfish/v1/EventService/SSE'
         self.account_uri = '/redfish/v1/AccountsService/Accounts/3/'
+        self.sut.set_supported_query_params({'ExcerptQuery': True})
 
     def test_test_accept_header_pass(self):
         self.sut.set_server_sent_event_uri(self.sse_uri)
@@ -705,6 +706,122 @@ class ServiceRequests(TestCase):
             'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_query_params_not_tested(self):
+        self.sut.set_supported_query_params({})
+        req.test_query_params(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_PROTOCOL_FEATURES_SUPPORTED,
+            '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No supported query parameters specified in the '
+                      'ProtocolFeaturesSupported object in the Service Root',
+                      result['msg'])
+
+    def test_test_query_ignore_unsupported_fail(self):
+        uri = '/redfish/v1/?rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.NOT_IMPLEMENTED)
+        self.mock_session.get.return_value = r
+        req.test_query_ignore_unsupported(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_IGNORE_UNSUPPORTED,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('GET request with unknown query parameter (URI %s) '
+                      'failed' % uri, result['msg'])
+
+    def test_test_query_ignore_unsupported_pass(self):
+        uri = '/redfish/v1/?rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.OK)
+        self.mock_session.get.return_value = r
+        req.test_query_ignore_unsupported(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_IGNORE_UNSUPPORTED,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_query_unsupported_dollar_params_fail(self):
+        uri = '/redfish/v1/?$rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.get.return_value = r
+        req.test_query_unsupported_dollar_params(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('query parameter that starts with $ (URI %s) returned '
+                      'status %s; expected status %s' %
+                      (uri, requests.codes.BAD_REQUEST,
+                       requests.codes.NOT_IMPLEMENTED), result['msg'])
+
+    def test_test_query_unsupported_dollar_params_pass(self):
+        uri = '/redfish/v1/?$rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.NOT_IMPLEMENTED,
+                         json={'error': {'@Message.ExtendedInfo': [
+                                 {'Message': '$rpvunknown not supported'}
+                         ]}})
+        self.mock_session.get.return_value = r
+        req.test_query_unsupported_dollar_params(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_query_unsupported_dollar_params_mixed1(self):
+        uri = '/redfish/v1/?$rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.NOT_IMPLEMENTED,
+                         json={})
+        self.mock_session.get.return_value = r
+        req.test_query_unsupported_dollar_params(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The response did not contain an extended error',
+                      result['msg'])
+
+    def test_test_query_unsupported_dollar_params_mixed2(self):
+        uri = '/redfish/v1/?$rpvunknown'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.NOT_IMPLEMENTED,
+                         json={'@Message.ExtendedInfo': [
+                             {'Message': 'parameter not supported'}
+                         ]})
+        self.mock_session.get.return_value = r
+        req.test_query_unsupported_dollar_params(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+            'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The response contained an extended error, but the '
+                      'unsupported query parameter', result['msg'])
 
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)

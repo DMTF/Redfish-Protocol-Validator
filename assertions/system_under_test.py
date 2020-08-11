@@ -52,7 +52,8 @@ class SystemUnderTest(object):
         self._users = {}
         self._roles = {}
         self._cert_coll = {}
-        self._avoid_http_redirect = False  # work-around for virtual plug-fest
+        self._supported_query_params = None
+        self._avoid_http_redirect = False
         self._summary = {
             Result.PASS: 0,
             Result.WARN: 0,
@@ -317,6 +318,13 @@ class SystemUnderTest(object):
 
     def get_role_oem_privs(self, role):
         return self._roles.get(role, {}).get('OemPrivileges')
+
+    def set_supported_query_params(self, params):
+        self._supported_query_params = params
+
+    @property
+    def supported_query_params(self):
+        return self._supported_query_params
 
     def add_response(self, uri, response, resource_type=None,
                      request_type=RequestType.NORMAL):
