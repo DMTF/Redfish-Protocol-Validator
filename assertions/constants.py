@@ -199,6 +199,12 @@ class Assertion(NoValue):
         'Services shall return an extended error that indicates the '
         'unsupported query parameters for this resource.'
     )
+    REQ_QUERY_INVALID_VALUES = (
+        'Services shall return the HTTP 400 Bad Request status code for any '
+        'query parameters that contain values that are invalid, or values '
+        'applied to query parameters without defined values, such as excerpt '
+        'or only.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

@@ -93,7 +93,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     sut.set_version(root.get('RedfishVersion', '1.0.0'))
     sut.set_product(root.get('Product', 'N/A'))
     sut.set_service_uuid(root.get('UUID'))
-    sut.set_supported_query_params(root.get('ProtocolFeaturesSupported'))
+    sut.set_supported_query_params(root.get('ProtocolFeaturesSupported', {}))
 
     for prop in ['Systems', 'Chassis']:
         if prop in root:

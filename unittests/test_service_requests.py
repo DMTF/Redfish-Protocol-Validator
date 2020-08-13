@@ -823,6 +823,43 @@ class ServiceRequests(TestCase):
         self.assertIn('The response contained an extended error, but the '
                       'unsupported query parameter', result['msg'])
 
+    def test_test_query_invalid_values_not_tested(self):
+        self.sut.set_supported_query_params({})
+        req.test_query_invalid_values(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_INVALID_VALUES, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('The service does not support either the \'only\' or '
+                      '\'excerpt\' query parameters', result['msg'])
+
+    def test_test_query_invalid_values_fail(self):
+        uri = '/redfish/v1/' + '?excerpt=foo'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.OK)
+        self.mock_session.get.return_value = r
+        req.test_query_invalid_values(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_INVALID_VALUES, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('invalid query parameter (URI %s) returned status %s; '
+                      'expected status %s' % (
+                       uri, requests.codes.OK, requests.codes.BAD_REQUEST),
+                      result['msg'])
+
+    def test_test_query_invalid_values_pass(self):
+        self.sut.set_supported_query_params({'OnlyMemberQuery': True})
+        uri = self.sut.sessions_uri + '?only=foo'
+        r = add_response(self.sut, uri, method='GET',
+                         status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.get.return_value = r
+        req.test_query_invalid_values(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_QUERY_INVALID_VALUES, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)
 

@@ -52,7 +52,7 @@ class SystemUnderTest(object):
         self._users = {}
         self._roles = {}
         self._cert_coll = {}
-        self._supported_query_params = None
+        self._supported_query_params = {}
         self._avoid_http_redirect = False
         self._summary = {
             Result.PASS: 0,

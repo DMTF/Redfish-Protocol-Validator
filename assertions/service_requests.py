@@ -510,39 +510,75 @@ def test_query_ignore_unsupported(sut: SystemUnderTest):
                 Assertion.REQ_QUERY_IGNORE_UNSUPPORTED, msg)
 
 
+def test_query_unsupported_dollar_params_ext_error(
+        sut: SystemUnderTest, uri, response):
+    """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR."""
+    if ('application/json' in response.headers.get('Content-Type', '') and
+            '@Message.ExtendedInfo' in response.text):
+        data = response.json()
+        if utils.is_text_in_extended_error('rpvunknown', data):
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+                    'Test passed')
+        else:
+            msg = ('The response contained an extended error, but the '
+                   'unsupported query parameter $rpvunknown was not '
+                   'indicated in the error message text')
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+                    msg)
+    else:
+        msg = 'The response did not contain an extended error'
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
+                msg)
+
+
 def test_query_unsupported_dollar_params(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS and
-    Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR."""
+    """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS."""
     uri = '/redfish/v1/?$rpvunknown'
     response = sut.session.get(sut.rhost + uri)
     if response.status_code == requests.codes.NOT_IMPLEMENTED:
         sut.log(Result.PASS, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS, 'Test passed')
-        if ('application/json' in response.headers.get('Content-Type', '') and
-                '@Message.ExtendedInfo' in response.text):
-            data = response.json()
-            if utils.is_text_in_extended_error('rpvunknown', data):
-                sut.log(Result.PASS, 'GET', response.status_code, uri,
-                        Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
-                        'Test passed')
-            else:
-                msg = ('The response contained an extended error, but the '
-                       'unsupported query parameter $rpvunknown was not '
-                       'indicated in the error message text')
-                sut.log(Result.FAIL, 'GET', response.status_code, uri,
-                        Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
-                        msg)
-        else:
-            msg = 'The response did not contain an extended error'
-            sut.log(Result.FAIL, 'GET', response.status_code, uri,
-                    Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
-                    msg)
+        test_query_unsupported_dollar_params_ext_error(sut, uri, response)
     else:
         msg = ('GET request with unknown query parameter that starts with $ '
                '(URI %s) returned status %s; expected status %s' %
                (uri, response.status_code, requests.codes.NOT_IMPLEMENTED))
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS, msg)
+        if not response.ok:
+            test_query_unsupported_dollar_params_ext_error(sut, uri, response)
+
+
+def test_query_invalid_values(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_QUERY_INVALID_VALUES."""
+    uris = []
+    if sut.supported_query_params.get('OnlyMemberQuery'):
+        uris.append(sut.sessions_uri + '?only=foo')
+    if sut.supported_query_params.get('ExcerptQuery'):
+        uris.append('/redfish/v1/' + '?excerpt=foo')
+
+    if not uris:
+        msg = ('The service does not support either the \'only\' or '
+               '\'excerpt\' query parameters; unable to test this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_QUERY_INVALID_VALUES, msg)
+        return
+
+    for uri in uris:
+        response = sut.session.get(sut.rhost + uri)
+        if response.status_code == requests.codes.BAD_REQUEST:
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.REQ_QUERY_INVALID_VALUES,
+                    'Test passed')
+        else:
+            msg = ('GET request with invalid query parameter (URI %s) '
+                   'returned status %s; expected status %s' %
+                   (uri, response.status_code, requests.codes.BAD_REQUEST))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.REQ_QUERY_INVALID_VALUES, msg)
 
 
 def test_request_headers(sut: SystemUnderTest):
@@ -582,6 +618,8 @@ def test_query_params(sut: SystemUnderTest):
     else:
         test_query_ignore_unsupported(sut)
         test_query_unsupported_dollar_params(sut)
+        test_query_invalid_values(sut)
+        # TODO(bdodd): add assertions for $expand, $select, and $filter
 
 
 def test_head(sut: SystemUnderTest):
