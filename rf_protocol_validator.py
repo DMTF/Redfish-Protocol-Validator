@@ -37,6 +37,8 @@ def perform_tests(sut: SystemUnderTest):
 def main():
     parser = argparse.ArgumentParser(
         description='Validate the protocol conformance of a Redfish service')
+    parser.add_argument('--version', action='version',
+                        version='Redfish-Protocol-Validator %s' % tool_version)
     parser.add_argument('--user', '-u', type=str, required=True,
                         help='the username for authentication')
     parser.add_argument('--password', '-p', type=str, required=True,
