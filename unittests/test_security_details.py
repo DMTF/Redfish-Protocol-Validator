@@ -330,7 +330,7 @@ class SecurityDetails(TestCase):
         self.assertIn('Location and X-Auth-Token headers were not returned',
                       result['msg'])
         # request failed
-        response.status_code = requests.codes.bad_request
+        response.status_code = requests.codes.BAD_REQUEST
         response.ok = False
         sec.test_require_login_sessions(self.sut)
         result = get_result(self.sut, Assertion.SEC_REQUIRE_LOGIN_SESSIONS,
@@ -787,7 +787,7 @@ class SecurityDetails(TestCase):
 
     def test_test_accounts_support_etags_pass(self):
         add_response(self.sut, self.account_uri, 'PATCH',
-                     requests.codes.precondition_failed,
+                     requests.codes.PRECONDITION_FAILED,
                      res_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.BAD_ETAG)
         sec.test_accounts_support_etags(self.sut)
@@ -807,7 +807,7 @@ class SecurityDetails(TestCase):
 
     def test_test_accounts_support_etags_warn(self):
         add_response(self.sut, self.account_uri, 'PATCH',
-                     requests.codes.bad_request,
+                     requests.codes.BAD_REQUEST,
                      res_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.BAD_ETAG)
         sec.test_accounts_support_etags(self.sut)
@@ -816,13 +816,13 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.WARN, result['result'])
         self.assertIn('failed with status %s; expected it to fail with status '
-                      '%s' % (requests.codes.bad_request,
-                              requests.codes.precondition_failed),
+                      '%s' % (requests.codes.BAD_REQUEST,
+                              requests.codes.PRECONDITION_FAILED),
                       result['msg'])
 
     def test_test_accounts_support_etags_fail(self):
         add_response(self.sut, self.account_uri, 'PATCH',
-                     requests.codes.ok,
+                     requests.codes.OK,
                      res_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.BAD_ETAG)
         sec.test_accounts_support_etags(self.sut)

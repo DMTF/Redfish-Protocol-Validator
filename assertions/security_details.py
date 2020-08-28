@@ -252,7 +252,7 @@ def test_redirect_enforces_target_privs(sut: SystemUnderTest):
             # HTTP redirect occurred if there is a response.history
             # check the final status and expect a 401
             redirect_found = True
-            if response.status_code == requests.codes.unauthorized:
+            if response.status_code == requests.codes.UNAUTHORIZED:
                 sut.log(Result.PASS, response.request.method,
                         response.status_code, uri,
                         Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS,
@@ -282,7 +282,7 @@ def test_redirect_to_https(sut: SystemUnderTest):
             # HTTP redirect occurred if there is a response.history
             # check the final status and expect a 200
             redirect_found = True
-            if response.status_code == requests.codes.ok:
+            if response.status_code == requests.codes.OK:
                 sut.log(Result.PASS, response.request.method,
                         response.status_code, uri,
                         Assertion.SEC_REDIRECT_TO_HTTPS,
@@ -681,12 +681,12 @@ def test_accounts_support_etags(sut: SystemUnderTest):
             msg = ('%s request to account URI %s with stale If-Match header '
                    'succeeded; expected it to fail with status %s'
                    % (response.request.method, uri,
-                      requests.codes.precondition_failed))
+                      requests.codes.PRECONDITION_FAILED))
             sut.log(Result.FAIL, response.request.method,
                     response.status_code, uri,
                     Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)
         else:
-            if response.status_code == requests.codes.precondition_failed:
+            if response.status_code == requests.codes.PRECONDITION_FAILED:
                 sut.log(Result.PASS, response.request.method,
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, 'Test passed')
@@ -695,7 +695,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
                        'header failed with status %s; expected it to fail '
                        'with status %s' % (response.request.method, uri,
                                            response.status_code,
-                                           requests.codes.precondition_failed))
+                                           requests.codes.PRECONDITION_FAILED))
                 sut.log(Result.WARN, response.request.method,
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)
@@ -776,7 +776,7 @@ def test_password_change_required(sut: SystemUnderTest):
         sut.log(Result.NOT_TESTED, 'GET', '', sut.sessions_uri,
                 Assertion.SEC_PWD_CHANGE_REQ_DISALLOW_ALL_OTHERS, msg)
     else:
-        if response.status_code == requests.codes.forbidden:
+        if response.status_code == requests.codes.FORBIDDEN:
             data = response.json()
             keys = utils.get_extended_info_message_keys(data)
             if 'PasswordChangeRequired' in keys:

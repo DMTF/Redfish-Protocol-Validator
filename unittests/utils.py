@@ -27,6 +27,7 @@ def add_response(sut: SystemUnderTest, uri, method='GET',
         response.headers = {
             'Content-Type': 'application/json'
         }
+        response.text = str(json)
     elif text:
         response.text = text
         response.headers = {

@@ -38,7 +38,8 @@ def create_session(sut: SystemUnderTest):
         'Password': sut.password
     }
     headers = {
-        'OData-Version': '4.0'
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json;charset=utf-8'
     }
     response = requests.post(sut.rhost + sut.sessions_uri, json=payload,
                              headers=headers, verify=sut.verify)

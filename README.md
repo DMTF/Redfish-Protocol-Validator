@@ -33,8 +33,8 @@ You may install the external packages by running:
 ## Usage
 
 ```
-usage: rf_protocol_validator.py [-h] --user USER --password PASSWORD --rhost
-                                RHOST [--log-level LOG_LEVEL]
+usage: rf_protocol_validator.py [-h] [--version] --user USER --password
+                                PASSWORD --rhost RHOST [--log-level LOG_LEVEL]
                                 [--report-dir REPORT_DIR]
                                 [--report-type {html,tsv,both}]
                                 [--avoid-http-redirect]
@@ -44,6 +44,7 @@ Validate the protocol conformance of a Redfish service
 
 optional arguments:
   -h, --help            show this help message and exit
+  --version             show program's version number and exit
   --user USER, -u USER  the username for authentication
   --password PASSWORD, -p PASSWORD
                         the password for authentication

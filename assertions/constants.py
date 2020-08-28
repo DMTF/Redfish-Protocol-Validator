@@ -88,11 +88,122 @@ class Assertion(NoValue):
         '//mgmt.vendor.com/redfish/v1/Systems, or a single forward slash (/) '
         'and include the absolute-path, such as /redfish/v1/Systems.')
     # Service requests assertions (prefix of "REQ_")
-    REQ_HEADERS = (
-        'Redfish Services shall process the headers in the following table as '
-        'defined by the HTTP 1.1 specification if the value in the Service '
-        'Requirement column is set to "Yes", or if the value is "Conditional" '
-        'under the conditions noted in the Description column.'
+    REQ_HEADERS_ACCEPT = (
+        'Redfish Services shall process the [Accept header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_AUTHORIZATION = (
+        'Redfish Services shall process the [Authorization header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_CONTENT_TYPE = (
+        'Redfish Services shall process the [Content-Type header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_HOST = (
+        'Redfish Services shall process the [Host header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_IF_MATCH = (
+        'Redfish Services shall process the [If-Match header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_ODATA_VERSION = (
+        'Redfish Services shall process the [OData-Version header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_ORIGIN = (
+        'Redfish Services shall process the [Origin header] in the following '
+        'table as defined by the HTTP 1.1 specification if the value in the '
+        'Service Requirement column is set to "Yes", or if the value is '
+        '"Conditional" under the conditions noted in the Description column.'
+    )
+    REQ_HEADERS_USER_AGENT = (
+        'Redfish Services shall process the [User-Agent header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_HEADERS_X_AUTH_TOKEN = (
+        'Redfish Services shall process the [X-Auth-Token header] in the '
+        'following table as defined by the HTTP 1.1 specification if the '
+        'value in the Service Requirement column is set to "Yes", or if the '
+        'value is "Conditional" under the conditions noted in the Description '
+        'column.'
+    )
+    REQ_GET_NO_ACCEPT_HEADER = (
+        'If the Accept header is absent, the service shall return the '
+        'resource\'s representation as application/json.'
+    )
+    REQ_GET_IGNORE_BODY = (
+        'The service shall ignore the content of the body on a GET.'
+    )
+    REQ_GET_COLLECTION_COUNT_PROP_REQUIRED = (
+        'Retrieved resource collections shall always include the count '
+        'property to specify the total number of entries in its Members array.'
+    )
+    REQ_GET_COLLECTION_COUNT_PROP_TOTAL = (
+        'Regardless of the next link property or paging, the count property '
+        'shall return the total number of resources that the Members array '
+        'references.'
+    )
+    REQ_GET_SERVICE_ROOT_URL = (
+        'The root URL for Redfish version 1.x services shall be /redfish/v1/.'
+    )
+    REQ_GET_SERVICE_ROOT_NO_AUTH = (
+        'Services shall not require authentication to retrieve the Service '
+        'Root and /redfish resources.'
+    )
+    REQ_GET_METADATA_URI = (
+        'Service shall expose an OData metadata document at the '
+        '/redfish/v1/$metadata URI.'
+    )
+    REQ_GET_ODATA_URI = (
+        'Service shall expose an OData service document at the '
+        '/redfish/v1/odata URI.'
+    )
+    REQ_GET_METADATA_ODATA_NO_AUTH = (
+        'Service shall not require authentication to retrieve the OData '
+        'metadata document or the OData service document.'
+    )
+    REQ_QUERY_PROTOCOL_FEATURES_SUPPORTED = (
+        'Services shall include the ProtocolFeaturesSupported object in the '
+        'Service Root, if the service supports query parameters.'
+    )
+    REQ_QUERY_IGNORE_UNSUPPORTED = (
+        'Services shall ignore unknown or unsupported query parameters that '
+        'do not begin with $.'
+    )
+    REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS = (
+        'Services shall return the HTTP 501 Not Implemented status code for '
+        'any unsupported query parameters that start with $.'
+    )
+    REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR = (
+        'Services shall return an extended error that indicates the '
+        'unsupported query parameters for this resource.'
+    )
+    REQ_QUERY_INVALID_VALUES = (
+        'Services shall return the HTTP 400 Bad Request status code for any '
+        'query parameters that contain values that are invalid, or values '
+        'applied to query parameters without defined values, such as excerpt '
+        'or only.'
     )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
