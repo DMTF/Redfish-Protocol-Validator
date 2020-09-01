@@ -9,7 +9,8 @@ from unittest import mock, TestCase
 import requests
 
 from assertions import service_details as service
-from assertions.constants import Assertion, Result, SSDP_ALL, SSDP_REDFISH
+from assertions.constants import Assertion, RequestType, Result, SSDP_ALL
+from assertions.constants import SSDP_REDFISH
 from assertions.system_under_test import SystemUnderTest
 from unittests.utils import add_response, get_result
 
@@ -1283,7 +1284,8 @@ class ServiceDetails(TestCase):
         get_resp1 = add_response(self.sut, self.sut.subscriptions_uri, 'GET',
                                  status_code=requests.codes.OK)
         get_resp2 = add_response(self.sut, self.sut.server_sent_event_uri,
-                                 'GET', status_code=requests.codes.NOT_FOUND)
+                                 'GET', status_code=requests.codes.NOT_FOUND,
+                                 request_type=RequestType.STREAMING)
         self.mock_session.get.side_effect = [get_resp1, get_resp2]
         r, e = service.test_sse_open_creates_event_dest(self.sut)
         self.assertIsNone(r)
@@ -1303,7 +1305,8 @@ class ServiceDetails(TestCase):
                                  status_code=requests.codes.OK,
                                  json={'Members': []})
         get_resp2 = add_response(self.sut, self.sut.server_sent_event_uri,
-                                 'GET', status_code=requests.codes.OK)
+                                 'GET', status_code=requests.codes.OK,
+                                 request_type=RequestType.STREAMING)
         get_resp3 = add_response(self.sut, self.sut.subscriptions_uri, 'GET',
                                  status_code=requests.codes.OK,
                                  json={'Members': [
@@ -1329,7 +1332,8 @@ class ServiceDetails(TestCase):
                                  status_code=requests.codes.OK,
                                  json={'Members': []})
         get_resp2 = add_response(self.sut, self.sut.server_sent_event_uri,
-                                 'GET', status_code=requests.codes.OK)
+                                 'GET', status_code=requests.codes.OK,
+                                 request_type=RequestType.STREAMING)
         get_resp3 = add_response(self.sut, self.sut.subscriptions_uri, 'GET',
                                  status_code=requests.codes.OK,
                                  json={'Members': []})
@@ -1352,7 +1356,8 @@ class ServiceDetails(TestCase):
                                  status_code=requests.codes.OK,
                                  json={'Members': []})
         get_resp2 = add_response(self.sut, self.sut.server_sent_event_uri,
-                                 'GET', status_code=requests.codes.OK)
+                                 'GET', status_code=requests.codes.OK,
+                                 request_type=RequestType.STREAMING)
         get_resp3 = add_response(self.sut, self.sut.subscriptions_uri, 'GET',
                                  status_code=requests.codes.OK,
                                  json={'Members': [{'@odata.id': '/foo'}]})

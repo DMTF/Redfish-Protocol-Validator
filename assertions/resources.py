@@ -205,7 +205,8 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                 if event_dest_uri:
                     sut.set_event_dest_uri(event_dest_uri)
                 if r is not None:
-                    yield {'uri': uri, 'response': r}
+                    yield {'uri': uri, 'response': r,
+                           'request_type': RequestType.STREAMING}
 
     if 'CertificateService' in root:
         uri = root['CertificateService']['@odata.id']
@@ -229,7 +230,9 @@ def read_target_resources(sut: SystemUnderTest, uri='/redfish/v1/',
         response = r['response']
         uri = r['uri']
         resource_type = r.get('resource_type')
-        sut.add_response(uri, response, resource_type=resource_type)
+        request_type = r.get('request_type', RequestType.NORMAL)
+        sut.add_response(uri, response, resource_type=resource_type,
+                         request_type=request_type)
 
 
 def create_account(sut: SystemUnderTest, session,

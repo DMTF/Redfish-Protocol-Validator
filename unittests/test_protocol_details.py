@@ -9,7 +9,7 @@ from unittest import mock, TestCase
 import requests
 
 from assertions import protocol_details as proto
-from assertions.constants import Assertion, ResourceType, Result
+from assertions.constants import Assertion, RequestType, ResourceType, Result
 from assertions.system_under_test import SystemUnderTest
 from unittests.utils import add_response, get_result
 
@@ -31,7 +31,8 @@ class ProtocolDetails(TestCase):
         add_response(self.sut, '/redfish/v1/$metadata', 'GET', status,
                      text='<Edmx><DataServices></DataServices></Edmx>')
         add_response(self.sut, self.sut.server_sent_event_uri, 'GET', status,
-                     text=': stream keep-alive')
+                     text=': stream keep-alive',
+                     request_type=RequestType.STREAMING)
 
     def setUp(self):
         super(ProtocolDetails, self).setUp()

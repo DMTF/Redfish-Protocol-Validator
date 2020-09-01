@@ -38,6 +38,7 @@ class RequestType(NoValue):
     BAD_ETAG = auto()
     MODIFY_OTHER = auto()
     SUBSCRIPTION = auto()
+    STREAMING = auto()
 
 
 class Assertion(NoValue):

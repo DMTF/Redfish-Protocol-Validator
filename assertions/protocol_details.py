@@ -221,11 +221,6 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
 
 def test_media_types(sut: SystemUnderTest, uri, response):
     """Perform tests of the supported media types."""
-
-    if uri == sut.server_sent_event_uri:
-        # do not perform these tests on the SSE stream response
-        return
-
     if (uri != '/redfish/v1/$metadata' and
             response.status_code in [requests.codes.OK,
                                      requests.codes.CREATED]):
