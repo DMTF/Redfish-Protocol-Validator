@@ -64,9 +64,9 @@ class Assertion(NoValue):
     PROTO_ETAG_ON_GET_ACCOUNT = (
         'Implementations shall support the return of ETag headers for GET '
         'requests of ManagerAccount resources.')
-    PROTO_ETAG_STRONG_VALIDATOR = (
+    PROTO_ETAG_RFC7232 = (
         'If a resource supports an ETag, it shall use the RFC7232-defined '
-        'ETag strong validator.')
+        'ETag.')
     PROTO_STD_URI_SERVICE_ROOT = (
         'The root URI for this version of the Redfish protocol shall be '
         '/redfish/v1/.')

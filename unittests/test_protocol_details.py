@@ -264,25 +264,26 @@ class ProtocolDetails(TestCase):
         self.assertEqual(r, Result.FAIL)
         self.assertIn('did not return an ETag', msg)
 
-    def test_test_strong_etag_fail(self):
+    def test_test_valid_etag_fail(self):
         uri = '/redfish/v1/foo'
         response = add_response(
             self.sut, uri, 'GET', status_code=requests.codes.OK,
-            headers={'ETag': 'W/"9573"'})
-        proto.test_strong_etag(self.sut, uri, response)
-        result = get_result(self.sut, Assertion.PROTO_ETAG_STRONG_VALIDATOR,
+            headers={'ETag': 'W/" 9573"'})  # space char not allowed
+        proto.test_valid_etag(self.sut, uri, response)
+        result = get_result(self.sut, Assertion.PROTO_ETAG_RFC7232,
                             'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('%s returned weak ETag header W' % uri, result['msg'])
+        self.assertIn('Response from GET request to URI %s returned invalid '
+                      'ETag header value' % uri, result['msg'])
 
-    def test_test_strong_etag_pass(self):
+    def test_test_valid_etag_pass(self):
         uri = '/redfish/v1/foo'
         response = add_response(
             self.sut, uri, 'GET', status_code=requests.codes.OK,
-            headers={'ETag': '48305216'})
-        proto.test_strong_etag(self.sut, uri, response)
-        result = get_result(self.sut, Assertion.PROTO_ETAG_STRONG_VALIDATOR,
+            headers={}, json={'@odata.etag': '"4A30/CF16"'})
+        proto.test_valid_etag(self.sut, uri, response)
+        result = get_result(self.sut, Assertion.PROTO_ETAG_RFC7232,
                             'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
