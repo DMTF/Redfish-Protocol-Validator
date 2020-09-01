@@ -3,6 +3,7 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import string
 import unittest
 from unittest import mock, TestCase
 
@@ -116,6 +117,30 @@ class ProtocolDetails(TestCase):
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%1Ca#a/x/y'))
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%B2#a/x/y'))
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%aF#a/x/y'))
+
+    def test_check_etag_valid(self):
+        punctuation = string.punctuation.replace('"', '')  # no double quote
+        # positive
+        self.assertTrue(proto.check_etag_valid('""'))
+        self.assertTrue(proto.check_etag_valid('W/""'))
+        self.assertTrue(proto.check_etag_valid('"xyzzy"'))
+        self.assertTrue(proto.check_etag_valid('W/"xyzzy"'))
+        self.assertTrue(proto.check_etag_valid('"abcXYZ123"'))
+        self.assertTrue(proto.check_etag_valid('"%s"' % punctuation))
+        self.assertTrue(proto.check_etag_valid('"\x7B\x7F\x80\xB8\xFF"'))
+        # negative
+        self.assertFalse(proto.check_etag_valid('\'\''))
+        self.assertFalse(proto.check_etag_valid('xyzzy'))
+        self.assertFalse(proto.check_etag_valid('"xy zy"'))
+        self.assertFalse(proto.check_etag_valid('"xy"zy"'))
+        self.assertFalse(proto.check_etag_valid('W/"xy\x00zy"'))
+        self.assertFalse(proto.check_etag_valid('"xy\x13zy"'))
+        self.assertFalse(proto.check_etag_valid('w/"xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('W\\"xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('W/"xyzzy'))
+        self.assertFalse(proto.check_etag_valid('xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('"xyzzy" '))
+        self.assertFalse(proto.check_etag_valid(' "xyzzy"'))
 
     def test_check_slash_redfish(self):
         response = mock.Mock(spec=requests.Response)
