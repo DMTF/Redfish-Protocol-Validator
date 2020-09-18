@@ -911,7 +911,7 @@ class ServiceRequests(TestCase):
             self.sut, Assertion.REQ_DATA_MOD_ERRORS, '', '')
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No failed POST requests found; unable to test this '
+        self.assertIn('No failed POST responses found; unable to test this '
                       'assertion', result['msg'])
 
     def test_test_data_mod_errors_pass(self):
@@ -939,6 +939,69 @@ class ServiceRequests(TestCase):
         self.assertIn('uri %s failed with status %s, but appeared to create '
                       'resource %s' % (uri, requests.codes.BAD_REQUEST,
                                        uri + '/xyz'), result['msg'])
+
+    def test_test_patch_mixed_props_not_tested(self):
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_mixed_props_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_MIXED_PROPS)
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST, requests.codes.OK),
+                      result['msg'])
+
+    def test_test_patch_mixed_props_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'error': {}})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include the resource '
+                      'representation', result['msg'])
+
+    def test_test_patch_mixed_props_fail3(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'@odata.id': uri})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include a message '
+                      'annotation that lists the non-updatable properties',
+                      result['msg'])
+
+    def test_test_patch_mixed_props_pass(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'@odata.id': uri, '@Message.ExtendedInfo': [{}]})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
 
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)

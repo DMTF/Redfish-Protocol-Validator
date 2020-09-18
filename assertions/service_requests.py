@@ -622,10 +622,46 @@ def test_data_mod_errors(sut: SystemUnderTest):
                         Assertion.REQ_DATA_MOD_ERRORS, 'Test passed')
 
     if not found_error:
-        msg = ('No failed POST requests found; unable to test this '
+        msg = ('No failed POST responses found; unable to test this '
                'assertion')
         sut.log(Result.NOT_TESTED, '', '', '',
                 Assertion.REQ_DATA_MOD_ERRORS, msg)
+
+
+def test_patch_mixed_props(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_MIXED_PROPS."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_MIXED_PROPS).items():
+        found_response = True
+        if response.status_code == requests.codes.OK:
+            data = response.json()
+            if '@odata.id' in data:
+                if '@Message.ExtendedInfo' in data:
+                    sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_MIXED_PROPS, 'Test passed')
+                else:
+                    msg = ('The service response did not include a message '
+                           'annotation that lists the non-updatable '
+                           'properties')
+                    sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_MIXED_PROPS, msg)
+            else:
+                msg = ('The service response did not include the resource '
+                       'representation')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_MIXED_PROPS, msg)
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.OK))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_MIXED_PROPS, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_MIXED_PROPS, msg)
 
 
 def test_request_headers(sut: SystemUnderTest):
@@ -682,6 +718,7 @@ def test_data_modification(sut: SystemUnderTest):
 
 def test_patch_update(sut: SystemUnderTest):
     """Perform tests from the 'PATCH (update)' sub-section of the spec."""
+    test_patch_mixed_props(sut)
 
 
 def test_patch_array_props(sut: SystemUnderTest):

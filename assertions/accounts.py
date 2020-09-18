@@ -224,6 +224,15 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
         sut.add_response(acct_uri, r,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.BAD_ETAG)
+    if request_type == RequestType.NORMAL:
+        # patch several props, mix of updatable and non-updatable
+        payload = {'Password': new_password(sut), 'BogusProp': 'foo'}
+        headers = utils.get_etag_header(sut, session, acct_uri)
+        response = session.patch(sut.rhost + acct_uri, json=payload,
+                                 headers=headers)
+        sut.add_response(acct_uri, response,
+                         resource_type=ResourceType.MANAGER_ACCOUNT,
+                         request_type=RequestType.PATCH_MIXED_PROPS)
     return response
 
 

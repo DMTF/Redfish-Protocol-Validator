@@ -39,6 +39,7 @@ class RequestType(NoValue):
     MODIFY_OTHER = auto()
     SUBSCRIPTION = auto()
     STREAMING = auto()
+    PATCH_MIXED_PROPS = auto()
 
 
 class Assertion(NoValue):
@@ -214,6 +215,12 @@ class Assertion(NoValue):
         'Otherwise, if the service returns a client 4XX or service 5XX status '
         'code, the service encountered an error and the resource shall not '
         'have been modified or created as a result of the operation.'
+    )
+    REQ_PATCH_MIXED_PROPS = (
+        'Modify several properties where one or more properties can never be '
+        'updated: Services shall return the HTTP 200 OK status code and a '
+        'resource representation with a message annotation that lists the '
+        'non-updatable properties.'
     )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
