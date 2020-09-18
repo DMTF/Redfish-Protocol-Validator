@@ -860,6 +860,86 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
+    def test_test_head_differ_from_get_pass(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.OK)
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_head_differ_from_get_fail1(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.OK,
+                         json={})
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('HEAD request to uri %s returned a non-empty body '
+                      '(Content-Type: application/json; Content-Length: 2)'
+                      % uri, result['msg'])
+
+    def test_test_head_differ_from_get_fail2(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.METHOD_NOT_ALLOWED)
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('HEAD request to uri %s failed with status %s' %
+                      (uri, requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_data_mod_errors_not_tested(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.CREATED,
+                         headers={'Location': uri + '/xyz'})
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No failed POST requests found; unable to test this '
+                      'assertion', result['msg'])
+
+    def test_test_data_mod_errors_pass(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, 'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_data_mod_errors_fail(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.BAD_REQUEST,
+                         headers={'Location': uri + '/xyz'})
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, 'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('uri %s failed with status %s, but appeared to create '
+                      'resource %s' % (uri, requests.codes.BAD_REQUEST,
+                                       uri + '/xyz'), result['msg'])
+
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)
 

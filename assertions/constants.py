@@ -206,6 +206,15 @@ class Assertion(NoValue):
         'applied to query parameters without defined values, such as excerpt '
         'or only.'
     )
+    REQ_HEAD_DIFFERS_FROM_GET = (
+        'The HEAD method differs from the GET method in that it shall not '
+        'return message body information.'
+    )
+    REQ_DATA_MOD_ERRORS = (
+        'Otherwise, if the service returns a client 4XX or service 5XX status '
+        'code, the service encountered an error and the resource shall not '
+        'have been modified or created as a result of the operation.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

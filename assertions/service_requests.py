@@ -581,6 +581,53 @@ def test_query_invalid_values(sut: SystemUnderTest):
                     Assertion.REQ_QUERY_INVALID_VALUES, msg)
 
 
+def test_head_differ_from_get(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEAD_DIFFERS_FROM_GET."""
+    uri = '/redfish/v1/'
+    response = sut.session.head(sut.rhost + uri)
+    if response.ok:
+        if not response.text:
+            sut.log(Result.PASS, 'HEAD', response.status_code, uri,
+                    Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'Test passed')
+        else:
+            msg = ('HEAD request to uri %s returned a non-empty body '
+                   '(Content-Type: %s; Content-Length: %s)'
+                   % (uri, response.headers.get('Content-Type', '<missing>'),
+                       response.headers.get('Content-Length', '<missing>')))
+            sut.log(Result.FAIL, 'HEAD', response.status_code, uri,
+                    Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+    else:
+        msg = ('HEAD request to uri %s failed with status %s'
+               % (uri, response.status_code))
+        sut.log(Result.FAIL, 'HEAD', response.status_code, uri,
+                Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+
+
+def test_data_mod_errors(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DATA_MOD_ERRORS."""
+    found_error = False
+    for uri, response in sut.get_responses_by_method('POST').items():
+        if (not response.ok and
+                response.status_code != requests.codes.METHOD_NOT_ALLOWED):
+            found_error = True
+            if response.headers.get('Location'):
+                msg = ('POST request to uri %s failed with status %s, but '
+                       'appeared to create resource %s'
+                       % (uri, response.status_code,
+                          response.headers.get('Location')))
+                sut.log(Result.FAIL, 'POST', response.status_code, uri,
+                        Assertion.REQ_DATA_MOD_ERRORS, msg)
+            else:
+                sut.log(Result.PASS, 'POST', response.status_code, uri,
+                        Assertion.REQ_DATA_MOD_ERRORS, 'Test passed')
+
+    if not found_error:
+        msg = ('No failed POST requests found; unable to test this '
+               'assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_DATA_MOD_ERRORS, msg)
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -624,11 +671,13 @@ def test_query_params(sut: SystemUnderTest):
 
 def test_head(sut: SystemUnderTest):
     """Perform tests from the 'HEAD' sub-section of the spec."""
+    test_head_differ_from_get(sut)
 
 
 def test_data_modification(sut: SystemUnderTest):
     """Perform tests from the 'Data modification requests' sub-section of the
     spec."""
+    test_data_mod_errors(sut)
 
 
 def test_patch_update(sut: SystemUnderTest):
