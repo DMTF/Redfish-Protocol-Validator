@@ -227,7 +227,7 @@ class Accounts(TestCase):
         self.session.get.return_value.headers = {}
         uri = '/redfish/v1/AccountService/Accounts/4'
         accounts.patch_account(self.sut, self.session, uri)
-        self.assertEqual(self.session.patch.call_count, 2)
+        self.assertEqual(self.session.patch.call_count, 4)
 
     def test_patch_account2(self):
         self.session.get.return_value.status_code = requests.codes.OK
@@ -235,7 +235,7 @@ class Accounts(TestCase):
         self.session.get.return_value.headers = {'ETag': '0123456789abcdef'}
         uri = '/redfish/v1/AccountService/Accounts/4'
         accounts.patch_account(self.sut, self.session, uri)
-        self.assertEqual(self.session.patch.call_count, 3)
+        self.assertEqual(self.session.patch.call_count, 5)
 
     def test_delete_account_via_patch_pass(self):
         self.session.delete.return_value.status_code = (

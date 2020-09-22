@@ -263,6 +263,26 @@ def patch_other_account(sut: SystemUnderTest, session, user, password):
     return new_user, new_password, new_acct_uri
 
 
+def patch_session(sut: SystemUnderTest, session_uri):
+    """PATCH a session; should fail, sessions are not updatable"""
+    payload = {'UserName': 'pRoToVAl'}
+    headers = utils.get_etag_header(sut, sut.session, session_uri)
+    response = sut.session.patch(sut.rhost + session_uri, json=payload,
+                                 headers=headers)
+    sut.add_response(session_uri, response,
+                     request_type=RequestType.PATCH_RO_RESOURCE)
+
+
+def patch_collection(sut: SystemUnderTest, collection_uri):
+    """PATCH a collection; should fail, collections are not updatable"""
+    payload = {'Name': 'My Collection'}
+    headers = utils.get_etag_header(sut, sut.session, collection_uri)
+    response = sut.session.patch(sut.rhost + collection_uri, json=payload,
+                                 headers=headers)
+    sut.add_response(collection_uri, response,
+                     request_type=RequestType.PATCH_COLLECTION)
+
+
 def delete_account(sut: SystemUnderTest, session, user, acct_uri,
                    request_type=RequestType.NORMAL):
     # DELETE account
@@ -274,8 +294,10 @@ def delete_account(sut: SystemUnderTest, session, user, acct_uri,
 def data_modification_requests(sut: SystemUnderTest):
     new_session_uri, _ = sessions.create_session(sut)
     if new_session_uri:
+        patch_session(sut, new_session_uri)
         sessions.delete_session(sut, sut.session, new_session_uri,
                                 request_type=RequestType.NORMAL)
+    patch_collection(sut, sut.sessions_uri)
     new_user, new_pwd, new_uri = None, None, None
     other_user, other_pwd, other_uri = None, None, None
     try:

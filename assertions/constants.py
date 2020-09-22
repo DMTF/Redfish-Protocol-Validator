@@ -40,6 +40,10 @@ class RequestType(NoValue):
     SUBSCRIPTION = auto()
     STREAMING = auto()
     PATCH_MIXED_PROPS = auto()
+    PATCH_BAD_PROP = auto()
+    PATCH_RO_RESOURCE = auto()
+    PATCH_COLLECTION = auto()
+    PATCH_ODATA_PROPS = auto()
 
 
 class Assertion(NoValue):
@@ -221,6 +225,29 @@ class Assertion(NoValue):
         'updated: Services shall return the HTTP 200 OK status code and a '
         'resource representation with a message annotation that lists the '
         'non-updatable properties.'
+    )
+    REQ_PATCH_BAD_PROP = (
+        # TODO(billdodd): There appears to be an error in the spec here. The
+        #     response should be an error message, not be a resource
+        #     representation. Update the text here when the spec is updated.
+        'Modify a single property that can never be updated: Services shall '
+        'return the HTTP 400 Bad Request status code and a resource '
+        'representation with a message annotation that shows the '
+        'non-updatable property.'
+    )
+    REQ_PATCH_RO_RESOURCE = (
+        'Modify a resource or all properties that can never be updated: '
+        'Services shall return the HTTP 405 status code.'
+    )
+    REQ_PATCH_COLLECTION = (
+        'A client PATCH request against a resource collection: Services shall '
+        'return the HTTP 405 status code.'
+    )
+    REQ_PATCH_ODATA_PROPS = (
+        'A client only provides OData annotations: Services shall return the '
+        'HTTP 400 Bad Request status code with the NoOperation message from '
+        'the Base Message Registry or one of the modification success '
+        'responses.'
     )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (

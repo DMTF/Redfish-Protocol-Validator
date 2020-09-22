@@ -664,6 +664,118 @@ def test_patch_mixed_props(sut: SystemUnderTest):
                 Assertion.REQ_PATCH_MIXED_PROPS, msg)
 
 
+def test_patch_bad_prop(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_BAD_PROP."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_BAD_PROP).items():
+        found_response = True
+        if response.status_code == requests.codes.BAD_REQUEST:
+            data = response.json()
+            if ('error' in data and
+                    utils.is_text_in_extended_error('BogusProp', data)):
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_BAD_PROP, 'Test passed')
+            else:
+                msg = ('The service response did not include a message '
+                       'that lists the non-updatable property')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_BAD_PROP, msg)
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.BAD_REQUEST))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_BAD_PROP, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_BAD_PROP, msg)
+
+
+def test_patch_ro_resource(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_RO_RESOURCE."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_RO_RESOURCE).items():
+        found_response = True
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_RO_RESOURCE, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_RO_RESOURCE, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_RO_RESOURCE, msg)
+
+
+def test_patch_collection(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_COLLECTION."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_COLLECTION).items():
+        found_response = True
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_COLLECTION, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_COLLECTION, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_COLLECTION, msg)
+
+
+def test_patch_odata_props(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ODATA_PROPS."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_ODATA_PROPS).items():
+        found_response = True
+        if response.status_code == requests.codes.BAD_REQUEST:
+            data = response.json()
+            if ('error' in data and 'NoOperation' in
+                    utils.get_extended_info_message_keys(data)):
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ODATA_PROPS, 'Test passed')
+            else:
+                msg = ('The service response did not include the NoOperation '
+                       'message from the Base Message Registry')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ODATA_PROPS, msg)
+        elif response.status_code in [requests.codes.OK,
+                                      requests.codes.ACCEPTED,
+                                      requests.codes.NO_CONTENT]:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ODATA_PROPS, 'Test passed')
+        else:
+            exp_codes = [requests.codes.OK, requests.codes.ACCEPTED,
+                         requests.codes.NO_CONTENT, requests.codes.BAD_REQUEST]
+            msg = ('The service response returned status code %s; expected '
+                   'one of %s'
+                   % (response.status_code, exp_codes))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ODATA_PROPS, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_ODATA_PROPS, msg)
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -719,6 +831,10 @@ def test_data_modification(sut: SystemUnderTest):
 def test_patch_update(sut: SystemUnderTest):
     """Perform tests from the 'PATCH (update)' sub-section of the spec."""
     test_patch_mixed_props(sut)
+    test_patch_bad_prop(sut)
+    test_patch_ro_resource(sut)
+    test_patch_collection(sut)
+    test_patch_odata_props(sut)
 
 
 def test_patch_array_props(sut: SystemUnderTest):

@@ -65,7 +65,8 @@ def is_text_in_extended_error(text: str, body: dict):
     elif '@Message.ExtendedInfo' in body:
         data = body['@Message.ExtendedInfo']
     for d in data:
-        if text in d.get('Message', '') or text in d.get('Resolution', ''):
+        if (text in d.get('Message', '') or text in d.get('Resolution', '')
+                or text in d.get('MessageArgs', '')):
             return True
     return False
 

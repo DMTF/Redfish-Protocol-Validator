@@ -1003,6 +1003,187 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
+    def test_test_patch_bad_prop_not_tested(self):
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_bad_prop_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_BAD_PROP)
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.OK, requests.codes.BAD_REQUEST),
+                      result['msg'])
+
+    def test_test_patch_bad_prop_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'@Message.ExtendedInfo':
+                           [{'Message': 'unknown property'}]}})
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include a message that '
+                      'lists the non-updatable property', result['msg'])
+
+    def test_test_patch_bad_prop_pass(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'@Message.ExtendedInfo':
+                           [{'Message': 'unknown property BogusProp'}]}})
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_ro_resource_not_tested(self):
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_ro_resource_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_RO_RESOURCE)
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST,
+                              requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_patch_ro_resource_pass(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_RO_RESOURCE)
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_collection_not_tested(self):
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_patch_collection_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_COLLECTION)
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST,
+                              requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_patch_patch_collection_pass(self):
+        uri = '/redfish/v1/SessionService/Sessions'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_COLLECTION)
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_odata_props_not_tested(self):
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_patch_odata_props_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_ODATA_PROPS)
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        exp_codes = [requests.codes.OK, requests.codes.ACCEPTED,
+                     requests.codes.NO_CONTENT, requests.codes.BAD_REQUEST]
+        self.assertIn('The service response returned status code %s; expected '
+                      'one of %s' % (requests.codes.METHOD_NOT_ALLOWED,
+                                     exp_codes), result['msg'])
+
+    def test_test_patch_patch_odata_props_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_ODATA_PROPS,
+                     json={'error': {'@Message.ExtendedInfo': [{
+                           'MessageId': 'Base.1.6.PropertyUnknown'}]}})
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include the NoOperation '
+                      'message from the Base Message Registry', result['msg'])
+
+    def test_test_patch_patch_odata_props_pass1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_ODATA_PROPS,
+                     json={'error': {'@Message.ExtendedInfo': [{
+                           'MessageId': 'Base.1.6.NoOperation'}]}})
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_odata_props_pass2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_ODATA_PROPS)
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)
 
