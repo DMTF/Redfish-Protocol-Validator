@@ -249,6 +249,22 @@ class Assertion(NoValue):
         'the Base Message Registry or one of the modification success '
         'responses.'
     )
+    REQ_PATCH_ARRAY_ELEMENT_REMOVE = (
+        'Within a PATCH request, the service shall accept null to remove an '
+        'element.'
+    )
+    REQ_PATCH_ARRAY_ELEMENT_UNCHANGED = (
+        'Within a PATCH request, the service shall accept an empty object {} '
+        'to leave an element unchanged'
+    )
+    REQ_PATCH_ARRAY_OPERATIONS_ORDER = (
+        'When processing a PATCH request, the order of operations shall be: '
+        'modifications, deletions, additions.'
+    )
+    REQ_PATCH_ARRAY_TRUNCATE = (
+        'A PATCH request with fewer elements than in the current array shall '
+        'remove the remaining elements of the array.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

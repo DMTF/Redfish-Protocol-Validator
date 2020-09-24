@@ -3,6 +3,8 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import logging
+
 import requests
 
 from assertions import utils
@@ -776,6 +778,199 @@ def test_patch_odata_props(sut: SystemUnderTest):
                 Assertion.REQ_PATCH_ODATA_PROPS, msg)
 
 
+def patch_array_save(sut: SystemUnderTest):
+    """Save the original array, if found."""
+    array = None
+    if sut.mgr_net_proto_uri:
+        response = sut.get_response('GET', sut.mgr_net_proto_uri)
+        if response is not None and response.ok:
+            a = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(a, list):
+                array = a
+    return array
+
+
+# An initial starting point
+patch_array_payload1 = {
+    'NTP': {
+        'NTPServers': [
+            'time-a-b.nist.gov',
+            'time-b-b.nist.gov',
+            'time-c-b.nist.gov'
+        ]
+    }
+}
+# Leave two entries unchanged (1st and 3rd) and remove one (2nd)
+patch_array_payload2 = {
+    'NTP': {
+        'NTPServers': [
+            {},
+            None,
+            {}
+        ]
+    }
+}
+# Patch with with a shorter list
+patch_array_payload3 = {
+    'NTP': {
+        'NTPServers': [
+            'time-b-b.nist.gov',
+            'time-c-b.nist.gov'
+        ]
+    }
+}
+
+
+def test_patch_array_element_remove(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE."""
+    uri = sut.mgr_net_proto_uri
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri,
+                                 json=patch_array_payload1, headers=headers)
+    if response.ok:
+        headers = utils.get_etag_header(sut, sut.session, uri)
+        response = sut.session.patch(
+            sut.rhost + uri, json=patch_array_payload2, headers=headers)
+        if response.ok:
+            array = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(array, list):
+                if 'time-b-b.nist.gov' in array:
+                    msg = ('Array element %s was not removed; resource: %s; '
+                           'PATCH payload: %s; resulting array: %s' %
+                           ('time-b-b.nist.gov', patch_array_payload1,
+                            patch_array_payload2, array))
+                    sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+                else:
+                    sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'Test passed')
+            else:
+                msg = ('After PATCH, NTPServers array not found in response; '
+                       'resource: %s; PATCH payload: %s' %
+                       (patch_array_payload1, patch_array_payload2))
+                sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+            return response, array
+        else:
+            msg = ('PATCH failed with status %s; resource: %s; '
+                   'PATCH payload: %s' % (
+                    response.status_code, patch_array_payload1,
+                    patch_array_payload2))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+    else:
+        msg = ('PATCH failed with status %s; PATCH payload: %s' %
+               (response.status_code, patch_array_payload1))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+
+    return response, None
+
+
+def test_patch_array_element_unchanged(sut: SystemUnderTest, response, array):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED."""
+    uri = sut.mgr_net_proto_uri
+    if response.ok:
+        if isinstance(array, list):
+            if 'time-a-b.nist.gov' in array and 'time-c-b.nist.gov' in array:
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+                        'Test passed')
+            else:
+                missing = []
+                if 'time-a-b.nist.gov' not in array:
+                    missing.append('time-a-b.nist.gov')
+                if 'time-c-b.nist.gov' not in array:
+                    missing.append('time-c-b.nist.gov')
+                msg = ('After PATCH, the following NTPServers array elements '
+                       'should have been left unchanged, but were not found '
+                       'in the response: %s; resource: %s; PATCH payload: %s' %
+                       (missing, patch_array_payload1, patch_array_payload2))
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+        else:
+            msg = ('After PATCH, NTPServers array not found in response; '
+                   'resource: %s; PATCH payload: %s' %
+                   (patch_array_payload1, patch_array_payload2))
+            sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+    else:
+        msg = ('PATCH failed with status %s; resource: %s; '
+               'PATCH payload: %s' %
+               (response.status_code, patch_array_payload1,
+                patch_array_payload2))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+
+
+def test_patch_array_operations_order(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_OPERATIONS_ORDER."""
+    # TODO(bdodd): Need more thought on how to test this
+
+
+def test_patch_array_truncate(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_TRUNCATE."""
+    expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+    uri = sut.mgr_net_proto_uri
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri, json=patch_array_payload1,
+                                 headers=headers)
+    if response.ok:
+        headers = utils.get_etag_header(sut, sut.session, uri)
+        response = sut.session.patch(
+            sut.rhost + uri, json=patch_array_payload3, headers=headers)
+        if response.ok:
+            array = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(array, list):
+                if array == expected_array:
+                    sut.log(Result.PASS, 'PATCH', response.status_code,
+                            uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+                            'Test passed')
+                else:
+                    msg = ('After PATCH, expected NTPServers array to be %s; '
+                           'found: %s; resource: %s; PATCH payload: %s' % (
+                            expected_array, array, patch_array_payload1,
+                            patch_array_payload3))
+                    sut.log(Result.FAIL, 'PATCH', response.status_code,
+                            uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+            else:
+                msg = ('After PATCH, NTPServers array not found in response; '
+                       'resource: %s; PATCH payload: %s' %
+                       (patch_array_payload1, patch_array_payload3))
+                sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+        else:
+            msg = ('PATCH failed with status %s; resource: %s; '
+                   'PATCH payload: %s' %
+                   (response.status_code, patch_array_payload1,
+                    patch_array_payload3))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+    else:
+        msg = ('PATCH failed with status %s; PATCH payload: %s' %
+               (response.status_code, patch_array_payload1))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+
+
+def patch_array_restore(sut: SystemUnderTest, array):
+    """Restore the original array."""
+    uri = sut.mgr_net_proto_uri
+    payload = {
+        'NTP': {
+            'NTPServers': array
+        }
+    }
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri,
+                                 json=payload, headers=headers)
+    if not response.ok:
+        logging.warning('Attempt to PATCH %s to restore the original '
+                        'NTPServers array failed with status %s; PATCH '
+                        'payload: %s' % (uri, response.status_code, payload))
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -840,6 +1035,13 @@ def test_patch_update(sut: SystemUnderTest):
 def test_patch_array_props(sut: SystemUnderTest):
     """Perform tests from the 'PATCH on array properties' sub-section of the
     spec."""
+    orig_array = patch_array_save(sut)
+    if orig_array is not None:
+        response, new_array = test_patch_array_element_remove(sut)
+        test_patch_array_element_unchanged(sut, response, new_array)
+        test_patch_array_operations_order(sut)
+        test_patch_array_truncate(sut)
+        patch_array_restore(sut, orig_array)
 
 
 def test_put(sut: SystemUnderTest):
