@@ -546,7 +546,8 @@ def test_sse_successful_response(sut: SystemUnderTest):
                 Assertion.SERV_SSE_SUCCESSFUL_RESPONSE, msg)
         return
 
-    response = sut.get_response('GET', sut.server_sent_event_uri)
+    response = sut.get_response('GET', sut.server_sent_event_uri,
+                                request_type=RequestType.STREAMING)
     if response is None:
         response, _ = utils.get_sse_stream(sut)
 

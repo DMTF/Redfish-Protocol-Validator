@@ -3,6 +3,7 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import json as json_util
 from unittest import mock
 
 import requests
@@ -22,18 +23,21 @@ def add_response(sut: SystemUnderTest, uri, method='GET',
     response.encoding = encoding
     request = mock.Mock(spec=requests.Request)
     request.method = method
-    if json:
+    if json is not None:
         response.json.return_value = json
         response.headers = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Content-Length': len(json_util.dumps(json))
         }
         response.text = str(json)
-    elif text:
+    elif text is not None:
         response.text = text
         response.headers = {
-            'Content-Type': 'application/xml'
+            'Content-Type': 'application/xml',
+            'Content-Length': len(text)
         }
     else:
+        response.text = ''
         response.headers = {}
     if headers is not None:
         response.headers.update(headers)

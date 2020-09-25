@@ -3,6 +3,8 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import logging
+
 import requests
 
 from assertions import utils
@@ -581,6 +583,394 @@ def test_query_invalid_values(sut: SystemUnderTest):
                     Assertion.REQ_QUERY_INVALID_VALUES, msg)
 
 
+def test_head_differ_from_get(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_HEAD_DIFFERS_FROM_GET."""
+    uri = '/redfish/v1/'
+    response = sut.session.head(sut.rhost + uri)
+    if response.ok:
+        if not response.text:
+            sut.log(Result.PASS, 'HEAD', response.status_code, uri,
+                    Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'Test passed')
+        else:
+            msg = ('HEAD request to uri %s returned a non-empty body '
+                   '(Content-Type: %s; Content-Length: %s)'
+                   % (uri, response.headers.get('Content-Type', '<missing>'),
+                       response.headers.get('Content-Length', '<missing>')))
+            sut.log(Result.FAIL, 'HEAD', response.status_code, uri,
+                    Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+    else:
+        msg = ('HEAD request to uri %s failed with status %s'
+               % (uri, response.status_code))
+        sut.log(Result.FAIL, 'HEAD', response.status_code, uri,
+                Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+
+
+def test_data_mod_errors(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DATA_MOD_ERRORS."""
+    found_error = False
+    for uri, response in sut.get_responses_by_method('POST').items():
+        if (not response.ok and
+                response.status_code != requests.codes.METHOD_NOT_ALLOWED):
+            found_error = True
+            if response.headers.get('Location'):
+                msg = ('POST request to uri %s failed with status %s, but '
+                       'appeared to create resource %s'
+                       % (uri, response.status_code,
+                          response.headers.get('Location')))
+                sut.log(Result.FAIL, 'POST', response.status_code, uri,
+                        Assertion.REQ_DATA_MOD_ERRORS, msg)
+            else:
+                sut.log(Result.PASS, 'POST', response.status_code, uri,
+                        Assertion.REQ_DATA_MOD_ERRORS, 'Test passed')
+
+    if not found_error:
+        msg = ('No failed POST responses found; unable to test this '
+               'assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_DATA_MOD_ERRORS, msg)
+
+
+def test_patch_mixed_props(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_MIXED_PROPS."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_MIXED_PROPS).items():
+        found_response = True
+        if response.status_code == requests.codes.OK:
+            data = response.json()
+            if '@odata.id' in data:
+                if '@Message.ExtendedInfo' in data:
+                    sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_MIXED_PROPS, 'Test passed')
+                else:
+                    msg = ('The service response did not include a message '
+                           'annotation that lists the non-updatable '
+                           'properties')
+                    sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_MIXED_PROPS, msg)
+            else:
+                msg = ('The service response did not include the resource '
+                       'representation')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_MIXED_PROPS, msg)
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.OK))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_MIXED_PROPS, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_MIXED_PROPS, msg)
+
+
+def test_patch_bad_prop(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_BAD_PROP."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_BAD_PROP).items():
+        found_response = True
+        if response.status_code == requests.codes.BAD_REQUEST:
+            data = response.json()
+            if ('error' in data and
+                    utils.is_text_in_extended_error('BogusProp', data)):
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_BAD_PROP, 'Test passed')
+            else:
+                msg = ('The service response did not include a message '
+                       'that lists the non-updatable property')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_BAD_PROP, msg)
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.BAD_REQUEST))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_BAD_PROP, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_BAD_PROP, msg)
+
+
+def test_patch_ro_resource(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_RO_RESOURCE."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_RO_RESOURCE).items():
+        found_response = True
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_RO_RESOURCE, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_RO_RESOURCE, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_RO_RESOURCE, msg)
+
+
+def test_patch_collection(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_COLLECTION."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_COLLECTION).items():
+        found_response = True
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_COLLECTION, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_COLLECTION, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_COLLECTION, msg)
+
+
+def test_patch_odata_props(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ODATA_PROPS."""
+    found_response = False
+    for uri, response in sut.get_responses_by_method(
+            'PATCH', request_type=RequestType.PATCH_ODATA_PROPS).items():
+        found_response = True
+        if response.status_code == requests.codes.BAD_REQUEST:
+            data = response.json()
+            if ('error' in data and 'NoOperation' in
+                    utils.get_extended_info_message_keys(data)):
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ODATA_PROPS, 'Test passed')
+            else:
+                msg = ('The service response did not include the NoOperation '
+                       'message from the Base Message Registry')
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ODATA_PROPS, msg)
+        elif response.status_code in [requests.codes.OK,
+                                      requests.codes.ACCEPTED,
+                                      requests.codes.NO_CONTENT]:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ODATA_PROPS, 'Test passed')
+        else:
+            exp_codes = [requests.codes.OK, requests.codes.ACCEPTED,
+                         requests.codes.NO_CONTENT, requests.codes.BAD_REQUEST]
+            msg = ('The service response returned status code %s; expected '
+                   'one of %s'
+                   % (response.status_code, exp_codes))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ODATA_PROPS, msg)
+
+    if not found_response:
+        msg = ('No PATCH responses found for this condition; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.REQ_PATCH_ODATA_PROPS, msg)
+
+
+def patch_array_save(sut: SystemUnderTest):
+    """Save the original array, if found."""
+    array = None
+    if sut.mgr_net_proto_uri:
+        response = sut.get_response('GET', sut.mgr_net_proto_uri)
+        if response is not None and response.ok:
+            a = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(a, list):
+                array = a
+    return array
+
+
+# An initial starting point
+patch_array_payload1 = {
+    'NTP': {
+        'NTPServers': [
+            'time-a-b.nist.gov',
+            'time-b-b.nist.gov',
+            'time-c-b.nist.gov'
+        ]
+    }
+}
+# Leave two entries unchanged (1st and 3rd) and remove one (2nd)
+patch_array_payload2 = {
+    'NTP': {
+        'NTPServers': [
+            {},
+            None,
+            {}
+        ]
+    }
+}
+# Patch with with a shorter list
+patch_array_payload3 = {
+    'NTP': {
+        'NTPServers': [
+            'time-b-b.nist.gov',
+            'time-c-b.nist.gov'
+        ]
+    }
+}
+
+
+def test_patch_array_element_remove(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE."""
+    uri = sut.mgr_net_proto_uri
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri,
+                                 json=patch_array_payload1, headers=headers)
+    if response.ok:
+        headers = utils.get_etag_header(sut, sut.session, uri)
+        response = sut.session.patch(
+            sut.rhost + uri, json=patch_array_payload2, headers=headers)
+        if response.ok:
+            array = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(array, list):
+                if 'time-b-b.nist.gov' in array:
+                    msg = ('Array element %s was not removed; resource: %s; '
+                           'PATCH payload: %s; resulting array: %s' %
+                           ('time-b-b.nist.gov', patch_array_payload1,
+                            patch_array_payload2, array))
+                    sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+                else:
+                    sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'Test passed')
+            else:
+                msg = ('After PATCH, NTPServers array not found in response; '
+                       'resource: %s; PATCH payload: %s' %
+                       (patch_array_payload1, patch_array_payload2))
+                sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+            return response, array
+        else:
+            msg = ('PATCH failed with status %s; resource: %s; '
+                   'PATCH payload: %s' % (
+                    response.status_code, patch_array_payload1,
+                    patch_array_payload2))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+    else:
+        msg = ('PATCH failed with status %s; PATCH payload: %s' %
+               (response.status_code, patch_array_payload1))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
+
+    return response, None
+
+
+def test_patch_array_element_unchanged(sut: SystemUnderTest, response, array):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED."""
+    uri = sut.mgr_net_proto_uri
+    if response.ok:
+        if isinstance(array, list):
+            if 'time-a-b.nist.gov' in array and 'time-c-b.nist.gov' in array:
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+                        'Test passed')
+            else:
+                missing = []
+                if 'time-a-b.nist.gov' not in array:
+                    missing.append('time-a-b.nist.gov')
+                if 'time-c-b.nist.gov' not in array:
+                    missing.append('time-c-b.nist.gov')
+                msg = ('After PATCH, the following NTPServers array elements '
+                       'should have been left unchanged, but were not found '
+                       'in the response: %s; resource: %s; PATCH payload: %s' %
+                       (missing, patch_array_payload1, patch_array_payload2))
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+        else:
+            msg = ('After PATCH, NTPServers array not found in response; '
+                   'resource: %s; PATCH payload: %s' %
+                   (patch_array_payload1, patch_array_payload2))
+            sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+    else:
+        msg = ('PATCH failed with status %s; resource: %s; '
+               'PATCH payload: %s' %
+               (response.status_code, patch_array_payload1,
+                patch_array_payload2))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+
+
+def test_patch_array_operations_order(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_OPERATIONS_ORDER."""
+    # TODO(bdodd): Need more thought on how to test this
+
+
+def test_patch_array_truncate(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PATCH_ARRAY_TRUNCATE."""
+    expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+    uri = sut.mgr_net_proto_uri
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri, json=patch_array_payload1,
+                                 headers=headers)
+    if response.ok:
+        headers = utils.get_etag_header(sut, sut.session, uri)
+        response = sut.session.patch(
+            sut.rhost + uri, json=patch_array_payload3, headers=headers)
+        if response.ok:
+            array = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(array, list):
+                if array == expected_array:
+                    sut.log(Result.PASS, 'PATCH', response.status_code,
+                            uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+                            'Test passed')
+                else:
+                    msg = ('After PATCH, expected NTPServers array to be %s; '
+                           'found: %s; resource: %s; PATCH payload: %s' % (
+                            expected_array, array, patch_array_payload1,
+                            patch_array_payload3))
+                    sut.log(Result.FAIL, 'PATCH', response.status_code,
+                            uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+            else:
+                msg = ('After PATCH, NTPServers array not found in response; '
+                       'resource: %s; PATCH payload: %s' %
+                       (patch_array_payload1, patch_array_payload3))
+                sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+                        Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+        else:
+            msg = ('PATCH failed with status %s; resource: %s; '
+                   'PATCH payload: %s' %
+                   (response.status_code, patch_array_payload1,
+                    patch_array_payload3))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+    else:
+        msg = ('PATCH failed with status %s; PATCH payload: %s' %
+               (response.status_code, patch_array_payload1))
+        sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
+
+
+def patch_array_restore(sut: SystemUnderTest, array):
+    """Restore the original array."""
+    uri = sut.mgr_net_proto_uri
+    payload = {
+        'NTP': {
+            'NTPServers': array
+        }
+    }
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri,
+                                 json=payload, headers=headers)
+    if not response.ok:
+        logging.warning('Attempt to PATCH %s to restore the original '
+                        'NTPServers array failed with status %s; PATCH '
+                        'payload: %s' % (uri, response.status_code, payload))
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -624,20 +1014,34 @@ def test_query_params(sut: SystemUnderTest):
 
 def test_head(sut: SystemUnderTest):
     """Perform tests from the 'HEAD' sub-section of the spec."""
+    test_head_differ_from_get(sut)
 
 
 def test_data_modification(sut: SystemUnderTest):
     """Perform tests from the 'Data modification requests' sub-section of the
     spec."""
+    test_data_mod_errors(sut)
 
 
 def test_patch_update(sut: SystemUnderTest):
     """Perform tests from the 'PATCH (update)' sub-section of the spec."""
+    test_patch_mixed_props(sut)
+    test_patch_bad_prop(sut)
+    test_patch_ro_resource(sut)
+    test_patch_collection(sut)
+    test_patch_odata_props(sut)
 
 
 def test_patch_array_props(sut: SystemUnderTest):
     """Perform tests from the 'PATCH on array properties' sub-section of the
     spec."""
+    orig_array = patch_array_save(sut)
+    if orig_array is not None:
+        response, new_array = test_patch_array_element_remove(sut)
+        test_patch_array_element_unchanged(sut, response, new_array)
+        test_patch_array_operations_order(sut)
+        test_patch_array_truncate(sut)
+        patch_array_restore(sut, orig_array)
 
 
 def test_put(sut: SystemUnderTest):

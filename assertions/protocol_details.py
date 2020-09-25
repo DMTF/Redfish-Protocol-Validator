@@ -17,6 +17,10 @@ safe_chars_regex = re.compile(
     r"^([A-Za-z0-9!$&'()*+,\-./:;=@_]|%[A-Fa-f0-9]{2})*\Z")
 encoded_char_regex = re.compile(r"%[A-Fa-f0-9]{2}")
 
+# See RFC 7232, section 2.3 Etags - valid chars within the double quotes
+#   of the opaque-tag can be 0x21, 0x23-0x7F, 0x80-0xFF
+etag_regex = re.compile(r'^(W/)?"[\x21\x23-\xFF]*"$')
+
 
 def split_path(uri):
     """
@@ -144,14 +148,8 @@ def check_etag_present(uri, response):
         return Result.FAIL, msg
 
 
-def check_etag_strong(uri, response):
-    etag = response.headers.get('ETag')
-    if etag.startswith('W/'):
-        msg = ('%s request to URI %s returned weak ETag header %s' %
-               (response.request.method, uri, etag))
-        return Result.FAIL, msg
-    else:
-        return Result.PASS, 'Test passed'
+def check_etag_valid(etag):
+    return bool(etag_regex.search(etag))
 
 
 def test_uri(sut: SystemUnderTest, uri, response):
@@ -223,11 +221,6 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
 
 def test_media_types(sut: SystemUnderTest, uri, response):
     """Perform tests of the supported media types."""
-
-    if uri == sut.server_sent_event_uri:
-        # do not perform these tests on the SSE stream response
-        return
-
     if (uri != '/redfish/v1/$metadata' and
             response.status_code in [requests.codes.OK,
                                      requests.codes.CREATED]):
@@ -251,14 +244,30 @@ def test_media_types(sut: SystemUnderTest, uri, response):
                     uri, Assertion.PROTO_JSON_ACCEPTED, msg)
 
 
-def test_strong_etag(sut: SystemUnderTest, uri, response):
-    """Perform tests for strong ETag support."""
-    # Test Assertion.PROTO_ETAG_STRONG_VALIDATOR
+def test_valid_etag(sut: SystemUnderTest, uri, response):
+    """Perform tests for RFC7232 ETag support."""
+    # Test Assertion.PROTO_ETAG_RFC7232
     if response.status_code in [requests.codes.OK, requests.codes.CREATED]:
-        if response.headers.get('ETag'):
-            result, msg = check_etag_strong(uri, response)
-            sut.log(result, response.request.method, response.status_code,
-                    uri, Assertion.PROTO_ETAG_STRONG_VALIDATOR, msg)
+        etag = response.headers.get('ETag')
+        source = 'header'
+        if (etag is None and utils.get_response_media_type(response)
+                == 'application/json'):
+            data = response.json()
+            if '@odata.etag' in data:
+                source = 'property'
+                etag = data.get('@odata.etag')
+        if etag is not None:
+            if check_etag_valid(etag):
+                sut.log(Result.PASS, response.request.method,
+                        response.status_code, uri,
+                        Assertion.PROTO_ETAG_RFC7232, 'Test passed')
+            else:
+                msg = ('Response from %s request to URI %s returned invalid '
+                       'ETag %s value %s'
+                       % (response.request.method, uri, source, etag))
+                sut.log(Result.FAIL, response.request.method,
+                        response.status_code, uri,
+                        Assertion.PROTO_ETAG_RFC7232, msg)
 
 
 def test_account_etags(sut: SystemUnderTest):
@@ -311,7 +320,7 @@ def test_protocol_details(sut: SystemUnderTest):
     for uri, response in sut.get_all_responses():
         test_uri(sut, uri, response)
         test_media_types(sut, uri, response)
-        # test_strong_etag(sut, uri, response)
+        test_valid_etag(sut, uri, response)
         test_standard_uris(sut, uri, response)
     test_http_supported_methods(sut)
     test_http_unsupported_methods(sut)

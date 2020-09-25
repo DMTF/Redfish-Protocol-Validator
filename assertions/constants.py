@@ -38,6 +38,12 @@ class RequestType(NoValue):
     BAD_ETAG = auto()
     MODIFY_OTHER = auto()
     SUBSCRIPTION = auto()
+    STREAMING = auto()
+    PATCH_MIXED_PROPS = auto()
+    PATCH_BAD_PROP = auto()
+    PATCH_RO_RESOURCE = auto()
+    PATCH_COLLECTION = auto()
+    PATCH_ODATA_PROPS = auto()
 
 
 class Assertion(NoValue):
@@ -64,9 +70,9 @@ class Assertion(NoValue):
     PROTO_ETAG_ON_GET_ACCOUNT = (
         'Implementations shall support the return of ETag headers for GET '
         'requests of ManagerAccount resources.')
-    PROTO_ETAG_STRONG_VALIDATOR = (
+    PROTO_ETAG_RFC7232 = (
         'If a resource supports an ETag, it shall use the RFC7232-defined '
-        'ETag strong validator.')
+        'ETag.')
     PROTO_STD_URI_SERVICE_ROOT = (
         'The root URI for this version of the Redfish protocol shall be '
         '/redfish/v1/.')
@@ -204,6 +210,60 @@ class Assertion(NoValue):
         'query parameters that contain values that are invalid, or values '
         'applied to query parameters without defined values, such as excerpt '
         'or only.'
+    )
+    REQ_HEAD_DIFFERS_FROM_GET = (
+        'The HEAD method differs from the GET method in that it shall not '
+        'return message body information.'
+    )
+    REQ_DATA_MOD_ERRORS = (
+        'Otherwise, if the service returns a client 4XX or service 5XX status '
+        'code, the service encountered an error and the resource shall not '
+        'have been modified or created as a result of the operation.'
+    )
+    REQ_PATCH_MIXED_PROPS = (
+        'Modify several properties where one or more properties can never be '
+        'updated: Services shall return the HTTP 200 OK status code and a '
+        'resource representation with a message annotation that lists the '
+        'non-updatable properties.'
+    )
+    REQ_PATCH_BAD_PROP = (
+        # TODO(billdodd): There appears to be an error in the spec here. The
+        #     response should be an error message, not be a resource
+        #     representation. Update the text here when the spec is updated.
+        'Modify a single property that can never be updated: Services shall '
+        'return the HTTP 400 Bad Request status code and a resource '
+        'representation with a message annotation that shows the '
+        'non-updatable property.'
+    )
+    REQ_PATCH_RO_RESOURCE = (
+        'Modify a resource or all properties that can never be updated: '
+        'Services shall return the HTTP 405 status code.'
+    )
+    REQ_PATCH_COLLECTION = (
+        'A client PATCH request against a resource collection: Services shall '
+        'return the HTTP 405 status code.'
+    )
+    REQ_PATCH_ODATA_PROPS = (
+        'A client only provides OData annotations: Services shall return the '
+        'HTTP 400 Bad Request status code with the NoOperation message from '
+        'the Base Message Registry or one of the modification success '
+        'responses.'
+    )
+    REQ_PATCH_ARRAY_ELEMENT_REMOVE = (
+        'Within a PATCH request, the service shall accept null to remove an '
+        'element.'
+    )
+    REQ_PATCH_ARRAY_ELEMENT_UNCHANGED = (
+        'Within a PATCH request, the service shall accept an empty object {} '
+        'to leave an element unchanged'
+    )
+    REQ_PATCH_ARRAY_OPERATIONS_ORDER = (
+        'When processing a PATCH request, the order of operations shall be: '
+        'modifications, deletions, additions.'
+    )
+    REQ_PATCH_ARRAY_TRUNCATE = (
+        'A PATCH request with fewer elements than in the current array shall '
+        'remove the remaining elements of the array.'
     )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (

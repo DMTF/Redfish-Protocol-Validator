@@ -25,6 +25,11 @@ class ServiceRequests(TestCase):
         self.sse_uri = '/redfish/v1/EventService/SSE'
         self.account_uri = '/redfish/v1/AccountsService/Accounts/3/'
         self.sut.set_supported_query_params({'ExcerptQuery': True})
+        self.mgr_net_proto_uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        self.sut.set_mgr_net_proto_uri(self.mgr_net_proto_uri)
+        add_response(self.sut, self.mgr_net_proto_uri, 'GET',
+                     json={'NTP': {'NTPServers': ['', '', ''],
+                                   'ProtocolEnabled': False}})
 
     def test_test_accept_header_pass(self):
         self.sut.set_server_sent_event_uri(self.sse_uri)
@@ -859,6 +864,567 @@ class ServiceRequests(TestCase):
             self.sut, Assertion.REQ_QUERY_INVALID_VALUES, 'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_head_differ_from_get_pass(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.OK)
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_head_differ_from_get_fail1(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.OK,
+                         json={})
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('HEAD request to uri %s returned a non-empty body '
+                      '(Content-Type: application/json; Content-Length: 2)'
+                      % uri, result['msg'])
+
+    def test_test_head_differ_from_get_fail2(self):
+        uri = '/redfish/v1/'
+        r = add_response(self.sut, uri, method='HEAD',
+                         status_code=requests.codes.METHOD_NOT_ALLOWED)
+        self.mock_session.head.return_value = r
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('HEAD request to uri %s failed with status %s' %
+                      (uri, requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_data_mod_errors_not_tested(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.CREATED,
+                         headers={'Location': uri + '/xyz'})
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No failed POST responses found; unable to test this '
+                      'assertion', result['msg'])
+
+    def test_test_data_mod_errors_pass(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, 'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_data_mod_errors_fail(self):
+        uri = self.sut.sessions_uri
+        r = add_response(self.sut, uri, method='POST',
+                         status_code=requests.codes.BAD_REQUEST,
+                         headers={'Location': uri + '/xyz'})
+        self.mock_session.head.return_value = r
+        req.test_data_mod_errors(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_ERRORS, 'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('uri %s failed with status %s, but appeared to create '
+                      'resource %s' % (uri, requests.codes.BAD_REQUEST,
+                                       uri + '/xyz'), result['msg'])
+
+    def test_test_patch_mixed_props_not_tested(self):
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_mixed_props_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_MIXED_PROPS)
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST, requests.codes.OK),
+                      result['msg'])
+
+    def test_test_patch_mixed_props_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'error': {}})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include the resource '
+                      'representation', result['msg'])
+
+    def test_test_patch_mixed_props_fail3(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'@odata.id': uri})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include a message '
+                      'annotation that lists the non-updatable properties',
+                      result['msg'])
+
+    def test_test_patch_mixed_props_pass(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_MIXED_PROPS,
+                     json={'@odata.id': uri, '@Message.ExtendedInfo': [{}]})
+        req.test_patch_mixed_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_bad_prop_not_tested(self):
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_bad_prop_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_BAD_PROP)
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.OK, requests.codes.BAD_REQUEST),
+                      result['msg'])
+
+    def test_test_patch_bad_prop_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'@Message.ExtendedInfo':
+                           [{'Message': 'unknown property'}]}})
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include a message that '
+                      'lists the non-updatable property', result['msg'])
+
+    def test_test_patch_bad_prop_pass(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'@Message.ExtendedInfo':
+                           [{'Message': 'unknown property BogusProp'}]}})
+        req.test_patch_bad_prop(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_ro_resource_not_tested(self):
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_ro_resource_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_RO_RESOURCE)
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST,
+                              requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_patch_ro_resource_pass(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_RO_RESOURCE)
+        req.test_patch_ro_resource(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_collection_not_tested(self):
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_patch_collection_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_COLLECTION)
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s' % (requests.codes.BAD_REQUEST,
+                              requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_patch_patch_collection_pass(self):
+        uri = '/redfish/v1/SessionService/Sessions'
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_COLLECTION)
+        req.test_patch_collection(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_odata_props_not_tested(self):
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No PATCH responses found for this condition; unable to '
+                      'test this assertion', result['msg'])
+
+    def test_test_patch_patch_odata_props_fail1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.PATCH_ODATA_PROPS)
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        exp_codes = [requests.codes.OK, requests.codes.ACCEPTED,
+                     requests.codes.NO_CONTENT, requests.codes.BAD_REQUEST]
+        self.assertIn('The service response returned status code %s; expected '
+                      'one of %s' % (requests.codes.METHOD_NOT_ALLOWED,
+                                     exp_codes), result['msg'])
+
+    def test_test_patch_patch_odata_props_fail2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_ODATA_PROPS,
+                     json={'error': {'@Message.ExtendedInfo': [{
+                           'MessageId': 'Base.1.6.PropertyUnknown'}]}})
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response did not include the NoOperation '
+                      'message from the Base Message Registry', result['msg'])
+
+    def test_test_patch_patch_odata_props_pass1(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_ODATA_PROPS,
+                     json={'error': {'@Message.ExtendedInfo': [{
+                           'MessageId': 'Base.1.6.NoOperation'}]}})
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_patch_odata_props_pass2(self):
+        uri = self.account_uri
+        add_response(self.sut, uri, method='PATCH',
+                     status_code=requests.codes.OK,
+                     request_type=RequestType.PATCH_ODATA_PROPS)
+        req.test_patch_odata_props(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ODATA_PROPS,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_array_element_remove_fail1(self):
+        uri = self.mgr_net_proto_uri
+        response = add_response(self.sut, uri, 'PATCH',
+                                status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.return_value = response
+        req.test_patch_array_element_remove(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('PATCH failed with status %s; PATCH payload: ' %
+                      requests.codes.BAD_REQUEST,
+                      result['msg'])
+
+    def test_test_patch_array_element_remove_fail2(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_element_remove(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('PATCH failed with status %s; resource: ' %
+                      requests.codes.BAD_REQUEST,
+                      result['msg'])
+
+    def test_test_patch_array_element_remove_fail3(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                ['time-a-b.nist.gov', 'time-b-b.nist.gov'],
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_element_remove(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('Array element %s was not removed' %
+                      'time-b-b.nist.gov', result['msg'])
+
+    def test_test_patch_array_element_remove_not_tested(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': None,
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_element_remove(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('After PATCH, NTPServers array not found in response',
+                      result['msg'])
+
+    def test_test_patch_array_element_remove_pass(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                ['time-a-b.nist.gov', 'time-c-b.nist.gov'],
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_element_remove(self.sut)
+        result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
+                            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_array_element_unchanged_fail1(self):
+        uri = self.mgr_net_proto_uri
+        response = add_response(self.sut, uri, 'PATCH',
+                                status_code=requests.codes.BAD_REQUEST)
+        req.test_patch_array_element_unchanged(self.sut, response, None)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('PATCH failed with status %s' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_patch_array_element_unchanged_fail2(self):
+        uri = self.mgr_net_proto_uri
+        array = ['time-b-b.nist.gov']
+        response = add_response(
+            self.sut, uri, 'PATCH', status_code=requests.codes.OK,
+            json={'NTP': {'NTPServers': array,
+                  'ProtocolEnabled': False}})
+        req.test_patch_array_element_unchanged(self.sut, response, array)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        missing = ['time-a-b.nist.gov', 'time-c-b.nist.gov']
+        self.assertIn('left unchanged, but were not found in the response: %s'
+                      % missing, result['msg'])
+
+    def test_test_patch_array_element_unchanged_not_tested(self):
+        uri = self.mgr_net_proto_uri
+        response = add_response(self.sut, uri, 'PATCH',
+                                status_code=requests.codes.OK,
+                                json={'NTP': {'NTPServers': None,
+                                      'ProtocolEnabled': False}})
+        req.test_patch_array_element_unchanged(self.sut, response, None)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('After PATCH, NTPServers array not found in response',
+                      result['msg'])
+
+    def test_test_patch_array_element_unchanged_pass(self):
+        uri = self.mgr_net_proto_uri
+        array = ['time-a-b.nist.gov', 'time-c-b.nist.gov']
+        response = add_response(
+            self.sut, uri, 'PATCH', status_code=requests.codes.OK,
+            json={'NTP': {'NTPServers': array,
+                  'ProtocolEnabled': False}})
+        req.test_patch_array_element_unchanged(self.sut, response, array)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_patch_array_truncate_fail1(self):
+        uri = self.mgr_net_proto_uri
+        response = add_response(self.sut, uri, 'PATCH',
+                                status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.return_value = response
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('PATCH failed with status %s' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_patch_array_truncate_fail2(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('PATCH failed with status %s' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_patch_array_truncate_fail3(self):
+        uri = self.mgr_net_proto_uri
+        expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov', 'time-c-b.nist.gov']
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': array,
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('expected NTPServers array to be %s; found: %s' %
+                      (expected_array, array), result['msg'])
+
+    def test_test_patch_array_truncate_not_tested(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': None,
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('After PATCH, NTPServers array not found in response',
+                      result['msg'])
+
+    def test_test_patch_array_truncate_pass(self):
+        uri = self.mgr_net_proto_uri
+        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': array,
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    @mock.patch('assertions.service_requests.logging.warning')
+    def test_patch_array_restore_warning(self, mock_warning):
+        uri = self.mgr_net_proto_uri
+        response = add_response(self.sut, uri, 'PATCH',
+                                status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.return_value = response
+        req.patch_array_restore(self.sut, ['', '', ''])
+        self.assertEqual(mock_warning.call_count, 1)
+        args = mock_warning.call_args[0]
+        self.assertIn('failed with status %s' % requests.codes.BAD_REQUEST,
+                      args[0])
 
     def test_test_service_requests_cover(self):
         req.test_service_requests(self.sut)

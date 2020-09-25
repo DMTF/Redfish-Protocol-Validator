@@ -3,13 +3,14 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import string
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
 from assertions import protocol_details as proto
-from assertions.constants import Assertion, ResourceType, Result
+from assertions.constants import Assertion, RequestType, ResourceType, Result
 from assertions.system_under_test import SystemUnderTest
 from unittests.utils import add_response, get_result
 
@@ -31,7 +32,8 @@ class ProtocolDetails(TestCase):
         add_response(self.sut, '/redfish/v1/$metadata', 'GET', status,
                      text='<Edmx><DataServices></DataServices></Edmx>')
         add_response(self.sut, self.sut.server_sent_event_uri, 'GET', status,
-                     text=': stream keep-alive')
+                     text=': stream keep-alive',
+                     request_type=RequestType.STREAMING)
 
     def setUp(self):
         super(ProtocolDetails, self).setUp()
@@ -115,6 +117,30 @@ class ProtocolDetails(TestCase):
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%1Ca#a/x/y'))
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%B2#a/x/y'))
         self.assertTrue(proto.encoded_char_in_uri('/foo/Bar%aF#a/x/y'))
+
+    def test_check_etag_valid(self):
+        punctuation = string.punctuation.replace('"', '')  # no double quote
+        # positive
+        self.assertTrue(proto.check_etag_valid('""'))
+        self.assertTrue(proto.check_etag_valid('W/""'))
+        self.assertTrue(proto.check_etag_valid('"xyzzy"'))
+        self.assertTrue(proto.check_etag_valid('W/"xyzzy"'))
+        self.assertTrue(proto.check_etag_valid('"abcXYZ123"'))
+        self.assertTrue(proto.check_etag_valid('"%s"' % punctuation))
+        self.assertTrue(proto.check_etag_valid('"\x7B\x7F\x80\xB8\xFF"'))
+        # negative
+        self.assertFalse(proto.check_etag_valid('\'\''))
+        self.assertFalse(proto.check_etag_valid('xyzzy'))
+        self.assertFalse(proto.check_etag_valid('"xy zy"'))
+        self.assertFalse(proto.check_etag_valid('"xy"zy"'))
+        self.assertFalse(proto.check_etag_valid('W/"xy\x00zy"'))
+        self.assertFalse(proto.check_etag_valid('"xy\x13zy"'))
+        self.assertFalse(proto.check_etag_valid('w/"xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('W\\"xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('W/"xyzzy'))
+        self.assertFalse(proto.check_etag_valid('xyzzy"'))
+        self.assertFalse(proto.check_etag_valid('"xyzzy" '))
+        self.assertFalse(proto.check_etag_valid(' "xyzzy"'))
 
     def test_check_slash_redfish(self):
         response = mock.Mock(spec=requests.Response)
@@ -264,25 +290,26 @@ class ProtocolDetails(TestCase):
         self.assertEqual(r, Result.FAIL)
         self.assertIn('did not return an ETag', msg)
 
-    def test_test_strong_etag_fail(self):
+    def test_test_valid_etag_fail(self):
         uri = '/redfish/v1/foo'
         response = add_response(
             self.sut, uri, 'GET', status_code=requests.codes.OK,
-            headers={'ETag': 'W/"9573"'})
-        proto.test_strong_etag(self.sut, uri, response)
-        result = get_result(self.sut, Assertion.PROTO_ETAG_STRONG_VALIDATOR,
+            headers={'ETag': 'W/" 9573"'})  # space char not allowed
+        proto.test_valid_etag(self.sut, uri, response)
+        result = get_result(self.sut, Assertion.PROTO_ETAG_RFC7232,
                             'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('%s returned weak ETag header W' % uri, result['msg'])
+        self.assertIn('Response from GET request to URI %s returned invalid '
+                      'ETag header value' % uri, result['msg'])
 
-    def test_test_strong_etag_pass(self):
+    def test_test_valid_etag_pass(self):
         uri = '/redfish/v1/foo'
         response = add_response(
             self.sut, uri, 'GET', status_code=requests.codes.OK,
-            headers={'ETag': '48305216'})
-        proto.test_strong_etag(self.sut, uri, response)
-        result = get_result(self.sut, Assertion.PROTO_ETAG_STRONG_VALIDATOR,
+            headers={}, json={'@odata.etag': '"4A30/CF16"'})
+        proto.test_valid_etag(self.sut, uri, response)
+        result = get_result(self.sut, Assertion.PROTO_ETAG_RFC7232,
                             'GET', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
