@@ -22,7 +22,7 @@ from assertions import sessions
 from assertions import utils
 from assertions.system_under_test import SystemUnderTest
 
-tool_version = '0.9.0'
+tool_version = '0.9.5'
 
 
 def perform_tests(sut: SystemUnderTest):
