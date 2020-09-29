@@ -169,7 +169,7 @@ def json_results(sut: SystemUnderTest, report_dir, time, tool_version):
     results = {
         'ToolName': 'Redfish-Protocol-Validator v%s' % tool_version,
         'Timestamp': {
-            'DateTime': '{:%Y-%m-%dT%H:%M:%SZ}'.format(time)
+            'DateTime': '{:%Y-%m-%dT%H:%M:%S%Z}'.format(time)
         },
         'Service': {
             'BaseURL': sut.rhost,
