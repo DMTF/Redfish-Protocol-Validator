@@ -95,6 +95,7 @@ def main():
     utils.print_summary(sut)
     current_time = datetime.now()
     print('Report output:')
+    report.json_results(sut, report_dir, current_time, tool_version)
     if args.report_type in ('tsv', 'both'):
         print(report.tsv_report(sut, report_dir, current_time))
     if args.report_type in ('html', 'both'):

@@ -1,0 +1,5 @@
+{
+  "test": {
+    "command": "$interpreter rf_protocol_validator.py -r $base_url -u $username -p $password --report-dir $output_subdir --no-cert-check"
+  }
+}
