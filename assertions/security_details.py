@@ -954,13 +954,9 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                 r = sut.session.get(sut.rhost + uri)
                 if r.ok:
                     d = r.json()
-                    privs = d.get('AssignedPrivileges')
-                    if test_priv in privs:
-                        new_privs = [{}] * len(privs)
-                        for i in range(len(privs)):
-                            if privs[i] == test_priv:
-                                new_privs[i] = None
-                        payload = {'AssignedPrivileges': new_privs}
+                    patched_privs = d.get('AssignedPrivileges')
+                    if test_priv in patched_privs:
+                        payload = {'AssignedPrivileges': privs}
                         etag = r.headers.get('ETag')
                         headers = {'If-Match': etag} if etag else {}
                         sut.session.patch(

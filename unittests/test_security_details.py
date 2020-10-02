@@ -1175,7 +1175,7 @@ class SecurityDetails(TestCase):
                       '%s' % (test_priv, 'ReadOnly'),
                       result['msg'])
 
-    def test_test_priv_predefined_roles_not_modifiable_not_pass(self):
+    def test_test_priv_predefined_roles_not_modifiable_pass(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
@@ -1205,7 +1205,7 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    def test_test_priv_predefined_roles_not_modifiable_not_fail1(self):
+    def test_test_priv_predefined_roles_not_modifiable_fail1(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
@@ -1238,7 +1238,7 @@ class SecurityDetails(TestCase):
                       (ro_uri, 'ReadOnly', requests.codes.OK),
                       result['msg'])
 
-    def test_test_priv_predefined_roles_not_modifiable_not_fail2(self):
+    def test_test_priv_predefined_roles_not_modifiable_fail2(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
@@ -1274,7 +1274,7 @@ class SecurityDetails(TestCase):
         sec.test_priv_predefined_roles_not_modifiable(self.sut)
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
-            json={'AssignedPrivileges': [{}, {}, None]},
+            json={'AssignedPrivileges': ['Login', 'ConfigureSelf', None]},
             headers={'If-Match': etag})
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
