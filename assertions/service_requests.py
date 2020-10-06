@@ -1327,15 +1327,18 @@ def test_delete(sut: SystemUnderTest):
 
 def test_post_action(sut: SystemUnderTest):
     """Perform tests from the 'POST (Action)' sub-section of the spec."""
+    # NOTE(bdodd): Actions better tested in the Redfish-Usecase-Checkers
 
 
 def test_operation_apply_time(sut: SystemUnderTest):
     """Perform tests from the 'Operation apply time' sub-section of the
     spec."""
+    # TODO(bdodd): Need an operation to test that will be minimally disruptive
 
 
 def test_deep_operations(sut: SystemUnderTest):
     """Perform tests from the 'Deep operations' sub-section of the spec."""
+    # TODO(bdodd): These will be challenging to test; defer for now
 
 
 def test_service_requests(sut: SystemUnderTest):
