@@ -1735,6 +1735,82 @@ class ServiceRequests(TestCase):
             self.sut.rhost + session_uri1)
         self.assertEqual(self.mock_session.delete.call_count, 2)
 
+    def test_test_delete_method_required_not_tested(self):
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No DELETE responses found', result['msg'])
+
+    def test_test_delete_method_required_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertEqual(uri, result['uri'])
+        self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
+        self.assertIn('No successful DELETE responses found', result['msg'])
+
+    def test_test_delete_method_required_pass(self):
+        uri1 = '/redfish/v1/SessionService/Sessions/123'
+        uri2 = '/redfish/v1/SessionService/Sessions/456'
+        add_response(self.sut, uri1, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        add_response(self.sut, uri2, 'DELETE',
+                     status_code=requests.codes.OK)
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', uri2)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertEqual(uri2, result['uri'])
+        self.assertEqual(requests.codes.OK, result['status'])
+
+    def test_test_delete_non_deletable_resource_not_tested(self):
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No failed DELETE responses found', result['msg'])
+
+    def test_test_delete_non_deletable_resource_warn(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, 'DELETE',
+                     status_code=requests.codes.BAD_REQUEST)
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.WARN, result['result'])
+        self.assertIn('DELETE request for resource %s failed with status %s'
+                      % (uri, requests.codes.BAD_REQUEST), result['msg'])
+        self.assertEqual(uri, result['uri'])
+        self.assertEqual(requests.codes.BAD_REQUEST, result['status'])
+
+    def test_test_delete_non_deletable_resource_pass(self):
+        uri1 = '/redfish/v1/SessionService/Sessions/123'
+        uri2 = '/redfish/v1/SessionService/Sessions/456'
+        add_response(self.sut, uri1, 'DELETE',
+                     status_code=requests.codes.BAD_REQUEST)
+        add_response(self.sut, uri2, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', uri2)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertEqual(uri2, result['uri'])
+        self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
+
     @mock.patch('assertions.service_requests.requests.post')
     def test_test_service_requests_cover(self, mock_post):
         req.test_service_requests(self.sut)

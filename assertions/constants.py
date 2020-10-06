@@ -290,6 +290,13 @@ class Assertion(NoValue):
     REQ_POST_CREATE_NOT_IDEMPOTENT = (
         'The POST operation shall not be idempotent.'
     )
+    REQ_DELETE_METHOD_REQUIRED = (
+        'To remove a resource, the service shall support the DELETE method.'
+    )
+    REQ_DELETE_NON_DELETABLE_RESOURCE = (
+        'If the resource can never be deleted, the service shall return the '
+        'HTTP 405 Method Not Allowed status code.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

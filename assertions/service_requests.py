@@ -1158,7 +1158,7 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
                 else:
                     sut.log(Result.PASS, 'POST', r1.status_code, uri,
                             Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
-                            'Test ppassed')
+                            'Test passed')
             else:
                 msg = ('POST request to %s did not return a Location header; '
                        'unable to test this assertion' % uri)
@@ -1180,6 +1180,56 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
                'this assertion' % (uri, r1.status_code))
         sut.log(Result.NOT_TESTED, 'POST', r1.status_code, uri,
                 Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+
+
+def test_delete_method_required(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DELETE_METHOD_REQUIRED."""
+    passed = False
+    fail_uri, fail_response = None, None
+    for uri, response in sut.get_responses_by_method('DELETE').items():
+        if response.ok:
+            sut.log(Result.PASS, 'DELETE', response.status_code, uri,
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, 'Test passed')
+            passed = True
+            break
+        else:
+            fail_uri, fail_response = uri, response
+
+    if not passed:
+        if fail_uri:
+            msg = 'No successful DELETE responses found'
+            sut.log(Result.FAIL, 'DELETE', fail_response.status_code, fail_uri,
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
+        else:
+            msg = 'No DELETE responses found; unable to test this assertion'
+            sut.log(Result.NOT_TESTED, 'DELETE', '', '',
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
+
+
+def test_delete_non_deletable_resource(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE."""
+    passed = False
+    warn_uri, warn_response = None, None
+    for uri, response in sut.get_responses_by_method('DELETE').items():
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'DELETE', response.status_code, uri,
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, 'Test passed')
+            passed = True
+            break
+        elif not response.ok:
+            warn_uri, warn_response = uri, response
+
+    if not passed:
+        if warn_uri:
+            msg = ('DELETE request for resource %s failed with status %s' %
+                   (warn_uri, warn_response.status_code))
+            sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
+        else:
+            msg = ('No failed DELETE responses found; unable to test this '
+                   'assertion')
+            sut.log(Result.NOT_TESTED, 'DELETE', '', '',
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
 
 
 def test_request_headers(sut: SystemUnderTest):
@@ -1271,6 +1321,8 @@ def test_post_create(sut: SystemUnderTest):
 
 def test_delete(sut: SystemUnderTest):
     """Perform tests from the 'DELETE (delete)' sub-section of the spec."""
+    test_delete_method_required(sut)
+    test_delete_non_deletable_resource(sut)
 
 
 def test_post_action(sut: SystemUnderTest):
