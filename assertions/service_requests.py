@@ -4,6 +4,7 @@
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
+from urllib.parse import urlparse
 
 import requests
 
@@ -1017,6 +1018,170 @@ def patch_array_restore(sut: SystemUnderTest, array):
                         'payload: %s' % (uri, response.status_code, payload))
 
 
+def test_put_not_implemented(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PUT_NOT_IMPLEMENTED."""
+    # TODO(bdodd): Need a good resource to try to replace
+
+
+def test_post_create_via_collection(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_VIA_COLLECTION."""
+    response = sut.get_response('POST', sut.sessions_uri)
+    if response is None:
+        msg = ('Not response found for POST to Sessions URI; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, 'POST', '', sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, msg)
+    elif response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, 'Test passed')
+    else:
+        msg = ('POST request to collections uri %s failed with status %s'
+               % (sut.sessions_uri, response.status_code))
+        sut.log(Result.FAIL, 'POST', response.status_code, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, msg)
+
+
+def test_post_create_uri_in_location_hdr(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR."""
+    response = sut.get_response('POST', sut.sessions_uri)
+    if response is None or not response.ok:
+        msg = ('No successful response found for POST to Sessions URI; '
+               'unable to test this assertion')
+        status = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'POST', status, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR, msg)
+    else:
+        location = response.headers.get('Location')
+        if location:
+            sut.log(Result.PASS, 'POST', response.status_code,
+                    sut.sessions_uri,
+                    Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR,
+                    'Test passed')
+        else:
+            msg = ('Location header missing from response to POST request to '
+                   'uri %s failed with status %s'
+                   % (sut.sessions_uri, response.status_code))
+            sut.log(Result.FAIL, 'POST', response.status_code,
+                    sut.sessions_uri,
+                    Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR, msg)
+
+
+def test_post_create_to_members_prop(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP."""
+    uri = sut.sessions_uri
+    uri = uri + 'Members' if uri.endswith('/') else uri + '/Members'
+    payload = {
+        'UserName': sut.username,
+        'Password': sut.password
+    }
+    headers = {
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+    response = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                             verify=sut.verify)
+    if response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, uri,
+                Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+                'Test passed')
+        # clean-up the created session
+        location = response.headers.get('Location')
+        if location and isinstance(location, str):
+            session_uri = urlparse(location).path
+            if session_uri:
+                sut.session.delete(sut.rhost + session_uri)
+    else:
+        msg = ('POST to Members property URI %s failed with status %s' %
+               (uri, response.status_code))
+        sut.log(Result.FAIL, 'POST', response.status_code, uri,
+                Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+                msg)
+
+
+def test_post_create_not_supported(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_NOT_SUPPORTED."""
+    response = sut.get_response('POST', sut.accounts_uri)
+    if response is None:
+        msg = ('Not response found for POST to Accounts URI; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, 'POST', '', sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
+    elif response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                'Service supports creation of resources')
+    elif response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                'Test passed')
+    else:
+        msg = ('POST request to URI %s failed with %s; expected %s' %
+               (sut.accounts_uri, response.status_code,
+                requests.codes.METHOD_NOT_ALLOWED))
+        sut.log(Result.FAIL, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                msg)
+
+
+def test_post_create_not_idempotent(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT."""
+    uri = sut.sessions_uri
+    payload = {
+        'UserName': sut.username,
+        'Password': sut.password
+    }
+    headers = {
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+    r1 = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                       verify=sut.verify)
+    if r1.ok:
+        loc1 = r1.headers.get('Location')
+        session_uri1 = ''
+        if loc1 and isinstance(loc1, str):
+            session_uri1 = urlparse(loc1).path
+        r2 = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                           verify=sut.verify)
+        if r2.ok:
+            loc2 = r2.headers.get('Location')
+            session_uri2 = ''
+            if loc2 and isinstance(loc2, str):
+                session_uri2 = urlparse(loc2).path
+                if loc1 == loc2:
+                    # FAIL
+                    msg = ('Two consecutive POST requests to %s succeeded, '
+                           'but each returned the same resource URI in the '
+                           'Location header (%s)' % (uri, loc1))
+                    sut.log(Result.FAIL, 'POST', r2.status_code, uri,
+                            Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+                else:
+                    sut.log(Result.PASS, 'POST', r1.status_code, uri,
+                            Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+                            'Test ppassed')
+            else:
+                msg = ('POST request to %s did not return a Location header; '
+                       'unable to test this assertion' % uri)
+                sut.log(Result.NOT_TESTED, 'POST', r2.status_code, uri,
+                        Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+            # clean-up the created session
+            if session_uri2 and loc1 != loc2:
+                sut.session.delete(sut.rhost + session_uri2)
+        else:
+            msg = ('Second POST request to %s failed with status code %s'
+                   % (uri, r2.status_code))
+            sut.log(Result.WARN, 'POST', r2.status_code, uri,
+                    Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+        # clean-up the created session
+        if session_uri1:
+            sut.session.delete(sut.rhost + session_uri1)
+    else:
+        msg = ('POST request to %s failed with status code %s; unable to test '
+               'this assertion' % (uri, r1.status_code))
+        sut.log(Result.NOT_TESTED, 'POST', r1.status_code, uri,
+                Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+
+
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -1092,10 +1257,16 @@ def test_patch_array_props(sut: SystemUnderTest):
 
 def test_put(sut: SystemUnderTest):
     """Perform tests from the 'PUT (replace)' sub-section of the spec."""
+    test_put_not_implemented(sut)
 
 
 def test_post_create(sut: SystemUnderTest):
     """Perform tests from the 'POST (create)' sub-section of the spec."""
+    test_post_create_via_collection(sut)
+    test_post_create_uri_in_location_hdr(sut)
+    test_post_create_to_members_prop(sut)
+    test_post_create_not_supported(sut)
+    test_post_create_not_idempotent(sut)
 
 
 def test_delete(sut: SystemUnderTest):

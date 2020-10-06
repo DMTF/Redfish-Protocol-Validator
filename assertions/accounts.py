@@ -171,14 +171,11 @@ def add_account(sut: SystemUnderTest, session,
     password = new_password(sut)
 
     headers = response.headers
+    methods = []
     if 'Allow' in headers:
         methods = [m.strip() for m in headers.get('Allow').split(',')]
-        if 'POST' not in methods:
-            # if Allow header present and POST not listed, add via PATCH
-            return add_account_via_patch(sut, session, user, role, password,
-                                         request_type=request_type)
-    payload = {'UserName': user,
-               'Password': password}
+
+    payload = {'UserName': user, 'Password': password}
     if role:
         payload['RoleId'] = role
     response = session.post(sut.rhost + sut.accounts_uri, json=payload)
@@ -196,7 +193,8 @@ def add_account(sut: SystemUnderTest, session,
         sut.add_response(new_acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=request_type)
-    elif response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+    elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED
+          or 'POST' not in methods):
         return add_account_via_patch(sut, session, user, role, password,
                                      request_type=request_type)
     return user, password, new_acct_uri
