@@ -21,7 +21,7 @@ class SecurityDetails(TestCase):
         super(SecurityDetails, self).setUp()
         self.sut = SystemUnderTest('https://127.0.0.1:8000', 'oper', 'xyzzy')
         self.sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
-        self.account_uri = '/redfish/v1/AccountsService/Accounts/3/'
+        self.account_uri = '/redfish/v1/AccountsService/Accounts/3'
         self.mock_session = mock.MagicMock(spec=requests.Session)
         self.sut._set_session(self.mock_session)
         patch_post = mock.patch('assertions.security_details.requests.post')
@@ -498,7 +498,7 @@ class SecurityDetails(TestCase):
         response = self.sut.get_response(
             'POST', self.sut.sessions_uri,
             request_type=RequestType.HTTP_BASIC_AUTH)
-        response.url = 'http://127.0.0.1:8000/redfish/v1/Sessions/'
+        response.url = 'http://127.0.0.1:8000/redfish/v1/Sessions'
         sec.test_basic_auth_over_https(self.sut)
         result = get_result(self.sut, Assertion.SEC_BASIC_AUTH_OVER_HTTPS,
                             'POST', self.sut.sessions_uri)
@@ -1029,7 +1029,7 @@ class SecurityDetails(TestCase):
                       % self.account_uri, result['msg'])
 
     def test_test_priv_support_predefined_roles_pass(self):
-        uri = '/redfish/v1/AccountsService/Roles/Operator/'
+        uri = '/redfish/v1/AccountsService/Roles/Operator'
         payload = {
             'Id': 'Operator',
             'AssignedPrivileges': [
@@ -1048,7 +1048,7 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_priv_support_predefined_roles_fail1(self):
-        oper_uri = '/redfish/v1/AccountsService/Roles/Operator/'
+        oper_uri = '/redfish/v1/AccountsService/Roles/Operator'
         payload = {
             'Id': 'Operator',
             'AssignedPrivileges': [
@@ -1059,7 +1059,7 @@ class SecurityDetails(TestCase):
         }
         add_response(self.sut, oper_uri, 'GET', requests.codes.OK,
                      res_type=ResourceType.ROLE, json=payload)
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         payload = {
             'Id': 'ReadOnly',
             'AssignedPrivileges': [
@@ -1086,7 +1086,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_support_predefined_roles_fail2(self):
-        oper_uri = '/redfish/v1/AccountsService/Roles/Operator/'
+        oper_uri = '/redfish/v1/AccountsService/Roles/Operator'
         payload = {
             'Id': 'Operator',
             'AssignedPrivileges': [
@@ -1098,7 +1098,7 @@ class SecurityDetails(TestCase):
         }
         add_response(self.sut, oper_uri, 'GET', requests.codes.OK,
                      res_type=ResourceType.ROLE, json=payload)
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         payload = {
             'Id': 'ReadOnly',
             'AssignedPrivileges': [
@@ -1136,7 +1136,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_not_tested2(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         payload = {
             'Id': 'ReadOnly',
             'AssignedPrivileges': []
@@ -1153,7 +1153,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_not_tested3(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         test_priv = 'RfProtoValTestPriv'
         payload = {
             'Id': 'ReadOnly',
@@ -1176,7 +1176,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_pass(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
         payload = {
@@ -1206,7 +1206,7 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_priv_predefined_roles_not_modifiable_fail1(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
         payload = {
@@ -1239,7 +1239,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_fail2(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly/'
+        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
         test_priv = 'RfProtoValTestPriv'
         etag = 'abcd1234'
         payload = {
@@ -1287,7 +1287,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_one_role_per_user_pass(self):
-        uri = '/redfish/v1/AccountsService/Accounts/carol/'
+        uri = '/redfish/v1/AccountsService/Accounts/carol'
         payload = {
             'UserName': 'carol',
             'RoleId': 'ReadOnly'
@@ -1302,7 +1302,7 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_priv_one_role_per_user_fail(self):
-        uri = '/redfish/v1/AccountsService/Accounts/bob/'
+        uri = '/redfish/v1/AccountsService/Accounts/bob'
         payload = {
             'UserName': 'bob'
         }
@@ -1319,7 +1319,7 @@ class SecurityDetails(TestCase):
 
     def test_test_priv_roles_assigned_at_account_create_pass(self):
         user = 'rfpv4f0a'
-        uri = '/redfish/v1/AccountsService/Accounts/%s/' % user
+        uri = '/redfish/v1/AccountsService/Accounts/%s' % user
         payload = {
             'UserName': user,
             'RoleId': 'ReadOnly'
@@ -1335,7 +1335,7 @@ class SecurityDetails(TestCase):
 
     def test_test_priv_roles_assigned_at_account_create_fail(self):
         user = 'rfpv4f0a'
-        uri = '/redfish/v1/AccountsService/Accounts/%s/' % user
+        uri = '/redfish/v1/AccountsService/Accounts/%s' % user
         payload = {
             'UserName': user
         }
@@ -1361,7 +1361,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_operation_to_priv_mapping_pass(self):
-        uri = '/redfish/v1/AccountsService/Accounts/10/'
+        uri = '/redfish/v1/AccountsService/Accounts/10'
         headers = {'Authorization': 'Basic cmZwdmM1YmY6cDUzMDU5ZWE='}
         response = add_response(
             self.sut, uri, 'PATCH', requests.codes.UNAUTHORIZED,
@@ -1376,7 +1376,7 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_priv_operation_to_priv_mapping_warn(self):
-        uri = '/redfish/v1/AccountsService/Accounts/10/'
+        uri = '/redfish/v1/AccountsService/Accounts/10'
         headers = {'Authorization': 'Basic cmZwdmM1YmY6cDUzMDU5ZWE='}
         response = add_response(
             self.sut, uri, 'PATCH', requests.codes.FORBIDDEN,
@@ -1395,7 +1395,7 @@ class SecurityDetails(TestCase):
                       result['msg'])
 
     def test_test_priv_operation_to_priv_mapping_fail(self):
-        uri = '/redfish/v1/AccountsService/Accounts/10/'
+        uri = '/redfish/v1/AccountsService/Accounts/10'
         headers = {'Authorization': 'Basic cmZwdmM1YmY6cDUzMDU5ZWE='}
         user = 'rfpvc5bf'
         response = add_response(

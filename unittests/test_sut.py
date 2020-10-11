@@ -22,18 +22,18 @@ class Sut(TestCase):
         self.password = 'xyzzy'
         self.version = '1.6.0'
         self.version_tuple = (1, 6, 0)
-        self.sessions_uri = '/redfish/v1/sessions/'
+        self.sessions_uri = '/redfish/v1/sessions'
         self.active_session_uri = '/redfish/v1/sessions/12345'
         self.active_session_key = 'token98765'
         self.session = mock.Mock()
-        self.systems_uri = '/redfish/v1/Systems/'
-        self.managers_uri = '/redfish/v1/Managers/'
-        self.chassis_uri = '/redfish/v1/Chassis/'
-        self.account_service_uri = '/redfish/v1/AccountService/'
-        self.accounts_uri = '/redfish/v1/accounts/'
-        self.roles_uri = '/redfish/v1/roles/'
-        self.cert_service_uri = '/redfish/v1/CertificateService/'
-        self.event_service_uri = '/redfish/v1/EventService/'
+        self.systems_uri = '/redfish/v1/Systems'
+        self.managers_uri = '/redfish/v1/Managers'
+        self.chassis_uri = '/redfish/v1/Chassis'
+        self.account_service_uri = '/redfish/v1/AccountService'
+        self.accounts_uri = '/redfish/v1/accounts'
+        self.roles_uri = '/redfish/v1/roles'
+        self.cert_service_uri = '/redfish/v1/CertificateService'
+        self.event_service_uri = '/redfish/v1/EventService'
         self.privilege_registry_uri = '/redfish/v1/AccountService/PrivilegeMap'
         self.sut = SystemUnderTest(self.rhost, self.username, self.password)
         self.sut.set_avoid_http_redirect(False)
@@ -152,7 +152,7 @@ class Sut(TestCase):
 
     @mock.patch('assertions.system_under_test.logging.error')
     def test_bad_nav_prop(self, mock_error):
-        self.sut.set_nav_prop_uri('Foo', '/redfish/v1/Foo/')
+        self.sut.set_nav_prop_uri('Foo', '/redfish/v1/Foo')
         self.assertEqual(mock_error.call_count, 1)
         args = mock_error.call_args[0]
         self.assertIn('set_nav_prop_uri() called with', args[0])

@@ -23,7 +23,7 @@ class Utils(TestCase):
     def setUp(self):
         super(Utils, self).setUp()
         self.sut = SystemUnderTest('http://127.0.0.1:8000', 'oper', 'xyzzy')
-        self.uri = '/redfish/v1/AccountsService/Accounts/3/'
+        self.uri = '/redfish/v1/AccountsService/Accounts/3'
         self.etag = 'A89B031B62'
         response = mock.Mock(spec=requests.Response)
         response.status_code = requests.codes.OK

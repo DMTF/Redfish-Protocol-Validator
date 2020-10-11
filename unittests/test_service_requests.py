@@ -24,7 +24,7 @@ class ServiceRequests(TestCase):
         self.sut._set_session(self.mock_session)
         self.sse_uri = '/redfish/v1/EventService/SSE'
         self.accounts_uri = '/redfish/v1/AccountsService/Accounts'
-        self.account_uri = self.accounts_uri + '/3/'
+        self.account_uri = self.accounts_uri + '/3'
         self.sut.set_supported_query_params({'ExcerptQuery': True})
         self.mgr_net_proto_uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
         self.sut.set_mgr_net_proto_uri(self.mgr_net_proto_uri)
