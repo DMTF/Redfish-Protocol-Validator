@@ -5,6 +5,7 @@
 
 import argparse
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,7 @@ from assertions import service_requests
 from assertions import service_responses
 from assertions import sessions
 from assertions import utils
+from assertions.constants import Result
 from assertions.system_under_test import SystemUnderTest
 
 tool_version = '0.9.5'
@@ -100,6 +102,8 @@ def main():
         print(report.tsv_report(sut, report_dir, current_time))
     if args.report_type in ('html', 'both'):
         print(report.html_report(sut, report_dir, current_time, tool_version))
+    # exit with status 1 if any assertions failed, 0 otherwise
+    sys.exit(int(sut.summary_count(Result.FAIL) > 0))
 
 
 if __name__ == "__main__":
