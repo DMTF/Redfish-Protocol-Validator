@@ -568,13 +568,27 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    def test_test_session_post_response_fail(self):
+    def test_test_session_post_response_fail1(self):
         sec.test_session_post_response(self.sut)
         result = get_result(self.sut, Assertion.SEC_SESSION_POST_RESPONSE,
                             'POST', self.sut.sessions_uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('did not contain full representation of the new session',
+                      result['msg'])
+
+    def test_test_session_post_response_fail2(self):
+        headers = {'X-Auth-Token': 'abcdef40',
+                   'Location': '/redfish/v1/SessionService/Sessions/1'}
+        add_response(self.sut, self.sut.sessions_uri, 'POST',
+                     requests.codes.NO_CONTENT, headers=headers)
+        sec.test_session_post_response(self.sut)
+        result = get_result(self.sut, Assertion.SEC_SESSION_POST_RESPONSE,
+                            'POST', self.sut.sessions_uri)
+        self.assertIsNotNone(result)
+        self.assertIn('status %s, expected status %s in order to return full '
+                      'representation' % (requests.codes.NO_CONTENT,
+                                          requests.codes.CREATED),
                       result['msg'])
 
     def test_test_session_post_response_not_tested(self):

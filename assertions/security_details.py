@@ -531,18 +531,30 @@ def test_session_post_response(sut: SystemUnderTest):
                 sut.log(Result.FAIL, 'POST', response.status_code,
                         sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
                         msg)
-        data = response.json()
-        missing_props = []
-        for prop in ['@odata.id', '@odata.type', 'Id', 'Name', 'UserName']:
-            if prop not in data:
-                missing_props.append(prop)
-        if missing_props:
+        if response.status_code == requests.codes.CREATED:
+            data = response.json()
+            missing_props = []
+            for prop in ['@odata.id', '@odata.type', 'Id', 'Name', 'UserName']:
+                if prop not in data:
+                    missing_props.append(prop)
+            if missing_props:
+                failed = True
+                msg = ('Response payload for POST to %s did not contain full '
+                       'representation of the new session resource; missing '
+                       'properties: %s ' % (sut.sessions_uri, missing_props))
+                sut.log(Result.FAIL, 'POST', response.status_code,
+                        sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
+                        msg)
+        else:
             failed = True
-            msg = ('Response payload for POST to %s did not contain full '
-                   'representation of the new session resource; missing '
-                   'properties: %s ' % (sut.sessions_uri, missing_props))
+            msg = ('Response for POST to %s returned status %s, expected '
+                   'status %s in order to return full representation of the '
+                   'new session resource' %
+                   (sut.sessions_uri, response.status_code,
+                    requests.codes.CREATED))
             sut.log(Result.FAIL, 'POST', response.status_code,
-                    sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE, msg)
+                    sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
+                    msg)
         if not failed:
             sut.log(Result.PASS, 'POST', response.status_code,
                     sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
