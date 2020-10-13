@@ -636,7 +636,7 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
                 # read from the SSE stream
                 try:
                     lines = response.iter_lines()
-                    for line in lines:
+                    for _ in lines:
                         sut.log(Result.PASS, 'GET', response.status_code,
                                 sut.server_sent_event_uri,
                                 Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS,
