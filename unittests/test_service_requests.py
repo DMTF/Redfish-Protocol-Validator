@@ -23,10 +23,12 @@ class ServiceRequests(TestCase):
         self.mock_session = mock.MagicMock(spec=requests.Session)
         self.sut._set_session(self.mock_session)
         self.sse_uri = '/redfish/v1/EventService/SSE'
-        self.account_uri = '/redfish/v1/AccountsService/Accounts/3/'
+        self.accounts_uri = '/redfish/v1/AccountsService/Accounts'
+        self.account_uri = self.accounts_uri + '/3'
         self.sut.set_supported_query_params({'ExcerptQuery': True})
         self.mgr_net_proto_uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
         self.sut.set_mgr_net_proto_uri(self.mgr_net_proto_uri)
+        self.sut.set_nav_prop_uri('Accounts', self.accounts_uri)
         add_response(self.sut, self.mgr_net_proto_uri, 'GET',
                      json={'NTP': {'NTPServers': ['', '', ''],
                                    'ProtocolEnabled': False}})
@@ -1228,7 +1230,10 @@ class ServiceRequests(TestCase):
                           json={'NTP': {'NTPServers':
                                 ['time-a-b.nist.gov', 'time-b-b.nist.gov'],
                                 'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.NOT_FOUND)
         self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
         req.test_patch_array_element_remove(self.sut)
         result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
                             'PATCH', uri)
@@ -1263,7 +1268,13 @@ class ServiceRequests(TestCase):
                           json={'NTP': {'NTPServers':
                                 ['time-a-b.nist.gov', 'time-c-b.nist.gov'],
                                 'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                ['time-a-b.nist.gov', 'time-c-b.nist.gov'],
+                                'ProtocolEnabled': False}})
         self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
         req.test_patch_array_element_remove(self.sut)
         result = get_result(self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE,
                             'PATCH', uri)
@@ -1274,7 +1285,8 @@ class ServiceRequests(TestCase):
         uri = self.mgr_net_proto_uri
         response = add_response(self.sut, uri, 'PATCH',
                                 status_code=requests.codes.BAD_REQUEST)
-        req.test_patch_array_element_unchanged(self.sut, response, None)
+        self.mock_session.patch.return_value = response
+        req.test_patch_array_element_unchanged(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
             'PATCH', uri)
@@ -1285,18 +1297,40 @@ class ServiceRequests(TestCase):
 
     def test_test_patch_array_element_unchanged_fail2(self):
         uri = self.mgr_net_proto_uri
-        array = ['time-b-b.nist.gov']
-        response = add_response(
-            self.sut, uri, 'PATCH', status_code=requests.codes.OK,
-            json={'NTP': {'NTPServers': array,
-                  'ProtocolEnabled': False}})
-        req.test_patch_array_element_unchanged(self.sut, response, array)
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.BAD_REQUEST)
+        self.mock_session.patch.side_effect = [r1, r2]
+        req.test_patch_array_element_unchanged(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
             'PATCH', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        missing = ['time-a-b.nist.gov', 'time-c-b.nist.gov']
+        self.assertIn('PATCH failed with status %s' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_patch_array_element_unchanged_fail3(self):
+        uri = self.mgr_net_proto_uri
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                [{}, {}, 'time-d-b.nist.gov'],
+                                'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.NOT_FOUND)
+        self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
+        req.test_patch_array_element_unchanged(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        missing = ['time-a-b.nist.gov', 'time-b-b.nist.gov']
         self.assertIn('left unchanged, but were not found in the response: %s'
                       % missing, result['msg'])
 
@@ -1306,7 +1340,8 @@ class ServiceRequests(TestCase):
                                 status_code=requests.codes.OK,
                                 json={'NTP': {'NTPServers': None,
                                       'ProtocolEnabled': False}})
-        req.test_patch_array_element_unchanged(self.sut, response, None)
+        self.mock_session.patch.return_value = response
+        req.test_patch_array_element_unchanged(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
             'PATCH', uri)
@@ -1317,12 +1352,23 @@ class ServiceRequests(TestCase):
 
     def test_test_patch_array_element_unchanged_pass(self):
         uri = self.mgr_net_proto_uri
-        array = ['time-a-b.nist.gov', 'time-c-b.nist.gov']
-        response = add_response(
-            self.sut, uri, 'PATCH', status_code=requests.codes.OK,
-            json={'NTP': {'NTPServers': array,
-                  'ProtocolEnabled': False}})
-        req.test_patch_array_element_unchanged(self.sut, response, array)
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                ['time-a-b.nist.gov', 'time-b-b.nist.gov',
+                                 'time-d-b.nist.gov'],
+                                'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers':
+                                ['time-a-b.nist.gov', 'time-b-b.nist.gov',
+                                 'time-d-b.nist.gov'],
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
+        req.test_patch_array_element_unchanged(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
             'PATCH', uri)
@@ -1369,7 +1415,10 @@ class ServiceRequests(TestCase):
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers': array,
                                 'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.NOT_FOUND)
         self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
         req.test_patch_array_truncate(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
@@ -1406,7 +1455,12 @@ class ServiceRequests(TestCase):
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers': array,
                                 'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': array,
+                                'ProtocolEnabled': False}})
         self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
         req.test_patch_array_truncate(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
@@ -1426,7 +1480,339 @@ class ServiceRequests(TestCase):
         self.assertIn('failed with status %s' % requests.codes.BAD_REQUEST,
                       args[0])
 
-    def test_test_service_requests_cover(self):
+    def test_test_post_create_via_collection_not_tested(self):
+        uri = self.sut.sessions_uri
+        req.test_post_create_via_collection(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_VIA_COLLECTION,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Not response found for POST to Sessions URI',
+                      result['msg'])
+
+    def test_test_post_create_via_collection_fail(self):
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_post_create_via_collection(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_VIA_COLLECTION,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('POST request to collections uri %s failed with status '
+                      '%s' % (uri, requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_post_create_via_collection_pass(self):
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.CREATED)
+        req.test_post_create_via_collection(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_VIA_COLLECTION,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_post_create_uri_in_location_hdr_not_tested(self):
+        uri = self.sut.sessions_uri
+        req.test_post_create_uri_in_location_hdr(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No successful response found for POST to Sessions URI',
+                      result['msg'])
+
+    def test_test_post_create_uri_in_location_hdr_fail(self):
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.CREATED)
+        req.test_post_create_uri_in_location_hdr(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('Location header missing from response to POST request',
+                      result['msg'])
+
+    def test_test_post_create_uri_in_location_hdr_pass(self):
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.CREATED,
+                     headers={'Location':
+                              '/redfish/v1/SessionService/Sessions/123'})
+        req.test_post_create_uri_in_location_hdr(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_to_members_prop_fail(self, mock_post):
+        uri = self.sut.sessions_uri + '/Members'
+        response = add_response(self.sut, uri, 'POST',
+                                status_code=requests.codes.NOT_FOUND)
+        mock_post.return_value = response
+        req.test_post_create_to_members_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('POST to Members property URI %s failed with status %s'
+                      % (uri, requests.codes.NOT_FOUND), result['msg'])
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_to_members_prop_pass(self, mock_post):
+        uri = self.sut.sessions_uri + '/Members'
+        session_uri = '/redfish/v1/SessionService/Sessions/123'
+        response = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri})
+        mock_post.return_value = response
+        req.test_post_create_to_members_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.mock_session.delete.assert_called_with(
+            self.sut.rhost + session_uri)
+
+    def test_test_post_create_not_supported_not_tested(self):
+        uri = self.sut.accounts_uri
+        req.test_post_create_not_supported(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Not response found for POST to Accounts URI',
+                      result['msg'])
+
+    def test_test_post_create_not_supported_fail(self):
+        uri = self.sut.accounts_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.BAD_REQUEST)
+        req.test_post_create_not_supported(self.sut)
+        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('POST request to URI %s failed with %s; expected %s' %
+                      (uri, requests.codes.BAD_REQUEST,
+                       requests.codes.METHOD_NOT_ALLOWED), result['msg'])
+
+    def test_test_post_create_not_supported_pass1(self):
+        uri = self.sut.accounts_uri
+        add_response(self.sut, uri, 'POST', status_code=requests.codes.CREATED)
+        req.test_post_create_not_supported(self.sut)
+        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Service supports creation of resources', result['msg'])
+
+    def test_test_post_create_not_supported_pass2(self):
+        uri = self.sut.accounts_uri
+        add_response(self.sut, uri, 'POST',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_post_create_not_supported(self.sut)
+        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Test passed', result['msg'])
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_not_idempotent_not_tested1(self, mock_post):
+        uri = self.sut.sessions_uri
+        response = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.BAD_REQUEST)
+        mock_post.return_value = response
+        req.test_post_create_not_idempotent(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('POST request to %s failed with status code %s' %
+                      (uri, requests.codes.BAD_REQUEST), result['msg'])
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_not_idempotent_warn(self, mock_post):
+        uri = self.sut.sessions_uri
+        session_uri = '/redfish/v1/Sessions/123'
+        r1 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri})
+        r2 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.BAD_REQUEST)
+        mock_post.side_effect = [r1, r2]
+        req.test_post_create_not_idempotent(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.WARN, result['result'])
+        self.assertIn('Second POST request to %s failed with status code %s' %
+                      (uri, requests.codes.BAD_REQUEST), result['msg'])
+        self.mock_session.delete.assert_called_with(
+            self.sut.rhost + session_uri)
+        self.assertEqual(self.mock_session.delete.call_count, 1)
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_not_idempotent_not_tested2(self, mock_post):
+        uri = self.sut.sessions_uri
+        session_uri = '/redfish/v1/Sessions/123'
+        r1 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri})
+        r2 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={})
+        mock_post.side_effect = [r1, r2]
+        req.test_post_create_not_idempotent(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('POST request to %s did not return a Location header' %
+                      uri, result['msg'])
+        self.mock_session.delete.assert_called_with(
+            self.sut.rhost + session_uri)
+        self.assertEqual(self.mock_session.delete.call_count, 1)
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_not_idempotent_fail(self, mock_post):
+        uri = self.sut.sessions_uri
+        session_uri = '/redfish/v1/Sessions/123'
+        r1 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri})
+        r2 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri})
+        mock_post.side_effect = [r1, r2]
+        req.test_post_create_not_idempotent(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('the same resource URI in the Location header (%s)' %
+                      session_uri, result['msg'])
+        self.mock_session.delete.assert_called_with(
+            self.sut.rhost + session_uri)
+        self.assertEqual(self.mock_session.delete.call_count, 1)
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_post_create_not_idempotent_pass(self, mock_post):
+        uri = self.sut.sessions_uri
+        session_uri1 = '/redfish/v1/Sessions/123'
+        session_uri2 = '/redfish/v1/Sessions/456'
+        r1 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri1})
+        r2 = add_response(
+            self.sut, uri, 'POST', status_code=requests.codes.CREATED,
+            headers={'Location': session_uri2})
+        mock_post.side_effect = [r1, r2]
+        req.test_post_create_not_idempotent(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+            'POST', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.mock_session.delete.assert_called_with(
+            self.sut.rhost + session_uri1)
+        self.assertEqual(self.mock_session.delete.call_count, 2)
+
+    def test_test_delete_method_required_not_tested(self):
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No DELETE responses found', result['msg'])
+
+    def test_test_delete_method_required_fail(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertEqual(uri, result['uri'])
+        self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
+        self.assertIn('No successful DELETE responses found', result['msg'])
+
+    def test_test_delete_method_required_pass(self):
+        uri1 = '/redfish/v1/SessionService/Sessions/123'
+        uri2 = '/redfish/v1/SessionService/Sessions/456'
+        add_response(self.sut, uri1, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        add_response(self.sut, uri2, 'DELETE',
+                     status_code=requests.codes.OK)
+        req.test_delete_method_required(self.sut)
+        result = get_result(self.sut, Assertion.REQ_DELETE_METHOD_REQUIRED,
+                            'DELETE', uri2)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertEqual(uri2, result['uri'])
+        self.assertEqual(requests.codes.OK, result['status'])
+
+    def test_test_delete_non_deletable_resource_not_tested(self):
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No failed DELETE responses found', result['msg'])
+
+    def test_test_delete_non_deletable_resource_warn(self):
+        uri = '/redfish/v1/SessionService/Sessions/123'
+        add_response(self.sut, uri, 'DELETE',
+                     status_code=requests.codes.BAD_REQUEST)
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.WARN, result['result'])
+        self.assertIn('DELETE request for resource %s failed with status %s'
+                      % (uri, requests.codes.BAD_REQUEST), result['msg'])
+        self.assertEqual(uri, result['uri'])
+        self.assertEqual(requests.codes.BAD_REQUEST, result['status'])
+
+    def test_test_delete_non_deletable_resource_pass(self):
+        uri1 = '/redfish/v1/SessionService/Sessions/123'
+        uri2 = '/redfish/v1/SessionService/Sessions/456'
+        add_response(self.sut, uri1, 'DELETE',
+                     status_code=requests.codes.BAD_REQUEST)
+        add_response(self.sut, uri2, 'DELETE',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+        req.test_delete_non_deletable_resource(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
+            'DELETE', uri2)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertEqual(uri2, result['uri'])
+        self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
+
+    @mock.patch('assertions.service_requests.requests.post')
+    def test_test_service_requests_cover(self, mock_post):
         req.test_service_requests(self.sut)
 
 

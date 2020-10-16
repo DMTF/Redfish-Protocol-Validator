@@ -4,6 +4,7 @@
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
+from urllib.parse import urlparse
 
 import requests
 
@@ -790,55 +791,46 @@ def patch_array_save(sut: SystemUnderTest):
     return array
 
 
-# An initial starting point
-patch_array_payload1 = {
-    'NTP': {
-        'NTPServers': [
-            'time-a-b.nist.gov',
-            'time-b-b.nist.gov',
-            'time-c-b.nist.gov'
-        ]
-    }
-}
-# Leave two entries unchanged (1st and 3rd) and remove one (2nd)
-patch_array_payload2 = {
-    'NTP': {
-        'NTPServers': [
-            {},
-            None,
-            {}
-        ]
-    }
-}
-# Patch with with a shorter list
-patch_array_payload3 = {
-    'NTP': {
-        'NTPServers': [
-            'time-b-b.nist.gov',
-            'time-c-b.nist.gov'
-        ]
-    }
-}
-
-
 def test_patch_array_element_remove(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE."""
+    payload1 = {
+        'NTP': {
+            'NTPServers': [
+                'time-a-b.nist.gov',
+                'time-b-b.nist.gov',
+                'time-c-b.nist.gov'
+            ]
+        }
+    }
+    payload2 = {
+        'NTP': {
+            'NTPServers': [
+                'time-a-b.nist.gov',
+                None,
+                'time-c-b.nist.gov'
+            ]
+        }
+    }
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
     response = sut.session.patch(sut.rhost + uri,
-                                 json=patch_array_payload1, headers=headers)
+                                 json=payload1, headers=headers)
     if response.ok:
         headers = utils.get_etag_header(sut, sut.session, uri)
         response = sut.session.patch(
-            sut.rhost + uri, json=patch_array_payload2, headers=headers)
+            sut.rhost + uri, json=payload2, headers=headers)
         if response.ok:
-            array = response.json().get('NTP', {}).get('NTPServers', None)
+            get_resp = sut.session.get(sut.rhost + uri)
+            if get_resp.ok:
+                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
+            else:
+                array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
                 if 'time-b-b.nist.gov' in array:
                     msg = ('Array element %s was not removed; resource: %s; '
                            'PATCH payload: %s; resulting array: %s' %
-                           ('time-b-b.nist.gov', patch_array_payload1,
-                            patch_array_payload2, array))
+                           ('time-b-b.nist.gov', payload1,
+                            payload2, array))
                     sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                             Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
                 else:
@@ -848,58 +840,92 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
             else:
                 msg = ('After PATCH, NTPServers array not found in response; '
                        'resource: %s; PATCH payload: %s' %
-                       (patch_array_payload1, patch_array_payload2))
+                       (payload1, payload2))
                 sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
-            return response, array
         else:
             msg = ('PATCH failed with status %s; resource: %s; '
                    'PATCH payload: %s' % (
-                    response.status_code, patch_array_payload1,
-                    patch_array_payload2))
+                       response.status_code, payload1,
+                       payload2))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
     else:
         msg = ('PATCH failed with status %s; PATCH payload: %s' %
-               (response.status_code, patch_array_payload1))
+               (response.status_code, payload1))
         sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                 Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
 
-    return response, None
 
-
-def test_patch_array_element_unchanged(sut: SystemUnderTest, response, array):
+def test_patch_array_element_unchanged(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED."""
+    payload1 = {
+        'NTP': {
+            'NTPServers': [
+                'time-a-b.nist.gov',
+                'time-b-b.nist.gov',
+                'time-c-b.nist.gov'
+            ]
+        }
+    }
+    payload2 = {
+        'NTP': {
+            'NTPServers': [
+                {},
+                {},
+                'time-d-b.nist.gov'
+            ]
+        }
+    }
     uri = sut.mgr_net_proto_uri
+    headers = utils.get_etag_header(sut, sut.session, uri)
+    response = sut.session.patch(sut.rhost + uri,
+                                 json=payload1, headers=headers)
     if response.ok:
-        if isinstance(array, list):
-            if 'time-a-b.nist.gov' in array and 'time-c-b.nist.gov' in array:
-                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
-                        Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
-                        'Test passed')
+        headers = utils.get_etag_header(sut, sut.session, uri)
+        response = sut.session.patch(
+            sut.rhost + uri, json=payload2, headers=headers)
+        if response.ok:
+            get_resp = sut.session.get(sut.rhost + uri)
+            if get_resp.ok:
+                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
             else:
-                missing = []
-                if 'time-a-b.nist.gov' not in array:
-                    missing.append('time-a-b.nist.gov')
-                if 'time-c-b.nist.gov' not in array:
-                    missing.append('time-c-b.nist.gov')
-                msg = ('After PATCH, the following NTPServers array elements '
-                       'should have been left unchanged, but were not found '
-                       'in the response: %s; resource: %s; PATCH payload: %s' %
-                       (missing, patch_array_payload1, patch_array_payload2))
-                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                array = response.json().get('NTP', {}).get('NTPServers', None)
+            if isinstance(array, list):
+                if ('time-a-b.nist.gov' in array and
+                        'time-b-b.nist.gov' in array):
+                    sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
+                            'Test passed')
+                else:
+                    missing = []
+                    if 'time-a-b.nist.gov' not in array:
+                        missing.append('time-a-b.nist.gov')
+                    if 'time-b-b.nist.gov' not in array:
+                        missing.append('time-b-b.nist.gov')
+                    msg = ('After PATCH, the following NTPServers array '
+                           'elements should have been left unchanged, but '
+                           'were not found in the response: %s; resource: %s; '
+                           'PATCH payload: %s' % (missing, payload1, payload2))
+                    sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                            Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+            else:
+                msg = ('After PATCH, NTPServers array not found in response; '
+                       'resource: %s; PATCH payload: %s' %
+                       (payload1, payload2))
+                sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
+            return response, array
         else:
-            msg = ('After PATCH, NTPServers array not found in response; '
-                   'resource: %s; PATCH payload: %s' %
-                   (patch_array_payload1, patch_array_payload2))
-            sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
+            msg = ('PATCH failed with status %s; resource: %s; '
+                   'PATCH payload: %s' % (
+                       response.status_code, payload1,
+                       payload2))
+            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
     else:
-        msg = ('PATCH failed with status %s; resource: %s; '
-               'PATCH payload: %s' %
-               (response.status_code, patch_array_payload1,
-                patch_array_payload2))
+        msg = ('PATCH failed with status %s; PATCH payload: %s' %
+               (response.status_code, payload1))
         sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                 Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED, msg)
 
@@ -911,17 +937,38 @@ def test_patch_array_operations_order(sut: SystemUnderTest):
 
 def test_patch_array_truncate(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_PATCH_ARRAY_TRUNCATE."""
+    payload1 = {
+        'NTP': {
+            'NTPServers': [
+                'time-a-b.nist.gov',
+                'time-b-b.nist.gov',
+                'time-c-b.nist.gov'
+            ]
+        }
+    }
+    payload2 = {
+        'NTP': {
+            'NTPServers': [
+                'time-b-b.nist.gov',
+                'time-c-b.nist.gov'
+            ]
+        }
+    }
     expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
-    response = sut.session.patch(sut.rhost + uri, json=patch_array_payload1,
+    response = sut.session.patch(sut.rhost + uri, json=payload1,
                                  headers=headers)
     if response.ok:
         headers = utils.get_etag_header(sut, sut.session, uri)
         response = sut.session.patch(
-            sut.rhost + uri, json=patch_array_payload3, headers=headers)
+            sut.rhost + uri, json=payload2, headers=headers)
         if response.ok:
-            array = response.json().get('NTP', {}).get('NTPServers', None)
+            get_resp = sut.session.get(sut.rhost + uri)
+            if get_resp.ok:
+                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
+            else:
+                array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
                 if array == expected_array:
                     sut.log(Result.PASS, 'PATCH', response.status_code,
@@ -930,26 +977,26 @@ def test_patch_array_truncate(sut: SystemUnderTest):
                 else:
                     msg = ('After PATCH, expected NTPServers array to be %s; '
                            'found: %s; resource: %s; PATCH payload: %s' % (
-                            expected_array, array, patch_array_payload1,
-                            patch_array_payload3))
+                               expected_array, array, payload1,
+                               payload2))
                     sut.log(Result.FAIL, 'PATCH', response.status_code,
                             uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
             else:
                 msg = ('After PATCH, NTPServers array not found in response; '
                        'resource: %s; PATCH payload: %s' %
-                       (patch_array_payload1, patch_array_payload3))
+                       (payload1, payload2))
                 sut.log(Result.NOT_TESTED, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
         else:
             msg = ('PATCH failed with status %s; resource: %s; '
                    'PATCH payload: %s' %
-                   (response.status_code, patch_array_payload1,
-                    patch_array_payload3))
+                   (response.status_code, payload1,
+                    payload2))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
     else:
         msg = ('PATCH failed with status %s; PATCH payload: %s' %
-               (response.status_code, patch_array_payload1))
+               (response.status_code, payload1))
         sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                 Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
 
@@ -969,6 +1016,220 @@ def patch_array_restore(sut: SystemUnderTest, array):
         logging.warning('Attempt to PATCH %s to restore the original '
                         'NTPServers array failed with status %s; PATCH '
                         'payload: %s' % (uri, response.status_code, payload))
+
+
+def test_put_not_implemented(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_PUT_NOT_IMPLEMENTED."""
+    # TODO(bdodd): Need a good resource to try to replace
+
+
+def test_post_create_via_collection(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_VIA_COLLECTION."""
+    response = sut.get_response('POST', sut.sessions_uri)
+    if response is None:
+        msg = ('Not response found for POST to Sessions URI; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, 'POST', '', sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, msg)
+    elif response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, 'Test passed')
+    else:
+        msg = ('POST request to collections uri %s failed with status %s'
+               % (sut.sessions_uri, response.status_code))
+        sut.log(Result.FAIL, 'POST', response.status_code, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_VIA_COLLECTION, msg)
+
+
+def test_post_create_uri_in_location_hdr(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR."""
+    response = sut.get_response('POST', sut.sessions_uri)
+    if response is None or not response.ok:
+        msg = ('No successful response found for POST to Sessions URI; '
+               'unable to test this assertion')
+        status = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'POST', status, sut.sessions_uri,
+                Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR, msg)
+    else:
+        location = response.headers.get('Location')
+        if location:
+            sut.log(Result.PASS, 'POST', response.status_code,
+                    sut.sessions_uri,
+                    Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR,
+                    'Test passed')
+        else:
+            msg = ('Location header missing from response to POST request to '
+                   'uri %s failed with status %s'
+                   % (sut.sessions_uri, response.status_code))
+            sut.log(Result.FAIL, 'POST', response.status_code,
+                    sut.sessions_uri,
+                    Assertion.REQ_POST_CREATE_URI_IN_LOCATION_HDR, msg)
+
+
+def test_post_create_to_members_prop(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP."""
+    uri = sut.sessions_uri
+    uri = uri + 'Members' if uri.endswith('/') else uri + '/Members'
+    payload = {
+        'UserName': sut.username,
+        'Password': sut.password
+    }
+    headers = {
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+    response = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                             verify=sut.verify)
+    if response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, uri,
+                Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+                'Test passed')
+        # clean-up the created session
+        location = response.headers.get('Location')
+        if location and isinstance(location, str):
+            session_uri = urlparse(location).path
+            if session_uri:
+                sut.session.delete(sut.rhost + session_uri)
+    else:
+        msg = ('POST to Members property URI %s failed with status %s' %
+               (uri, response.status_code))
+        sut.log(Result.FAIL, 'POST', response.status_code, uri,
+                Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
+                msg)
+
+
+def test_post_create_not_supported(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_NOT_SUPPORTED."""
+    response = sut.get_response('POST', sut.accounts_uri)
+    if response is None:
+        msg = ('Not response found for POST to Accounts URI; unable to test '
+               'this assertion')
+        sut.log(Result.NOT_TESTED, 'POST', '', sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
+    elif response.ok:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                'Service supports creation of resources')
+    elif response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                'Test passed')
+    else:
+        msg = ('POST request to URI %s failed with %s; expected %s' %
+               (sut.accounts_uri, response.status_code,
+                requests.codes.METHOD_NOT_ALLOWED))
+        sut.log(Result.FAIL, 'POST', response.status_code, sut.accounts_uri,
+                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                msg)
+
+
+def test_post_create_not_idempotent(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT."""
+    uri = sut.sessions_uri
+    payload = {
+        'UserName': sut.username,
+        'Password': sut.password
+    }
+    headers = {
+        'OData-Version': '4.0',
+        'Content-Type': 'application/json;charset=utf-8'
+    }
+    r1 = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                       verify=sut.verify)
+    if r1.ok:
+        loc1 = r1.headers.get('Location')
+        session_uri1 = ''
+        if loc1 and isinstance(loc1, str):
+            session_uri1 = urlparse(loc1).path
+        r2 = requests.post(sut.rhost + uri, json=payload, headers=headers,
+                           verify=sut.verify)
+        if r2.ok:
+            loc2 = r2.headers.get('Location')
+            session_uri2 = ''
+            if loc2 and isinstance(loc2, str):
+                session_uri2 = urlparse(loc2).path
+                if loc1 == loc2:
+                    # FAIL
+                    msg = ('Two consecutive POST requests to %s succeeded, '
+                           'but each returned the same resource URI in the '
+                           'Location header (%s)' % (uri, loc1))
+                    sut.log(Result.FAIL, 'POST', r2.status_code, uri,
+                            Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+                else:
+                    sut.log(Result.PASS, 'POST', r1.status_code, uri,
+                            Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT,
+                            'Test passed')
+            else:
+                msg = ('POST request to %s did not return a Location header; '
+                       'unable to test this assertion' % uri)
+                sut.log(Result.NOT_TESTED, 'POST', r2.status_code, uri,
+                        Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+            # clean-up the created session
+            if session_uri2 and loc1 != loc2:
+                sut.session.delete(sut.rhost + session_uri2)
+        else:
+            msg = ('Second POST request to %s failed with status code %s'
+                   % (uri, r2.status_code))
+            sut.log(Result.WARN, 'POST', r2.status_code, uri,
+                    Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+        # clean-up the created session
+        if session_uri1:
+            sut.session.delete(sut.rhost + session_uri1)
+    else:
+        msg = ('POST request to %s failed with status code %s; unable to test '
+               'this assertion' % (uri, r1.status_code))
+        sut.log(Result.NOT_TESTED, 'POST', r1.status_code, uri,
+                Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
+
+
+def test_delete_method_required(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DELETE_METHOD_REQUIRED."""
+    passed = False
+    fail_uri, fail_response = None, None
+    for uri, response in sut.get_responses_by_method('DELETE').items():
+        if response.ok:
+            sut.log(Result.PASS, 'DELETE', response.status_code, uri,
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, 'Test passed')
+            passed = True
+            break
+        else:
+            fail_uri, fail_response = uri, response
+
+    if not passed:
+        if fail_uri:
+            msg = 'No successful DELETE responses found'
+            sut.log(Result.FAIL, 'DELETE', fail_response.status_code, fail_uri,
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
+        else:
+            msg = 'No DELETE responses found; unable to test this assertion'
+            sut.log(Result.NOT_TESTED, 'DELETE', '', '',
+                    Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
+
+
+def test_delete_non_deletable_resource(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE."""
+    passed = False
+    warn_uri, warn_response = None, None
+    for uri, response in sut.get_responses_by_method('DELETE').items():
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, 'DELETE', response.status_code, uri,
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, 'Test passed')
+            passed = True
+            break
+        elif not response.ok:
+            warn_uri, warn_response = uri, response
+
+    if not passed:
+        if warn_uri:
+            msg = ('DELETE request for resource %s failed with status %s' %
+                   (warn_uri, warn_response.status_code))
+            sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
+        else:
+            msg = ('No failed DELETE responses found; unable to test this '
+                   'assertion')
+            sut.log(Result.NOT_TESTED, 'DELETE', '', '',
+                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
 
 
 def test_request_headers(sut: SystemUnderTest):
@@ -1037,8 +1298,8 @@ def test_patch_array_props(sut: SystemUnderTest):
     spec."""
     orig_array = patch_array_save(sut)
     if orig_array is not None:
-        response, new_array = test_patch_array_element_remove(sut)
-        test_patch_array_element_unchanged(sut, response, new_array)
+        test_patch_array_element_remove(sut)
+        test_patch_array_element_unchanged(sut)
         test_patch_array_operations_order(sut)
         test_patch_array_truncate(sut)
         patch_array_restore(sut, orig_array)
@@ -1046,27 +1307,38 @@ def test_patch_array_props(sut: SystemUnderTest):
 
 def test_put(sut: SystemUnderTest):
     """Perform tests from the 'PUT (replace)' sub-section of the spec."""
+    test_put_not_implemented(sut)
 
 
 def test_post_create(sut: SystemUnderTest):
     """Perform tests from the 'POST (create)' sub-section of the spec."""
+    test_post_create_via_collection(sut)
+    test_post_create_uri_in_location_hdr(sut)
+    test_post_create_to_members_prop(sut)
+    test_post_create_not_supported(sut)
+    test_post_create_not_idempotent(sut)
 
 
 def test_delete(sut: SystemUnderTest):
     """Perform tests from the 'DELETE (delete)' sub-section of the spec."""
+    test_delete_method_required(sut)
+    test_delete_non_deletable_resource(sut)
 
 
 def test_post_action(sut: SystemUnderTest):
     """Perform tests from the 'POST (Action)' sub-section of the spec."""
+    # NOTE(bdodd): Actions better tested in the Redfish-Usecase-Checkers
 
 
 def test_operation_apply_time(sut: SystemUnderTest):
     """Perform tests from the 'Operation apply time' sub-section of the
     spec."""
+    # TODO(bdodd): Need an operation to test that will be minimally disruptive
 
 
 def test_deep_operations(sut: SystemUnderTest):
     """Perform tests from the 'Deep operations' sub-section of the spec."""
+    # TODO(bdodd): These will be challenging to test; defer for now
 
 
 def test_service_requests(sut: SystemUnderTest):

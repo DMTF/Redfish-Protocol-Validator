@@ -265,6 +265,38 @@ class Assertion(NoValue):
         'A PATCH request with fewer elements than in the current array shall '
         'remove the remaining elements of the array.'
     )
+    REQ_PUT_NOT_IMPLEMENTED = (
+        'If a service does not implement this method, the service shall '
+        'return the HTTP 405 Method Not Allowed status code.'
+    )
+    REQ_POST_CREATE_VIA_COLLECTION = (
+        'To create a resource, services shall support the POST method on '
+        'resource collections.'
+    )
+    REQ_POST_CREATE_URI_IN_LOCATION_HDR = (
+        'Additionally, the service shall set the Location header in the '
+        'response to the URI of the new resource.'
+    )
+    REQ_POST_CREATE_TO_MEMBERS_PROP = (
+        'Submitting a POST request to a resource collection is equivalent to '
+        'submitting the same request to the Members property of that resource '
+        'collection. Services that support the addition of Members to a '
+        'resource collection shall support both forms.'
+    )
+    REQ_POST_CREATE_NOT_SUPPORTED = (
+        'If the service does not enable creation of resources, the service '
+        'shall return the HTTP 405 Method Not Allowed status code.'
+    )
+    REQ_POST_CREATE_NOT_IDEMPOTENT = (
+        'The POST operation shall not be idempotent.'
+    )
+    REQ_DELETE_METHOD_REQUIRED = (
+        'To remove a resource, the service shall support the DELETE method.'
+    )
+    REQ_DELETE_NON_DELETABLE_RESOURCE = (
+        'If the resource can never be deleted, the service shall return the '
+        'HTTP 405 Method Not Allowed status code.'
+    )
     # Service responses assertions (prefix of "RESP_")
     RESP_HEADERS = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '

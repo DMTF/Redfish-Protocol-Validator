@@ -531,18 +531,30 @@ def test_session_post_response(sut: SystemUnderTest):
                 sut.log(Result.FAIL, 'POST', response.status_code,
                         sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
                         msg)
-        data = response.json()
-        missing_props = []
-        for prop in ['@odata.id', '@odata.type', 'Id', 'Name', 'UserName']:
-            if prop not in data:
-                missing_props.append(prop)
-        if missing_props:
+        if response.status_code == requests.codes.CREATED:
+            data = response.json()
+            missing_props = []
+            for prop in ['@odata.id', '@odata.type', 'Id', 'Name', 'UserName']:
+                if prop not in data:
+                    missing_props.append(prop)
+            if missing_props:
+                failed = True
+                msg = ('Response payload for POST to %s did not contain full '
+                       'representation of the new session resource; missing '
+                       'properties: %s ' % (sut.sessions_uri, missing_props))
+                sut.log(Result.FAIL, 'POST', response.status_code,
+                        sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
+                        msg)
+        else:
             failed = True
-            msg = ('Response payload for POST to %s did not contain full '
-                   'representation of the new session resource; missing '
-                   'properties: %s ' % (sut.sessions_uri, missing_props))
+            msg = ('Response for POST to %s returned status %s, expected '
+                   'status %s in order to return full representation of the '
+                   'new session resource' %
+                   (sut.sessions_uri, response.status_code,
+                    requests.codes.CREATED))
             sut.log(Result.FAIL, 'POST', response.status_code,
-                    sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE, msg)
+                    sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
+                    msg)
         if not failed:
             sut.log(Result.PASS, 'POST', response.status_code,
                     sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
@@ -624,7 +636,7 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
                 # read from the SSE stream
                 try:
                     lines = response.iter_lines()
-                    for line in lines:
+                    for _ in lines:
                         sut.log(Result.PASS, 'GET', response.status_code,
                                 sut.server_sent_event_uri,
                                 Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS,
@@ -954,13 +966,9 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                 r = sut.session.get(sut.rhost + uri)
                 if r.ok:
                     d = r.json()
-                    privs = d.get('AssignedPrivileges')
-                    if test_priv in privs:
-                        new_privs = [{}] * len(privs)
-                        for i in range(len(privs)):
-                            if privs[i] == test_priv:
-                                new_privs[i] = None
-                        payload = {'AssignedPrivileges': new_privs}
+                    patched_privs = d.get('AssignedPrivileges')
+                    if test_priv in patched_privs:
+                        payload = {'AssignedPrivileges': privs}
                         etag = r.headers.get('ETag')
                         headers = {'If-Match': etag} if etag else {}
                         sut.session.patch(

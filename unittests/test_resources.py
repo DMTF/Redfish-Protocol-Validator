@@ -36,7 +36,7 @@ class Resources(TestCase):
         add_response(self.sut, self.sut.sessions_uri, 'POST',
                      requests.codes.CREATED,
                      request_type=RequestType.NO_AUTH)
-        add_response(self.sut, '/redfish/v1/AccountsService/Accounts/3/',
+        add_response(self.sut, '/redfish/v1/AccountsService/Accounts/3',
                      'PATCH', requests.codes.NOT_ALLOWED,
                      request_type=RequestType.NO_AUTH)
 

@@ -88,7 +88,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
 
     r = sut.session.get(sut.rhost + uri)
     yield {'uri': uri, 'response': r}
-    root = r.json()
+    root = r.json() if r.status_code == requests.codes.OK else {}
 
     sut.set_version(root.get('RedfishVersion', '1.0.0'))
     sut.set_product(root.get('Product', 'N/A'))
