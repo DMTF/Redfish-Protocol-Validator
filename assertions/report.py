@@ -3,6 +3,7 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import json
 from datetime import datetime
 
 from assertions import redfish_logo
@@ -120,7 +121,6 @@ def tsv_report(sut: SystemUnderTest, report_dir, time):
 
 
 def html_report(sut: SystemUnderTest, report_dir, time, tool_version):
-    # TODO(bdodd): Get feedback on HTML report and refine as needed
     file = report_dir / report_name(time, 'html')
     html = ''
     for prefix, section_name in sections:
@@ -162,3 +162,31 @@ def html_report(sut: SystemUnderTest, report_dir, time, tool_version):
                                       sut.summary_count(Result.NOT_TESTED),
                                       html))
     return str(file)
+
+
+def json_results(sut: SystemUnderTest, report_dir, time, tool_version):
+    file = report_dir / 'results.json'
+    results = {
+        'ToolName': 'Redfish-Protocol-Validator v%s' % tool_version,
+        'Timestamp': {
+            'DateTime': '{:%Y-%m-%dT%H:%M:%S%Z}'.format(time)
+        },
+        'Service': {
+            'BaseURL': sut.rhost,
+            'Manufacturer': sut.manufacturer,
+            'Product': sut.product,
+            'Model': sut.model,
+            'FirmwareVersion': sut.firmware_version
+        },
+        'TestResults': {
+            'Protocol Validations': {
+                'pass': sut.summary_count(Result.PASS),
+                'fail': sut.summary_count(Result.FAIL),
+                'skip': sut.summary_count(Result.NOT_TESTED),
+                'warn': sut.summary_count(Result.WARN)
+            },
+            'ErrorMessages': []
+        }
+    }
+    with open(str(file), 'w', encoding='utf-8') as fd:
+        json.dump(results, fd, indent=4)
