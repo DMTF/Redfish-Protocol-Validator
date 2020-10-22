@@ -19,7 +19,7 @@ def test_access_control_allow_origin_header(sut: SystemUnderTest):
 def test_header_present(sut: SystemUnderTest, header, uri, method, response,
                         assertion):
     """Test that header is present in the response."""
-    if response is None or response.status_code != requests.codes.OK:
+    if response is None or not response.ok:
         msg = ('No successful response found for %s request to %s; unable to '
                'test this assertion' % (method, uri))
         status = response.status_code if response is not None else ''
@@ -42,7 +42,7 @@ def test_header_present(sut: SystemUnderTest, header, uri, method, response,
 def test_header_value(sut: SystemUnderTest, header, value, uri, method,
                       response, assertion):
     """Test that header is present in the response."""
-    if response is None or response.status_code != requests.codes.OK:
+    if response is None or not response.ok:
         msg = ('No successful response found for %s request to %s; unable to '
                'test this assertion' % (method, uri))
         status = response.status_code if response is not None else ''
