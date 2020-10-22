@@ -160,7 +160,7 @@ class Resources(TestCase):
         event_service.request = req
 
         self.session.get.side_effect = [
-            res, res, res, res,
+            res, res, res, res, res,
             service_root, coll1, res, coll1, res,
             coll1, manager, net_proto, coll1,
             account_service, coll1, acct, coll1, res,
@@ -170,7 +170,7 @@ class Resources(TestCase):
         ]
         resources.read_target_resources(
             self.sut, func=resources.get_default_resources)
-        self.assertEqual(self.session.get.call_count, 26)
+        self.assertEqual(self.session.get.call_count, 27)
 
     def test_get_all_resources(self):
         with self.assertRaises(NotImplementedError):

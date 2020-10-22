@@ -76,6 +76,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     :param uris: a list of specific URIs to retrieve
     :return: dict elements containing the URI and `requests` response
     """
+    # do GETs on spec-defined URIs
     yield {'uri': '/redfish', 'response': sut.session.get(
         sut.rhost + '/redfish')}
     yield {'uri': '/redfish/v1/odata', 'response':
@@ -85,7 +86,15 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     yield {'uri': '/redfish/v1/$metadata', 'response':
            sut.session.get(sut.rhost + '/redfish/v1/$metadata',
                            headers={'accept': 'application/xml'})}
+    yield {'uri': '/redfish/v1/openapi.yaml',
+           'request_type': RequestType.YAML,
+           'response': sut.session.get(sut.rhost + '/redfish/v1/openapi.yaml',
+                                       headers={'accept': 'application/yaml'})}
 
+    # do HEAD on the service root
+    r = sut.session.head(sut.rhost + uri)
+    yield {'uri': uri, 'response': r}
+    # do GET on the service root
     r = sut.session.get(sut.rhost + uri)
     yield {'uri': uri, 'response': r}
     root = r.json() if r.status_code == requests.codes.OK else {}

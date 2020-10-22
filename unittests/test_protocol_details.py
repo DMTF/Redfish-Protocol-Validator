@@ -331,9 +331,18 @@ class ProtocolDetails(TestCase):
         self.assertIn('No GET requests had a successful response',
                       result['msg'])
 
-    def test_test_http_unsupported_methods_pass(self):
+    def test_test_http_unsupported_methods_pass1(self):
         add_response(self.sut, '/redfish/v1/', 'TRACE',
                      requests.codes.METHOD_NOT_ALLOWED)
+        proto.test_http_unsupported_methods(self.sut)
+        result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
+                            'TRACE', '/redfish/v1/')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_http_unsupported_methods_pass2(self):
+        add_response(self.sut, '/redfish/v1/', 'TRACE',
+                     requests.codes.NOT_IMPLEMENTED)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                             'TRACE', '/redfish/v1/')

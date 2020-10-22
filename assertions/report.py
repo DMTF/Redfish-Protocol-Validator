@@ -3,6 +3,7 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import html as html_mod
 import json
 from datetime import datetime
 
@@ -148,7 +149,8 @@ def html_report(sut: SystemUnderTest, report_dir, time, tool_version):
                 html += ('<tr><td {}>{}</td><td>{}</td><td>{}</td>'
                          '<td>{}</td><td>{}</td></tr>'
                          .format(result_class, r['result'].name, r['method'],
-                                 r['status'], r['uri'], r['msg']))
+                                 r['status'], r['uri'],
+                                 html_mod.escape(r['msg'])))
             html += '</table>'
     with open(str(file), 'w', encoding='utf-8') as fd:
         fd.write(html_template.format(redfish_logo.logo, tool_version,
