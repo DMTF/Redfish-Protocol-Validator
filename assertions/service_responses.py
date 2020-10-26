@@ -56,7 +56,12 @@ def test_header_value(sut: SystemUnderTest, header, value, uri, method,
             sut.log(Result.FAIL, response.request.method,
                     response.status_code, uri,
                     assertion, msg)
-        elif value == utils.get_response_media_type(response):
+        elif (header == 'Content-Type' and
+              value == utils.get_response_media_type(response)):
+            msg = 'Test passed for header %s: %s' % (header, v)
+            sut.log(Result.PASS, response.request.method,
+                    response.status_code, uri, assertion, msg)
+        elif value == response.headers.get(header):
             msg = 'Test passed for header %s: %s' % (header, v)
             sut.log(Result.PASS, response.request.method,
                     response.status_code, uri, assertion, msg)
@@ -248,10 +253,30 @@ def test_link_header(sut: SystemUnderTest):
 
 def test_location_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_LOCATION."""
+    found_create_response = False
+    for uri, response in sut.get_responses_by_method('POST').items():
+        if response.status_code == requests.codes.CREATED:
+            found_create_response = True
+            test_header_present(sut, 'Location', uri, 'POST', response,
+                                Assertion.RESP_HEADERS_LOCATION)
+            if uri == sut.sessions_uri:
+                test_header_present(sut, 'X-Auth-Token', uri, 'POST', response,
+                                    Assertion.RESP_HEADERS_LOCATION)
+    if not found_create_response:
+        msg = ('No successful POST (create) response found; '
+               'unable to test this assertion')
+        sut.log(Result.NOT_TESTED, 'POST', '', '',
+                Assertion.RESP_HEADERS_LOCATION, msg)
 
 
 def test_odata_version_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_ODATA_VERSION."""
+    uri = '/redfish/v1/'
+    method = 'GET'
+    header = 'OData-Version'
+    response = sut.get_response(method, uri)
+    test_header_value(sut, header, '4.0', uri, method, response,
+                      Assertion.RESP_HEADERS_ODATA_VERSION)
 
 
 def test_www_authenticate_header(sut: SystemUnderTest):

@@ -19,6 +19,7 @@ class ServiceResponses(TestCase):
     def setUp(self):
         super(ServiceResponses, self).setUp()
         self.sut = SystemUnderTest('https://127.0.0.1:8000', 'oper', 'xyzzy')
+        self.sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
         self.mock_session = mock.MagicMock(spec=requests.Session)
         self.sut._set_session(self.mock_session)
 
@@ -402,6 +403,100 @@ class ServiceResponses(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.assertIn('Test passed for versioned resource %s' %
                       'ServiceRoot.v1_5_1', result['msg'])
+
+    def test_test_location_header_not_tested(self):
+        method = 'POST'
+        resp.test_location_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_LOCATION,
+                            method, '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No successful POST (create) response found',
+                      result['msg'])
+
+    def test_test_location_header_fail1(self):
+        method = 'POST'
+        uri = '/redfish/v1/Foo'
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={})
+        resp.test_location_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_LOCATION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header was missing from the response to the '
+                      '%s request to URI %s' % ('Location', method, uri),
+                      result['msg'])
+
+    def test_test_location_header_fail2(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={'Location': uri + '/c123'})
+        resp.test_location_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_LOCATION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header was missing from the response to the '
+                      '%s request to URI %s' % ('X-Auth-Token', method, uri),
+                      result['msg'])
+
+    def test_test_location_header_pass(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={'Location': uri + '/c123',
+                              'X-Auth-Token': '1a2b3c4'})
+        resp.test_location_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_LOCATION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Test passed for header %s: %s' %
+                      ('X-Auth-Token', '1a2b3c4'), result['msg'])
+
+    def test_test_odata_version_header_fail1(self):
+        method = 'GET'
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method, status_code=requests.codes.OK,
+                     headers={})
+        resp.test_odata_version_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_ODATA_VERSION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header was missing from the response to the '
+                      '%s request to URI %s' % ('OData-Version', method, uri),
+                      result['msg'])
+
+    def test_test_odata_version_header_fail2(self):
+        method = 'GET'
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method, status_code=requests.codes.OK,
+                     headers={'OData-Version': '4.1'})
+        resp.test_odata_version_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_ODATA_VERSION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header value from the response to the '
+                      '%s request to URI %s was %s; expected %s' %
+                      ('OData-Version', method, uri, '4.1', '4.0'),
+                      result['msg'])
+
+    def test_test_odata_version_header_pass(self):
+        method = 'GET'
+        uri = '/redfish/v1/'
+        add_response(self.sut, uri, method, status_code=requests.codes.OK,
+                     headers={'OData-Version': '4.0'})
+        resp.test_odata_version_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_ODATA_VERSION,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Test passed for header %s: %s' %
+                      ('OData-Version', '4.0'), result['msg'])
 
     def test_test_service_responses_cover(self):
         resp.test_service_responses(self.sut)
