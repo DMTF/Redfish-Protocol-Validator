@@ -20,6 +20,7 @@ class ServiceResponses(TestCase):
         super(ServiceResponses, self).setUp()
         self.sut = SystemUnderTest('https://127.0.0.1:8000', 'oper', 'xyzzy')
         self.sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
+        self.sut.set_nav_prop_uri('Systems', '/redfish/v1/Systems')
         self.mock_session = mock.MagicMock(spec=requests.Session)
         self.sut._set_session(self.mock_session)
 
@@ -66,7 +67,7 @@ class ServiceResponses(TestCase):
                             'HEAD', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No successful response found for %s request to %s' %
+        self.assertIn('No response found for %s request to %s' %
                       ('HEAD', uri), result['msg'])
 
     def test_test_allow_header_get_or_head_fail(self):
@@ -223,11 +224,11 @@ class ServiceResponses(TestCase):
                      res_type=ResourceType.MANAGER_ACCOUNT)
         resp.test_etag_header(self.sut)
         result = get_result(self.sut, Assertion.RESP_HEADERS_ETAG,
-                            method, uri)
+                            method, '')
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('No successful response found for %s request to %s' %
-                      (method, uri), result['msg'])
+                      (method, 'ManagerAccount'), result['msg'])
 
     def test_test_etag_header_fail(self):
         uri = '/redfish/v1/AccountsService/Accounts/1'
@@ -497,6 +498,45 @@ class ServiceResponses(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.assertIn('Test passed for header %s: %s' %
                       ('OData-Version', '4.0'), result['msg'])
+
+    def test_test_www_authenticate_header_not_tested(self):
+        resp.test_www_authenticate_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_WWW_AUTHENTICATE,
+                            '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No 401 Unauthorized responses found', result['msg'])
+
+    def test_test_www_authenticate_header_fail(self):
+        uri = '/redfish/v1/Systems'
+        method = 'GET'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.UNAUTHORIZED,
+                     request_type=RequestType.NO_AUTH,
+                     headers={})
+        resp.test_www_authenticate_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_WWW_AUTHENTICATE,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header was missing from the response to the '
+                      '%s request to URI %s' %
+                      ('WWW-Authenticate', method, uri), result['msg'])
+
+    def test_test_www_authenticate_header_pass(self):
+        uri = self.sut.systems_uri
+        method = 'GET'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.UNAUTHORIZED,
+                     request_type=RequestType.NO_AUTH,
+                     headers={'WWW-Authenticate': 'Basic'})
+        resp.test_www_authenticate_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_WWW_AUTHENTICATE,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Test passed for header %s: %s' %
+                      ('WWW-Authenticate', 'Basic'), result['msg'])
 
     def test_test_service_responses_cover(self):
         resp.test_service_responses(self.sut)

@@ -19,8 +19,8 @@ def test_access_control_allow_origin_header(sut: SystemUnderTest):
 def test_header_present(sut: SystemUnderTest, header, uri, method, response,
                         assertion):
     """Test that header is present in the response."""
-    if response is None or not response.ok:
-        msg = ('No successful response found for %s request to %s; unable to '
+    if response is None:
+        msg = ('No response found for %s request to %s; unable to '
                'test this assertion' % (method, uri))
         status = response.status_code if response is not None else ''
         sut.log(Result.NOT_TESTED, method, status, uri, assertion, msg)
@@ -42,8 +42,8 @@ def test_header_present(sut: SystemUnderTest, header, uri, method, response,
 def test_header_value(sut: SystemUnderTest, header, value, uri, method,
                       response, assertion):
     """Test that header is present in the response."""
-    if response is None or not response.ok:
-        msg = ('No successful response found for %s request to %s; unable to '
+    if response is None:
+        msg = ('No response found for %s request to %s; unable to '
                'test this assertion' % (method, uri))
         status = response.status_code if response is not None else ''
         sut.log(Result.NOT_TESTED, method, status, uri, assertion, msg)
@@ -117,49 +117,56 @@ def test_cache_control_header(sut: SystemUnderTest):
     uri = '/redfish/v1/'
     method = 'GET'
     response = sut.get_response(method, uri)
-    test_header_present(sut, 'Cache-Control', uri, method, response,
-                        Assertion.RESP_HEADERS_CACHE_CONTROL)
+    if response is None or not response.ok:
+        msg = ('No successful response found for %s request to %s; unable to '
+               'test this assertion' % (method, uri))
+        status = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, method, status, uri,
+                Assertion.RESP_HEADERS_CACHE_CONTROL, msg)
+    else:
+        test_header_present(sut, 'Cache-Control', uri, method, response,
+                            Assertion.RESP_HEADERS_CACHE_CONTROL)
 
 
 def test_content_type_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_CONTENT_TYPE."""
     header = 'Content-Type'
-
-    # JSON
-    uri, method, media = '/redfish/v1/', 'GET', 'application/json'
-    response = sut.get_response(method, uri)
-    test_header_value(sut, header, media, uri, method, response,
-                      Assertion.RESP_HEADERS_CONTENT_TYPE)
-
-    # XML
-    uri, method, media = '/redfish/v1/$metadata', 'GET', 'application/xml'
-    response = sut.get_response(method, uri)
-    test_header_value(sut, header, media, uri, method, response,
-                      Assertion.RESP_HEADERS_CONTENT_TYPE)
-
-    # YAML
-    uri, method, media = '/redfish/v1/openapi.yaml', 'GET', 'application/yaml'
-    response = sut.get_response(method, uri, request_type=RequestType.YAML)
-    test_header_value(sut, header, media, uri, method, response,
-                      Assertion.RESP_HEADERS_CONTENT_TYPE)
-
-    # SSE
-    if sut.server_sent_event_uri:
-        uri, method, media = (sut.server_sent_event_uri, 'GET',
-                              'text/event-stream')
-        response = sut.get_response(method, uri,
-                                    request_type=RequestType.STREAMING)
-        test_header_value(sut, header, media, uri, method, response,
-                          Assertion.RESP_HEADERS_CONTENT_TYPE)
+    method = 'GET'
+    uri_media_types = [
+        ('/redfish/v1/', 'application/json', RequestType.NORMAL),
+        ('/redfish/v1/$metadata', 'application/xml', RequestType.NORMAL),
+        ('/redfish/v1/openapi.yaml', 'application/yaml', RequestType.YAML),
+        (sut.server_sent_event_uri, 'text/event-stream', RequestType.STREAMING)
+    ]
+    for uri, media, req_type in uri_media_types:
+        if uri:
+            response = sut.get_response(method, uri, request_type=req_type)
+            if response is None or not response.ok:
+                msg = ('No successful response found for %s request to %s; '
+                       'unable to test this assertion' % (method, uri))
+                status = response.status_code if response is not None else ''
+                sut.log(Result.NOT_TESTED, method, status, uri,
+                        Assertion.RESP_HEADERS_CONTENT_TYPE, msg)
+            else:
+                test_header_value(sut, header, media, uri, method, response,
+                                  Assertion.RESP_HEADERS_CONTENT_TYPE)
 
 
 def test_etag_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_ETAG."""
     method = 'GET'
+    found_response = False
     for uri, response in sut.get_responses_by_method(
             method, resource_type=ResourceType.MANAGER_ACCOUNT).items():
-        test_header_present(sut, 'ETag', uri, method, response,
-                            Assertion.RESP_HEADERS_ETAG)
+        if response.ok:
+            found_response = True
+            test_header_present(sut, 'ETag', uri, method, response,
+                                Assertion.RESP_HEADERS_ETAG)
+    if not found_response:
+        msg = ('No successful response found for %s request to '
+               'ManagerAccount; unable to test this assertion' % method)
+        sut.log(Result.NOT_TESTED, method, '', '',
+                Assertion.RESP_HEADERS_ETAG, msg)
 
 
 def test_link_header_schema_ver_match(sut: SystemUnderTest, uri_ref, uri,
@@ -281,6 +288,28 @@ def test_odata_version_header(sut: SystemUnderTest):
 
 def test_www_authenticate_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_WWW_AUTHENTICATE."""
+    # a selection of URis to test
+    uris = [sut.sessions_uri, sut.mgr_net_proto_uri, sut.systems_uri,
+            sut.accounts_uri, sut.account_service_uri,
+            sut.privilege_registry_uri]
+    # eliminate URIs the service doesn't support
+    uris = [u for u in uris if u is not None]
+    found_unauthorized = False
+    for uri in uris:
+        for method in ['GET', 'POST', 'PATCH', 'DELETE']:
+            response = sut.get_response(
+                method, uri, request_type=RequestType.NO_AUTH)
+            if (response is not None and
+                    response.status_code == requests.codes.UNAUTHORIZED):
+                found_unauthorized = True
+                test_header_present(
+                    sut, 'WWW-Authenticate', uri, response.request.method,
+                    response, Assertion.RESP_HEADERS_WWW_AUTHENTICATE)
+    if not found_unauthorized:
+        msg = ('No 401 Unauthorized responses found; unable to test this '
+               'assertion')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.RESP_HEADERS_WWW_AUTHENTICATE, msg)
 
 
 def test_x_auth_token_header(sut: SystemUnderTest):
