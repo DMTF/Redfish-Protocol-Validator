@@ -27,7 +27,10 @@ def test_header_present(sut: SystemUnderTest, header, uri, method, response,
     else:
         v = response.headers.get(header)
         if v:
-            msg = 'Test passed for header %s: %s' % (header, v)
+            if header == 'X-Auth-Token':
+                msg = 'Test passed for header %s' % header
+            else:
+                msg = 'Test passed for header %s: %s' % (header, v)
             sut.log(Result.PASS, response.request.method,
                     response.status_code, uri, assertion, msg)
         else:
@@ -314,6 +317,37 @@ def test_www_authenticate_header(sut: SystemUnderTest):
 
 def test_x_auth_token_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_X_AUTH_TOKEN."""
+    uri = sut.sessions_uri
+    response = sut.get_response('POST', uri)
+    if response is not None and response.status_code == requests.codes.CREATED:
+        token = response.headers.get('X-Auth-Token')
+        if token:
+            is_random = utils.random_sequence(token)
+            if is_random is None:
+                msg = ('The security token is not a hexadecimal string; '
+                       'unable to test this assertion')
+                sut.log(Result.NOT_TESTED, 'POST', response.status_code,
+                        uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
+            elif is_random:
+                msg = ('Test passed for header %s' % 'X-Auth-Token')
+                sut.log(Result.PASS, 'POST', response.status_code,
+                        uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
+            else:
+                msg = ('The security token from the %s header may not be '
+                       'sufficiently random' % 'X-Auth-Token')
+                sut.log(Result.WARN, 'POST', response.status_code,
+                        uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
+        else:
+            msg = ('The %s header was missing from the response to the POST '
+                   'request to the Sessions URI' % 'X-Auth-Token')
+            sut.log(Result.FAIL, 'POST', response.status_code,
+                    uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
+    else:
+        msg = ('No successful response found for POST to Sessions URI; '
+               'unable to test this assertion')
+        status = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'POST', status,
+                uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
 
 
 def test_response_headers(sut: SystemUnderTest):

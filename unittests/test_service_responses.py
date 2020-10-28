@@ -454,8 +454,8 @@ class ServiceResponses(TestCase):
                             method, uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
-        self.assertIn('Test passed for header %s: %s' %
-                      ('X-Auth-Token', '1a2b3c4'), result['msg'])
+        self.assertIn('Test passed for header %s' % 'X-Auth-Token',
+                      result['msg'])
 
     def test_test_odata_version_header_fail1(self):
         method = 'GET'
@@ -537,6 +537,70 @@ class ServiceResponses(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.assertIn('Test passed for header %s: %s' %
                       ('WWW-Authenticate', 'Basic'), result['msg'])
+
+    def test_test_x_auth_token_header_not_tested1(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        resp.test_x_auth_token_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_X_AUTH_TOKEN,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No successful response found for POST to Sessions URI',
+                      result['msg'])
+
+    def test_test_x_auth_token_header_not_tested2(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={'X-Auth-Token': 'YXN1cmUu'})
+        resp.test_x_auth_token_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_X_AUTH_TOKEN,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('The security token is not a hexadecimal string',
+                      result['msg'])
+
+    def test_test_x_auth_token_header_warn(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={'X-Auth-Token': '00002000'})
+        resp.test_x_auth_token_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_X_AUTH_TOKEN,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.WARN, result['result'])
+        self.assertIn('The security token from the %s header may not be '
+                      'sufficiently random' % 'X-Auth-Token', result['msg'])
+
+    def test_test_x_auth_token_header_fail(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={})
+        resp.test_x_auth_token_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_X_AUTH_TOKEN,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The %s header was missing from the response to the '
+                      'POST request to the Sessions URI' % 'X-Auth-Token',
+                      result['msg'])
+
+    def test_test_x_auth_token_header_pass(self):
+        method = 'POST'
+        uri = self.sut.sessions_uri
+        add_response(self.sut, uri, method, status_code=requests.codes.CREATED,
+                     headers={'X-Auth-Token': 'C90FDAA22168C234C4C6628B8'})
+        resp.test_x_auth_token_header(self.sut)
+        result = get_result(self.sut, Assertion.RESP_HEADERS_X_AUTH_TOKEN,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+        self.assertIn('Test passed for header %s' % 'X-Auth-Token',
+                      result['msg'])
 
     def test_test_service_responses_cover(self):
         resp.test_service_responses(self.sut)

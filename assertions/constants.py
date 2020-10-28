@@ -349,8 +349,8 @@ class Assertion(NoValue):
         '[WWW-Authenticate header] if the value in the Required column is Yes.'
     )
     RESP_HEADERS_X_AUTH_TOKEN = (
-        'Redfish Services shall return the HTTP 1.1 Specification-defined '
-        '[X-Auth-Token header] if the value in the Required column is Yes.'
+        'The token value [from the X-Auth-Token header] shall be '
+        'indistinguishable from random.'
     )
     # Service details assertions (prefix of "SERV_")
     SERV_EVENT_POST_RESP = (
