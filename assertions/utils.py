@@ -298,8 +298,10 @@ def hex_to_binary_str(hex_str: str):
 
 
 def monobit_frequency(bit_str: str):
-    """Determine whether the number of ones and zeros in a sequence are
-    approximately the same as would be expected for a truly random sequence
+    """Frequency (Monobit) Test
+
+    Determine whether the number of ones and zeros in a sequence are
+    approximately the same as would be expected for a truly random sequence.
 
     See section 2.1 in this NIST publication:
     https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906762
@@ -307,18 +309,44 @@ def monobit_frequency(bit_str: str):
     obs_sum = 0
     n = len(bit_str)
     for i in range(n):
-        obs_sum += 1 if int(bit_str[i]) == 1 else -1
+        obs_sum += 1 if bit_str[i] == '1' else -1
     obs_stat = abs(obs_sum) / math.sqrt(n)
     p = math.erfc(obs_stat / math.sqrt(2))
     return p
 
 
+def runs(bit_str: str):
+    """Runs Test
+
+    Determine whether the number of runs of ones and zeros of various
+    lengths is as expected for a random sequence.
+
+    See section 2.3 in this NIST publication:
+    https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906762
+    """
+    n = len(bit_str)
+
+    # pre-test
+    ones = 0.0
+    for i in range(n):
+        ones += int(bit_str[i])
+    pi = ones / n
+    tau = 2.0 / math.sqrt(n)
+    if abs(pi - 0.5) >= tau or ones == n:
+        # pre-test failed; do not run this test
+        return 0.0
+
+    # Runs test
+    v_n = 1
+    for i in range(n-1):
+        v_n += 0 if bit_str[i] == bit_str[i+1] else 1
+    p = math.erfc(abs(v_n - 2 * n * pi * (1 - pi)) / (
+                2 * math.sqrt(2 * n) * pi * (1 - pi)))
+    return p
+
+
 def random_sequence(token: str):
     """Run randomness tests on the given security token
-
-    Note: This function currently only runs the Frequency (Monobit) Test from
-    the NIST pub referenced above. Adding additional tests from that suite
-    would provide better randomness testing.
 
     @param token: the security token to test as a hex string
     @return: None if token is not hex, True if token is random, False otherwise
@@ -326,9 +354,11 @@ def random_sequence(token: str):
     bit_str = hex_to_binary_str(token)
     if bit_str is None:
         return None
-    p = monobit_frequency(bit_str)
-    logging.debug('Monobit frequency of token %s is %s' % (token, p))
-    if p >= 0.01:
-        return True
-    else:
-        return False
+
+    for func in [monobit_frequency, runs]:
+        p = func(bit_str)
+        logging.debug('P-value of %s test for token %s is %s' %
+                      (func.__name__, token, p))
+        if p < 0.01:
+            return False
+    return True
