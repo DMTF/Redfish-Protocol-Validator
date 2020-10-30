@@ -869,21 +869,28 @@ class ServiceRequests(TestCase):
 
     def test_test_head_differ_from_get_pass(self):
         uri = '/redfish/v1/'
-        r = add_response(self.sut, uri, method='HEAD',
-                         status_code=requests.codes.OK)
-        self.mock_session.head.return_value = r
+        add_response(self.sut, uri, method='HEAD',
+                     status_code=requests.codes.OK)
         req.test_head_differ_from_get(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
+    def test_test_head_differ_from_get_not_tested(self):
+        uri = '/redfish/v1/'
+        req.test_head_differ_from_get(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No HEAD request to uri %s found' % uri, result['msg'])
+
     def test_test_head_differ_from_get_fail1(self):
         uri = '/redfish/v1/'
-        r = add_response(self.sut, uri, method='HEAD',
-                         status_code=requests.codes.OK,
-                         json={})
-        self.mock_session.head.return_value = r
+        add_response(self.sut, uri, method='HEAD',
+                     status_code=requests.codes.OK,
+                     json={})
         req.test_head_differ_from_get(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
@@ -895,9 +902,8 @@ class ServiceRequests(TestCase):
 
     def test_test_head_differ_from_get_fail2(self):
         uri = '/redfish/v1/'
-        r = add_response(self.sut, uri, method='HEAD',
-                         status_code=requests.codes.METHOD_NOT_ALLOWED)
-        self.mock_session.head.return_value = r
+        add_response(self.sut, uri, method='HEAD',
+                     status_code=requests.codes.METHOD_NOT_ALLOWED)
         req.test_head_differ_from_get(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)

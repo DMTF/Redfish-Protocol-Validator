@@ -39,6 +39,7 @@ class RequestType(NoValue):
     MODIFY_OTHER = auto()
     SUBSCRIPTION = auto()
     STREAMING = auto()
+    YAML = auto()
     PATCH_MIXED_PROPS = auto()
     PATCH_BAD_PROP = auto()
     PATCH_RO_RESOURCE = auto()
@@ -55,9 +56,10 @@ class Assertion(NoValue):
     PROTO_HTTP_SUPPORTED_METHODS = (
         'HTTP methods POST, GET, PATCH, and DELETE shall be supported.')
     PROTO_HTTP_UNSUPPORTED_METHODS = (
-        'For HTTP methods that the Redfish Service does not support or that '
-        'the following table omits, the Redfish Service shall return the '
-        'HTTP 405 Method Not Allowed status code.')
+        'For HTTP methods that the Redfish service does not support or that '
+        'the following table omits, the Redfish service shall return the HTTP '
+        '405 Method Not Allowed status code or the HTTP 501 Not Implemented '
+        'status code.')
     PROTO_JSON_ALL_RESOURCES = (
         'All resources shall be available through the JSON application/json '
         'media type.')
@@ -298,9 +300,57 @@ class Assertion(NoValue):
         'HTTP 405 Method Not Allowed status code.'
     )
     # Service responses assertions (prefix of "RESP_")
-    RESP_HEADERS = (
+    RESP_HEADERS_ACCESS_CONTROL_ALLOW_ORIGIN = (
         'Redfish Services shall return the HTTP 1.1 Specification-defined '
-        'headers if the value in the Required column is "Yes".'
+        '[Access-Control-Allow-Origin header] if the value in the Required '
+        'column is Yes.'
+    )
+    RESP_HEADERS_ALLOW_METHOD_NOT_ALLOWED = (
+        '[The Allow header] shall be returned with the HTTP 405 (Method Not '
+        'Allowed) status code to indicate the valid methods for the request '
+        'URI.'
+    )
+    RESP_HEADERS_ALLOW_GET_OR_HEAD = (
+        '[The Allow header] shall be returned with any GET or HEAD operation '
+        'to indicate the other allowable operations for this resource.'
+    )
+    RESP_HEADERS_CACHE_CONTROL = (
+        'Redfish Services shall return the HTTP 1.1 Specification-defined '
+        '[Cache-Control header] if the value in the Required column is Yes.'
+    )
+    RESP_HEADERS_CONTENT_TYPE = (
+        'Redfish Services shall return the HTTP 1.1 Specification-defined '
+        '[Content-Type header] if the value in the Required column is Yes.'
+    )
+    RESP_HEADERS_ETAG = (
+        'The ETag header shall be included on responses to GETs of '
+        'ManagerAccount resources.'
+    )
+    RESP_HEADERS_LINK_REL_DESCRIBED_BY = (
+        'A Link header containing rel=describedby shall be returned on GET '
+        'and HEAD requests.'
+    )
+    RESP_HEADERS_LINK_SCHEMA_VER_MATCH = (
+        'If the referenced JSON Schema is a versioned schema, it shall match '
+        'the version contained in the value of the @odata.type property '
+        'returned in this resource.'
+    )
+    RESP_HEADERS_LOCATION = (
+        '[The Location header] shall be returned upon creation of a resource. '
+        'Location and X-Auth-Token shall be included on responses that create '
+        'user sessions.'
+    )
+    RESP_HEADERS_ODATA_VERSION = (
+        'Redfish Services shall return the HTTP 1.1 Specification-defined '
+        '[OData-Version header] if the value in the Required column is Yes.'
+    )
+    RESP_HEADERS_WWW_AUTHENTICATE = (
+        'Redfish Services shall return the HTTP 1.1 Specification-defined '
+        '[WWW-Authenticate header] if the value in the Required column is Yes.'
+    )
+    RESP_HEADERS_X_AUTH_TOKEN = (
+        'The token value [from the X-Auth-Token header] shall be '
+        'indistinguishable from random.'
     )
     # Service details assertions (prefix of "SERV_")
     SERV_EVENT_POST_RESP = (

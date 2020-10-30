@@ -587,8 +587,13 @@ def test_query_invalid_values(sut: SystemUnderTest):
 def test_head_differ_from_get(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_HEAD_DIFFERS_FROM_GET."""
     uri = '/redfish/v1/'
-    response = sut.session.head(sut.rhost + uri)
-    if response.ok:
+    response = sut.get_response('HEAD', uri)
+    if response is None:
+        msg = ('No HEAD request to uri %s found; unable to test this assertion'
+               % uri)
+        sut.log(Result.NOT_TESTED, 'HEAD', '', uri,
+                Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+    elif response.ok:
         if not response.text:
             sut.log(Result.PASS, 'HEAD', response.status_code, uri,
                     Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'Test passed')

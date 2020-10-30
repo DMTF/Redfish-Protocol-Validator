@@ -209,7 +209,8 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
         sut.log(Result.NOT_TESTED, 'TRACE', '', uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                 'No response found for TRACE method request')
-    elif response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+    elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
+          response.status_code == requests.codes.NOT_IMPLEMENTED):
         sut.log(Result.PASS, 'TRACE', response.status_code, uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS, 'Test passed')
     else:
@@ -221,9 +222,9 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
 
 def test_media_types(sut: SystemUnderTest, uri, response):
     """Perform tests of the supported media types."""
-    if (uri != '/redfish/v1/$metadata' and
-            response.status_code in [requests.codes.OK,
-                                     requests.codes.CREATED]):
+    if (uri != '/redfish/v1/$metadata' and response.request.method != 'HEAD'
+            and response.status_code in [requests.codes.OK,
+                                         requests.codes.CREATED]):
         # Test Assertion.PROTO_JSON_ALL_RESOURCES
         result, msg = response_content_type_is_json(uri, response)
         sut.log(result, response.request.method, response.status_code, uri,
@@ -247,7 +248,8 @@ def test_media_types(sut: SystemUnderTest, uri, response):
 def test_valid_etag(sut: SystemUnderTest, uri, response):
     """Perform tests for RFC7232 ETag support."""
     # Test Assertion.PROTO_ETAG_RFC7232
-    if response.status_code in [requests.codes.OK, requests.codes.CREATED]:
+    if (response.request.method != 'HEAD' and response.status_code
+            in [requests.codes.OK, requests.codes.CREATED]):
         etag = response.headers.get('ETag')
         source = 'header'
         if (etag is None and utils.get_response_media_type(response)

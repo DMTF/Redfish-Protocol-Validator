@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import mock, TestCase
 
 from assertions.constants import Assertion, Result
-from assertions.report import html_report, tsv_report
+from assertions.report import html_report, json_results, tsv_report
 from assertions.system_under_test import SystemUnderTest
 
 
@@ -43,6 +43,13 @@ class Report(TestCase):
         html_report(self.sut, self.report_dir, self.current_time, '0.6.0')
         # HTML report is generated with one write() call
         self.assertEqual(handle.write.call_count, 1)
+
+    @mock.patch("builtins.open", new_callable=mock.mock_open)
+    def test_json_results(self, mock_file):
+        handle = mock_file()
+        json_results(self.sut, self.report_dir, self.current_time, '0.6.0')
+        # json_results() calls json.dump() which calls write() 1 or more times
+        self.assertGreaterEqual(handle.write.call_count, 1)
 
 
 if __name__ == '__main__':

@@ -259,6 +259,38 @@ class Utils(TestCase):
         s = sock.makefile()
         self.assertEqual(s, sock)
 
+    def test_hex_to_binary_str(self):
+        self.assertEqual('01111100', utils.hex_to_binary_str('7c'))
+        self.assertEqual('000000001010101111000001001000111110111111111111',
+                         utils.hex_to_binary_str('00ABC123EFFF'))
+        self.assertIsNone(utils.hex_to_binary_str('3VyZS4='))
+
+    def test_monobit_frequency(self):
+        p = utils.monobit_frequency('1011010101')
+        self.assertTrue(0.52708 <= p <= 0.52709)
+        p = utils.monobit_frequency(
+            '11001001000011111101101010100010001000010110100011'
+            '00001000110100110001001100011001100010100010111000')
+        self.assertTrue(0.10959 <= p <= 0.10960)
+
+    def test_runs(self):
+        p = utils.runs('1111111111')
+        self.assertEqual(p, 0.0)
+        p = utils.runs('1001101011')
+        self.assertTrue(0.14723 <= p <= 0.14724)
+        p = utils.runs(
+            '11001001000011111101101010100010001000010110100011'
+            '00001000110100110001001100011001100010100010111000')
+        self.assertTrue(0.50079 <= p <= 0.50080)
+
+    def test_random_sequence(self):
+        self.assertFalse(utils.random_sequence('00040000'))
+        self.assertFalse(utils.random_sequence('fffffffe'))
+        self.assertFalse(utils.random_sequence('0000ffff'))
+        token = 'C90FDAA22168C234C4C6628B8'
+        self.assertTrue(utils.random_sequence(token))
+        self.assertIsNone(utils.random_sequence('c3VyZS4='))
+
 
 if __name__ == '__main__':
     unittest.main()
