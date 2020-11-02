@@ -352,6 +352,14 @@ class Assertion(NoValue):
         'The token value [from the X-Auth-Token header] shall be '
         'indistinguishable from random.'
     )
+    RESP_STATUS_BAD_REQUEST = (
+        '[In a 400 Bad Request response] the response body shall return an '
+        'extended error as defined in the Error responses clause.'
+    )
+    RESP_STATUS_INTERNAL_SERVER_ERROR = (
+        '[In a 500 Internal Server Error response] the response body shall '
+        'return an extended error as defined in the Error responses clause.'
+    )
     # Service details assertions (prefix of "SERV_")
     SERV_EVENT_POST_RESP = (
         'If the [Event Service] subscription request succeeds, the service '

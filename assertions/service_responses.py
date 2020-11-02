@@ -350,6 +350,58 @@ def test_x_auth_token_header(sut: SystemUnderTest):
                 uri, Assertion.RESP_HEADERS_X_AUTH_TOKEN, msg)
 
 
+def test_extended_error(sut: SystemUnderTest, status_code,
+                        req_types, assertion):
+    """Test that response is an extended error."""
+    bad_request_found = False
+    for req_type in req_types:
+        for uri, response in sut.get_all_responses(request_type=req_type):
+            if response.status_code == status_code:
+                bad_request_found = True
+                if (utils.get_response_media_type(response) !=
+                        'application/json'):
+                    msg = ('The response payload type was %s; expected %s' %
+                           (response.headers.get('Content-Type', '<missing>'),
+                            'application/json'))
+                    sut.log(Result.FAIL, response.request.method,
+                            response.status_code, uri, assertion, msg)
+                    continue
+                data = response.json()
+                if 'error' in data:
+                    if 'code' in data['error'] and 'message' in data['error']:
+                        sut.log(Result.PASS, response.request.method,
+                                response.status_code, uri, assertion,
+                                'Test passed')
+                    else:
+                        msg = ('The required "code" or "message" properties '
+                               'were missing from the error response')
+                        sut.log(Result.FAIL, response.request.method,
+                                response.status_code, uri, assertion, msg)
+                else:
+                    msg = ('The required "error" property was missing from '
+                           'the error response')
+                    sut.log(Result.FAIL, response.request.method,
+                            response.status_code, uri, assertion, msg)
+    if not bad_request_found:
+        msg = ('No response with a %s status code was found; '
+               'unable to test this assertion' % status_code)
+        sut.log(Result.NOT_TESTED, '', '', '', assertion, msg)
+
+
+def test_status_bad_request(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_STATUS_BAD_REQUEST."""
+    req_types = [RequestType.PATCH_BAD_PROP, RequestType.PATCH_ODATA_PROPS]
+    test_extended_error(sut, requests.codes.BAD_REQUEST, req_types,
+                        Assertion.RESP_STATUS_BAD_REQUEST)
+
+
+def test_status_internal_server_error(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR."""
+    req_types = [RequestType.NORMAL, RequestType.STREAMING]
+    test_extended_error(sut, requests.codes.SERVER_ERROR, req_types,
+                        Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR)
+
+
 def test_response_headers(sut: SystemUnderTest):
     """Perform tests from the 'Response headers' sub-section of the spec."""
     test_access_control_allow_origin_header(sut)
@@ -365,6 +417,12 @@ def test_response_headers(sut: SystemUnderTest):
     test_x_auth_token_header(sut)
 
 
+def test_response_status_codes(sut: SystemUnderTest):
+    test_status_bad_request(sut)
+    test_status_internal_server_error(sut)
+
+
 def test_service_responses(sut: SystemUnderTest):
     """Perform tests from the 'Service responses' section of the spec."""
     test_response_headers(sut)
+    test_response_status_codes(sut)

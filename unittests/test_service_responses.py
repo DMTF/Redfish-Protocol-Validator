@@ -602,6 +602,98 @@ class ServiceResponses(TestCase):
         self.assertIn('Test passed for header %s' % 'X-Auth-Token',
                       result['msg'])
 
+    def test_test_status_bad_request_not_tested(self):
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response with a %s status code was found' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_status_bad_request_fail1(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The required "error" property was missing from the '
+                      'error response', result['msg'])
+
+    def test_test_status_bad_request_fail2(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'code': 'Base.1.8.GeneralError'}})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The required "code" or "message" properties were '
+                      'missing from the error response', result['msg'])
+
+    def test_test_status_bad_request_fail3(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     headers={'Content-Type': 'text/html'},
+                     text='<html></html>')
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The response payload type was %s; expected %s' %
+                      ('text/html', 'application/json'), result['msg'])
+
+    def test_test_status_bad_request_pass(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'code': 'Base.1.8.GeneralError',
+                                     'message': 'The property ...'}})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_status_internal_server_error_not_tested(self):
+        resp.test_status_internal_server_error(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response with a %s status code was found' %
+                      requests.codes.SERVER_ERROR, result['msg'])
+
+    def test_test_status_internal_server_error_pass(self):
+        uri = '/redfish/v1/SSE'
+        method = 'GET'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.SERVER_ERROR,
+                     request_type=RequestType.STREAMING,
+                     json={'error': {'code': 'Base.1.8.GeneralError',
+                                     'message': 'The property ...'}})
+        resp.test_status_internal_server_error(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR, method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_service_responses_cover(self):
         resp.test_service_responses(self.sut)
 
