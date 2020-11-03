@@ -590,7 +590,7 @@ def test_response_status_codes(sut: SystemUnderTest):
 
 
 def test_response_odata_metadata(sut: SystemUnderTest):
-    """Perform tests from the 'SOData metadata' sub-section of the spec."""
+    """Perform tests from the 'OData metadata' sub-section of the spec."""
     test_odata_metadata_mime_type(sut)
     test_odata_metadata_entity_container(sut)
     test_odata_service_mime_type(sut)

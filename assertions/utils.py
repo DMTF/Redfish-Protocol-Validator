@@ -181,6 +181,7 @@ class FakeSocket(io.BytesIO):
 def sanitize(number, minimum, maximum=None):
     """ Sanity check a given number.
 
+    :param number: the number to sanitize
     :param minimum: the minimum acceptable number
     :param maximum: the maximum acceptable number (optional)
 
