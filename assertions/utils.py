@@ -31,6 +31,12 @@ def get_response_media_type(response):
     return header.split(';', 1)[0].strip().lower()
 
 
+def get_response_media_type_charset(response):
+    header = response.headers.get('Content-Type', '')
+    if ';' in header:
+        return header.split(';', 1)[1].strip().lower()
+
+
 def get_etag_header(sut, session, uri):
     response = session.get(sut.rhost + uri)
     etag = None
@@ -360,5 +366,7 @@ def random_sequence(token: str):
         logging.debug('P-value of %s test for token %s is %s' %
                       (func.__name__, token, p))
         if p < 0.01:
+            # print('P-value of %s test for token %s is %s' %
+            #       (func.__name__, token, p))
             return False
     return True

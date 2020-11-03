@@ -360,6 +360,29 @@ class Assertion(NoValue):
         '[In a 500 Internal Server Error response] the response body shall '
         'return an extended error as defined in the Error responses clause.'
     )
+    RESP_ODATA_METADATA_MIME_TYPE = (
+        'The service shall use the application/xml or '
+        'application/xml;charset=utf-8 MIME types to return the OData '
+        'metadata document as an XML document.'
+    )
+    RESP_ODATA_METADATA_ENTITY_CONTAINER = (
+        'The service\'s OData metadata document shall include an '
+        'EntityContainer that defines the top-level resources and resource '
+        'collections.'
+    )
+    RESP_ODATA_SERVICE_MIME_TYPE = (
+        'The service shall use the application/json MIME type to return the '
+        'OData service document as a JSON object.'
+    )
+    RESP_ODATA_SERVICE_CONTEXT = (
+        'The JSON object shall contain the @odata.context context property '
+        'set to /redfish/v1/$metadata .'
+    )
+    RESP_ODATA_SERVICE_VALUE_PROP = (
+        'The JSON object shall include a value property set to a JSON array '
+        'that contains an entry for the Service Root and each resource that '
+        'is a direct child of the Service Root.'
+    )
     # Service details assertions (prefix of "SERV_")
     SERV_EVENT_POST_RESP = (
         'If the [Event Service] subscription request succeeds, the service '

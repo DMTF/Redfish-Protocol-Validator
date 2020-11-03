@@ -3,6 +3,9 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
+import io
+import xml.etree.ElementTree as ET
+
 import requests
 
 from assertions import utils
@@ -402,6 +405,169 @@ def test_status_internal_server_error(sut: SystemUnderTest):
                         Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR)
 
 
+def test_odata_metadata_mime_type(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_ODATA_METADATA_MIME_TYPE."""
+    uri = '/redfish/v1/$metadata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response found for URI %s; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.RESP_ODATA_METADATA_MIME_TYPE, msg)
+    elif not response.ok:
+        msg = ('%s request to URI %s failed with status %s'
+               % ('GET', uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.RESP_ODATA_METADATA_MIME_TYPE, msg)
+    else:
+        mime_type = utils.get_response_media_type(response)
+        charset = utils.get_response_media_type_charset(response)
+        if mime_type == 'application/xml' and (charset is None or
+                                               charset == 'charset=utf-8'):
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'Test passed')
+        else:
+            msg = ('The MIME type for the OData metadata document is %s; '
+                   'expected %s or %s' % (
+                    response.headers.get('Content-Type'), 'application/xml',
+                    'application/xml;charset=utf-8'))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_METADATA_MIME_TYPE, msg)
+
+
+def test_odata_metadata_entity_container(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER."""
+    uri = '/redfish/v1/$metadata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response found for URI %s; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, msg)
+    elif not response.ok:
+        msg = ('%s request to URI %s failed with status %s'
+               % ('GET', uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, msg)
+    else:
+        try:
+            tree = ET.iterparse(io.StringIO(response.text))
+            # strip the namespace
+            for _, el in tree:
+                _, _, el.tag = el.tag.rpartition('}')
+            root = tree.root
+            ec = None
+            ds = root.find('DataServices')
+            if ds is not None:
+                schema = ds.find('Schema')
+                if schema is not None:
+                    ec = schema.find('EntityContainer')
+            if ec is not None:
+                sut.log(Result.PASS, 'GET', response.status_code, uri,
+                        Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER,
+                        'Test passed')
+            else:
+                msg = ('EntityContainer element not found in OData metadata '
+                       'document')
+                sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                        Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, msg)
+        except Exception as e:
+            msg = ('%s received while trying to read EntityContainer '
+                   'element from the OData metadata document; error: "%s"' %
+                   (e.__class__.__name__, e))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, msg)
+
+
+def test_odata_service_mime_type(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_ODATA_SERVICE_MIME_TYPE."""
+    uri = '/redfish/v1/odata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response found for URI %s; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.RESP_ODATA_SERVICE_MIME_TYPE, msg)
+    elif not response.ok:
+        msg = ('%s request to URI %s failed with status %s'
+               % ('GET', uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.RESP_ODATA_SERVICE_MIME_TYPE, msg)
+    else:
+        mime_type = utils.get_response_media_type(response)
+        if mime_type == 'application/json':
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_SERVICE_MIME_TYPE, 'Test passed')
+        else:
+            msg = ('The MIME type for the OData service document is %s; '
+                   'expected %s' % (response.headers.get('Content-Type'),
+                                    'application/json'))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_SERVICE_MIME_TYPE, msg)
+
+
+def test_odata_service_context(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_ODATA_SERVICE_CONTEXT."""
+    uri = '/redfish/v1/odata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response found for URI %s; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.RESP_ODATA_SERVICE_CONTEXT, msg)
+    elif not response.ok:
+        msg = ('%s request to URI %s failed with status %s'
+               % ('GET', uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.RESP_ODATA_SERVICE_CONTEXT, msg)
+    else:
+        data = response.json()
+        context = data.get('@odata.context')
+        if context == '/redfish/v1/$metadata':
+            sut.log(Result.PASS, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_SERVICE_CONTEXT, 'Test passed')
+        else:
+            msg = ('The @odata.context property for the OData service '
+                   'document is %s; expected %s' %
+                   (context, '/redfish/v1/$metadata'))
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_SERVICE_CONTEXT, msg)
+
+
+def test_odata_service_value_prop(sut: SystemUnderTest):
+    """Perform tests for Assertion.RESP_ODATA_SERVICE_VALUE_PROP."""
+    uri = '/redfish/v1/odata'
+    response = sut.get_response('GET', uri)
+    if response is None:
+        msg = ('No response found for URI %s; '
+               'unable to test this assertion' % uri)
+        sut.log(Result.NOT_TESTED, 'GET', '', uri,
+                Assertion.RESP_ODATA_SERVICE_VALUE_PROP, msg)
+    elif not response.ok:
+        msg = ('%s request to URI %s failed with status %s'
+               % ('GET', uri, response.status_code))
+        sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                Assertion.RESP_ODATA_SERVICE_VALUE_PROP, msg)
+    else:
+        data = response.json()
+        value = data.get('value')
+        if value is not None:
+            if isinstance(value, list):
+                sut.log(Result.PASS, 'GET', response.status_code, uri,
+                        Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'Test passed')
+            else:
+                msg = ('The value property for the OData service '
+                       'document is type %s; expected list' %
+                       value.__class__.__name__)
+                sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                        Assertion.RESP_ODATA_SERVICE_VALUE_PROP, msg)
+        else:
+            msg = ('The value property for the OData service '
+                   'document is missing')
+            sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                    Assertion.RESP_ODATA_SERVICE_VALUE_PROP, msg)
+
+
 def test_response_headers(sut: SystemUnderTest):
     """Perform tests from the 'Response headers' sub-section of the spec."""
     test_access_control_allow_origin_header(sut)
@@ -418,11 +584,22 @@ def test_response_headers(sut: SystemUnderTest):
 
 
 def test_response_status_codes(sut: SystemUnderTest):
+    """Perform tests from the 'Status codes' sub-section of the spec."""
     test_status_bad_request(sut)
     test_status_internal_server_error(sut)
+
+
+def test_response_odata_metadata(sut: SystemUnderTest):
+    """Perform tests from the 'SOData metadata' sub-section of the spec."""
+    test_odata_metadata_mime_type(sut)
+    test_odata_metadata_entity_container(sut)
+    test_odata_service_mime_type(sut)
+    test_odata_service_context(sut)
+    test_odata_service_value_prop(sut)
 
 
 def test_service_responses(sut: SystemUnderTest):
     """Perform tests from the 'Service responses' section of the spec."""
     test_response_headers(sut)
     test_response_status_codes(sut)
+    test_response_odata_metadata(sut)
