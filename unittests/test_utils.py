@@ -67,6 +67,62 @@ class Utils(TestCase):
         etag = utils.get_response_etag(response)
         self.assertEqual(etag, odata_etag)
 
+    def test_get_extended_error(self):
+        response = mock.Mock(spec=requests.Response)
+        body = {
+            "error": {
+                "@Message.ExtendedInfo": [
+                    {
+                        "MessageId": "Base.1.4.NoValidSession",
+                        "Message": "No valid session found"
+                    }
+                ]
+            }
+        }
+        response.json.return_value = body
+        msg = utils.get_extended_error(response)
+        self.assertEqual(msg, 'No valid session found')
+
+        body = {
+            "error": {
+                "@Message.ExtendedInfo": [
+                    {
+                        "MessageId": "Base.1.4.NoValidSession"
+                    }
+                ]
+            }
+        }
+        response.json.return_value = body
+        msg = utils.get_extended_error(response)
+        self.assertEqual(msg, 'Base.1.4.NoValidSession')
+
+        body = {
+            "error": {
+                "code": "Base.1.8.GeneralError",
+                "message": "A general error has occurred. See Resolution for "
+                           "information on how to resolve the error.",
+                "@Message.ExtendedInfo": []
+            }
+        }
+        response.json.return_value = body
+        msg = utils.get_extended_error(response)
+        self.assertEqual(msg, 'A general error has occurred. See Resolution '
+                              'for information on how to resolve the error.')
+
+        body = {
+            "error": {
+                "code": "Base.1.8.GeneralError",
+                "@Message.ExtendedInfo": []
+            }
+        }
+        response.json.return_value = body
+        msg = utils.get_extended_error(response)
+        self.assertEqual(msg, 'Base.1.8.GeneralError')
+
+        response.json.side_effect = ValueError
+        msg = utils.get_extended_error(response)
+        self.assertEqual(msg, '')
+
     def test_get_extended_info_message_keys(self):
         body = {
             "error": {

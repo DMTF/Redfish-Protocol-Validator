@@ -508,7 +508,8 @@ def test_query_ignore_unsupported(sut: SystemUnderTest):
     else:
         msg = ('GET request with unknown query parameter (URI %s) failed with '
                'status %s; expected query param to be ignored and the request '
-               'to succeed' % (uri, response.status_code))
+               'to succeed; extended error: %s' %
+               (uri, response.status_code, utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_IGNORE_UNSUPPORTED, msg)
 
@@ -526,7 +527,8 @@ def test_query_unsupported_dollar_params_ext_error(
         else:
             msg = ('The response contained an extended error, but the '
                    'unsupported query parameter $rpvunknown was not '
-                   'indicated in the error message text')
+                   'indicated in the error message text; extended error: %s'
+                   % utils.get_extended_error(response))
             sut.log(Result.FAIL, 'GET', response.status_code, uri,
                     Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
                     msg)
@@ -1096,8 +1098,9 @@ def test_post_create_to_members_prop(sut: SystemUnderTest):
             if session_uri:
                 sut.session.delete(sut.rhost + session_uri)
     else:
-        msg = ('POST to Members property URI %s failed with status %s' %
-               (uri, response.status_code))
+        msg = ('POST to Members property URI %s failed with status %s; '
+               'extended error: %s' %
+               (uri, response.status_code, utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'POST', response.status_code, uri,
                 Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
                 msg)
@@ -1120,9 +1123,10 @@ def test_post_create_not_supported(sut: SystemUnderTest):
                 Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
                 'Test passed')
     else:
-        msg = ('POST request to URI %s failed with %s; expected %s' %
-               (sut.accounts_uri, response.status_code,
-                requests.codes.METHOD_NOT_ALLOWED))
+        msg = ('POST request to URI %s failed with %s; expected %s; extended '
+               'error: %s' % (sut.accounts_uri, response.status_code,
+                              requests.codes.METHOD_NOT_ALLOWED,
+                              utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'POST', response.status_code, sut.accounts_uri,
                 Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
                 msg)
@@ -1202,7 +1206,8 @@ def test_delete_method_required(sut: SystemUnderTest):
 
     if not passed:
         if fail_uri:
-            msg = 'No successful DELETE responses found'
+            msg = ('No successful DELETE responses found; extended error: %s'
+                   % utils.get_extended_error(fail_response))
             sut.log(Result.FAIL, 'DELETE', fail_response.status_code, fail_uri,
                     Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
         else:
@@ -1226,8 +1231,10 @@ def test_delete_non_deletable_resource(sut: SystemUnderTest):
 
     if not passed:
         if warn_uri:
-            msg = ('DELETE request for resource %s failed with status %s' %
-                   (warn_uri, warn_response.status_code))
+            msg = ('DELETE request for resource %s failed with status %s; '
+                   'extended error: %s' %
+                   (warn_uri, warn_response.status_code,
+                    utils.get_extended_error(warn_response)))
             sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
                     Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
         else:
