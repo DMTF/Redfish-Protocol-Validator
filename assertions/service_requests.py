@@ -33,7 +33,9 @@ def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
             break
         else:
             msg = ('GET request to %s failed with status code %s using header '
-                   '%s: %s' % (uri, response.status_code, header, val))
+                   '%s: %s; extended error: %s' %
+                   (uri, response.status_code, header, val,
+                    utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'GET', response.status_code, uri,
                     assertion, msg)
 
@@ -286,7 +288,8 @@ def test_get_no_accept_header(sut: SystemUnderTest):
             sut.log(Result.FAIL, 'GET', response.status_code, uri,
                     Assertion.REQ_GET_NO_ACCEPT_HEADER, msg)
     else:
-        msg = ('GET request to URI %s with no Accept header failed' % uri)
+        msg = ('GET request to URI %s with no Accept header failed; extended '
+               'error: %s' % (uri, utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.REQ_GET_NO_ACCEPT_HEADER, msg)
 
@@ -549,8 +552,10 @@ def test_query_unsupported_dollar_params(sut: SystemUnderTest):
         test_query_unsupported_dollar_params_ext_error(sut, uri, response)
     else:
         msg = ('GET request with unknown query parameter that starts with $ '
-               '(URI %s) returned status %s; expected status %s' %
-               (uri, response.status_code, requests.codes.NOT_IMPLEMENTED))
+               '(URI %s) returned status %s; expected status %s; extended '
+               'error: %s' % (uri, response.status_code,
+                              requests.codes.NOT_IMPLEMENTED,
+                              utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS, msg)
         if not response.ok:
@@ -662,8 +667,10 @@ def test_patch_mixed_props(sut: SystemUnderTest):
                 sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_MIXED_PROPS, msg)
         else:
-            msg = ('The service response returned status code %s; expected %s'
-                   % (response.status_code, requests.codes.OK))
+            msg = ('The service response returned status code %s; expected '
+                   '%s; extended error: %s'
+                   % (response.status_code, requests.codes.OK,
+                      utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_MIXED_PROPS, msg)
 
@@ -688,12 +695,15 @@ def test_patch_bad_prop(sut: SystemUnderTest):
                         Assertion.REQ_PATCH_BAD_PROP, 'Test passed')
             else:
                 msg = ('The service response did not include a message '
-                       'that lists the non-updatable property')
+                       'that lists the non-updatable property; extended '
+                       'error: %s' % utils.get_extended_error(response))
                 sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_BAD_PROP, msg)
         else:
-            msg = ('The service response returned status code %s; expected %s'
-                   % (response.status_code, requests.codes.BAD_REQUEST))
+            msg = ('The service response returned status code %s; expected '
+                   '%s; extended error: %s'
+                   % (response.status_code, requests.codes.BAD_REQUEST,
+                      utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_BAD_PROP, msg)
 
@@ -762,7 +772,8 @@ def test_patch_odata_props(sut: SystemUnderTest):
                         Assertion.REQ_PATCH_ODATA_PROPS, 'Test passed')
             else:
                 msg = ('The service response did not include the NoOperation '
-                       'message from the Base Message Registry')
+                       'message from the Base Message Registry; extended '
+                       'error: %s' % utils.get_extended_error(response))
                 sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_ODATA_PROPS, msg)
         elif response.status_code in [requests.codes.OK,
@@ -774,8 +785,9 @@ def test_patch_odata_props(sut: SystemUnderTest):
             exp_codes = [requests.codes.OK, requests.codes.ACCEPTED,
                          requests.codes.NO_CONTENT, requests.codes.BAD_REQUEST]
             msg = ('The service response returned status code %s; expected '
-                   'one of %s'
-                   % (response.status_code, exp_codes))
+                   'one of %s; extended error: %s'
+                   % (response.status_code, exp_codes,
+                      utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ODATA_PROPS, msg)
 
@@ -852,14 +864,15 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
                         Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
         else:
             msg = ('PATCH failed with status %s; resource: %s; '
-                   'PATCH payload: %s' % (
+                   'PATCH payload: %s; extended error: %s' % (
                        response.status_code, payload1,
-                       payload2))
+                       payload2, utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
     else:
-        msg = ('PATCH failed with status %s; PATCH payload: %s' %
-               (response.status_code, payload1))
+        msg = ('PATCH failed with status %s; PATCH payload: %s; extended '
+               'error: %s' % (response.status_code, payload1,
+                              utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                 Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
 
@@ -996,14 +1009,15 @@ def test_patch_array_truncate(sut: SystemUnderTest):
                         Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
         else:
             msg = ('PATCH failed with status %s; resource: %s; '
-                   'PATCH payload: %s' %
+                   'PATCH payload: %s; extended error: %s' %
                    (response.status_code, payload1,
-                    payload2))
+                    payload2, utils.get_extended_error(response)))
             sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                     Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
     else:
-        msg = ('PATCH failed with status %s; PATCH payload: %s' %
-               (response.status_code, payload1))
+        msg = ('PATCH failed with status %s; PATCH payload: %s; extended '
+               'error: %s' % (response.status_code, payload1,
+                              utils.get_extended_error(response)))
         sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                 Assertion.REQ_PATCH_ARRAY_TRUNCATE, msg)
 

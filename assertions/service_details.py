@@ -47,9 +47,10 @@ def test_event_service_subscription(sut: SystemUnderTest):
                         Assertion.SERV_EVENT_POST_RESP, msg)
         else:
             msg = ('Response from event subscription POST request to %s '
-                   'returned status code %s; expected %s' % (
-                    sut.subscriptions_uri, response.status_code,
-                    requests.codes.CREATED))
+                   'returned status code %s; expected %s; extended error: %s'
+                   % (sut.subscriptions_uri, response.status_code,
+                      requests.codes.CREATED,
+                      utils.get_extended_error(response)))
             sut.log(Result.FAIL, response.request.method,
                     response.status_code, sut.subscriptions_uri,
                     Assertion.SERV_EVENT_POST_RESP, msg)
