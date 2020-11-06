@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.0] - 2020-11-06
+- Added remaining tests for service responses
+
 ## [0.9.7] - 2020-10-30
 - Added more testing for service responses
 
