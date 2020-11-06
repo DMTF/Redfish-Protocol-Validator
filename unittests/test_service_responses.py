@@ -602,6 +602,388 @@ class ServiceResponses(TestCase):
         self.assertIn('Test passed for header %s' % 'X-Auth-Token',
                       result['msg'])
 
+    def test_test_status_bad_request_not_tested(self):
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response with a %s status code was found' %
+                      requests.codes.BAD_REQUEST, result['msg'])
+
+    def test_test_status_bad_request_fail1(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The required "error" property was missing from the '
+                      'error response', result['msg'])
+
+    def test_test_status_bad_request_fail2(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'code': 'Base.1.8.GeneralError'}})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The required "code" or "message" properties were '
+                      'missing from the error response', result['msg'])
+
+    def test_test_status_bad_request_fail3(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     headers={'Content-Type': 'text/html'},
+                     text='<html></html>')
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The response payload type was %s; expected %s' %
+                      ('text/html', 'application/json'), result['msg'])
+
+    def test_test_status_bad_request_pass(self):
+        uri = '/redfish/v1/Managers/BMC/NetworkProtocol'
+        method = 'PATCH'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.PATCH_BAD_PROP,
+                     json={'error': {'code': 'Base.1.8.GeneralError',
+                                     'message': 'The property ...'}})
+        resp.test_status_bad_request(self.sut)
+        result = get_result(self.sut, Assertion.RESP_STATUS_BAD_REQUEST,
+                            method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_status_internal_server_error_not_tested(self):
+        resp.test_status_internal_server_error(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR, '', '')
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response with a %s status code was found' %
+                      requests.codes.SERVER_ERROR, result['msg'])
+
+    def test_test_status_internal_server_error_pass(self):
+        uri = '/redfish/v1/SSE'
+        method = 'GET'
+        add_response(self.sut, uri, method,
+                     status_code=requests.codes.SERVER_ERROR,
+                     request_type=RequestType.STREAMING,
+                     json={'error': {'code': 'Base.1.8.GeneralError',
+                                     'message': 'The property ...'}})
+        resp.test_status_internal_server_error(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_STATUS_INTERNAL_SERVER_ERROR, method, uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_metadata_mime_type_not_tested(self):
+        uri = '/redfish/v1/$metadata'
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response found for URI %s' %
+                      uri, result['msg'])
+
+    def test_test_odata_metadata_mime_type_fail1(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type': 'text/xml'})
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The MIME type for the OData metadata document is %s' %
+                      'text/xml', result['msg'])
+
+    def test_test_odata_metadata_mime_type_fail2(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.NOT_FOUND)
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('%s request to URI %s failed with status %s' %
+                      ('GET', uri, requests.codes.NOT_FOUND), result['msg'])
+
+    def test_test_odata_metadata_mime_type_pass1(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type': 'application/xml'})
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_metadata_mime_type_pass2(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type': 'application/xml;charset=utf-8'})
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_metadata_mime_type_pass3(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type':
+                              'application/xml ; charset=UTF-8'})
+        resp.test_odata_metadata_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_metadata_entity_container_not_tested(self):
+        uri = '/redfish/v1/$metadata'
+        resp.test_odata_metadata_entity_container(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, 'GET',
+            uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response found for URI %s' %
+                      uri, result['msg'])
+
+    def test_test_odata_metadata_entity_container_fail1(self):
+        uri = '/redfish/v1/$metadata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.NOT_FOUND)
+        resp.test_odata_metadata_entity_container(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, 'GET',
+            uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('%s request to URI %s failed with status %s' %
+                      ('GET', uri, requests.codes.NOT_FOUND), result['msg'])
+
+    def test_test_odata_metadata_entity_container_fail2(self):
+        uri = '/redfish/v1/$metadata'
+        doc = '{"@odata.id": "/redfish/v1/$metadata"}'
+        add_response(self.sut, uri, 'GET', status_code=requests.codes.OK,
+                     text=doc)
+        resp.test_odata_metadata_entity_container(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, 'GET',
+            uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('ParseError received while trying to read '
+                      'EntityContainer element from the OData metadata '
+                      'document', result['msg'])
+
+    def test_test_odata_metadata_entity_container_fail3(self):
+        uri = '/redfish/v1/$metadata'
+        doc = ('<Edmx><DataServices><Schema>'
+               '</Schema></DataServices></Edmx>')
+        add_response(self.sut, uri, 'GET', status_code=requests.codes.OK,
+                     text=doc)
+        resp.test_odata_metadata_entity_container(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, 'GET',
+            uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('EntityContainer element not found in OData metadata '
+                      'document', result['msg'])
+
+    def test_test_odata_metadata_entity_container_pass(self):
+        uri = '/redfish/v1/$metadata'
+        doc = ('<Edmx><DataServices><Schema><EntityContainer/>'
+               '</Schema></DataServices></Edmx>')
+        add_response(self.sut, uri, 'GET', status_code=requests.codes.OK,
+                     text=doc)
+        resp.test_odata_metadata_entity_container(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_METADATA_ENTITY_CONTAINER, 'GET',
+            uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_service_mime_type_not_tested(self):
+        uri = '/redfish/v1/odata'
+        resp.test_odata_service_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response found for URI %s' %
+                      uri, result['msg'])
+
+    def test_test_odata_service_mime_type_fail1(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.NOT_FOUND)
+        resp.test_odata_service_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('%s request to URI %s failed with status %s' %
+                      ('GET', uri, requests.codes.NOT_FOUND), result['msg'])
+
+    def test_test_odata_service_mime_type_fail2(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type': 'application/xml'})
+        resp.test_odata_service_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The MIME type for the OData service document is %s; '
+                      'expected %s' % ('application/xml', 'application/json'),
+                      result['msg'])
+
+    def test_test_odata_service_mime_type_pass(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     headers={'Content-Type': 'application/json'})
+        resp.test_odata_service_mime_type(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_MIME_TYPE, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_service_context_not_tested(self):
+        uri = '/redfish/v1/odata'
+        resp.test_odata_service_context(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_CONTEXT, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response found for URI %s' %
+                      uri, result['msg'])
+
+    def test_test_odata_service_context_fail1(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.NOT_FOUND)
+        resp.test_odata_service_context(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_CONTEXT, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('%s request to URI %s failed with status %s' %
+                      ('GET', uri, requests.codes.NOT_FOUND), result['msg'])
+
+    def test_test_odata_service_context_fail2(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     json={'@odata.context': uri})
+        resp.test_odata_service_context(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_CONTEXT, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The @odata.context property for the OData service '
+                      'document is %s; expected %s' %
+                      (uri, '/redfish/v1/$metadata'), result['msg'])
+
+    def test_test_odata_service_context_pass(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     json={'@odata.context': '/redfish/v1/$metadata'})
+        resp.test_odata_service_context(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_CONTEXT, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
+    def test_test_odata_service_value_prop_not_tested(self):
+        uri = '/redfish/v1/odata'
+        resp.test_odata_service_value_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('No response found for URI %s' %
+                      uri, result['msg'])
+
+    def test_test_odata_service_value_prop_fail1(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.NOT_FOUND)
+        resp.test_odata_service_value_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('%s request to URI %s failed with status %s' %
+                      ('GET', uri, requests.codes.NOT_FOUND), result['msg'])
+
+    def test_test_odata_service_value_prop_fail2(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     json={})
+        resp.test_odata_service_value_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The value property for the OData service '
+                      'document is missing', result['msg'])
+
+    def test_test_odata_service_value_prop_fail3(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     json={'value': {}})
+        resp.test_odata_service_value_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The value property for the OData service '
+                      'document is type %s; expected list' % 'dict',
+                      result['msg'])
+
+    def test_test_odata_service_value_prop_pass(self):
+        uri = '/redfish/v1/odata'
+        add_response(self.sut, uri, 'GET',
+                     status_code=requests.codes.OK,
+                     json={'value': []})
+        resp.test_odata_service_value_prop(self.sut)
+        result = get_result(
+            self.sut, Assertion.RESP_ODATA_SERVICE_VALUE_PROP, 'GET', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_service_responses_cover(self):
         resp.test_service_responses(self.sut)
 

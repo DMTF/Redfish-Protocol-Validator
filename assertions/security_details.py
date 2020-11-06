@@ -705,9 +705,10 @@ def test_accounts_support_etags(sut: SystemUnderTest):
             else:
                 msg = ('%s request to account URI %s with stale If-Match '
                        'header failed with status %s; expected it to fail '
-                       'with status %s' % (response.request.method, uri,
-                                           response.status_code,
-                                           requests.codes.PRECONDITION_FAILED))
+                       'with status %s; extended error: %s' %
+                       (response.request.method, uri, response.status_code,
+                        requests.codes.PRECONDITION_FAILED,
+                        utils.get_extended_error(response)))
                 sut.log(Result.WARN, response.request.method,
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)
@@ -1050,9 +1051,10 @@ def test_priv_operation_to_priv_mapping(sut: SystemUnderTest):
             else:
                 msg = ('PATCH request to account %s using credentials of '
                        'other user %s failed with status %s, but expected it '
-                       'to fail with status %s' % (
+                       'to fail with status %s; extended error: %s' % (
                         uri, user, response.status_code,
-                        requests.codes.UNAUTHORIZED))
+                        requests.codes.UNAUTHORIZED,
+                        utils.get_extended_error(response)))
                 sut.log(Result.WARN, 'PATCH', response.status_code, uri,
                         Assertion.SEC_PRIV_OPERATION_TO_PRIV_MAPPING,
                         msg)

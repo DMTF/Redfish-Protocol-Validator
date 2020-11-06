@@ -31,6 +31,12 @@ def get_response_media_type(response):
     return header.split(';', 1)[0].strip().lower()
 
 
+def get_response_media_type_charset(response):
+    header = response.headers.get('Content-Type', '')
+    if ';' in header:
+        return header.split(';', 1)[1].strip().lower()
+
+
 def get_etag_header(sut, session, uri):
     response = session.get(sut.rhost + uri)
     etag = None
@@ -39,7 +45,7 @@ def get_etag_header(sut, session, uri):
     return {'If-Match': etag} if etag else {}
 
 
-def get_response_etag(response):
+def get_response_etag(response: requests.Response):
     etag = None
     if response.ok:
         etag = response.headers.get('ETag')
@@ -48,6 +54,27 @@ def get_response_etag(response):
                 data = response.json()
                 etag = data.get('@odata.etag')
     return etag
+
+
+def get_extended_error(response: requests.Response):
+    message = ''
+    try:
+        data = response.json()
+        if 'error' in data:
+            error = data['error']
+            if 'message' in error:
+                message = error['message']
+            elif 'code' in error:
+                message = error['code']
+            ext_info = error.get('@Message.ExtendedInfo', [])
+            if isinstance(ext_info, list) and len(ext_info) > 0:
+                if 'Message' in ext_info[0]:
+                    message = ext_info[0]['Message']
+                elif 'MessageId' in ext_info[0]:
+                    message = ext_info[0]['MessageId']
+    except Exception:
+        pass
+    return message
 
 
 def get_extended_info_message_keys(body: dict):
@@ -175,6 +202,7 @@ class FakeSocket(io.BytesIO):
 def sanitize(number, minimum, maximum=None):
     """ Sanity check a given number.
 
+    :param number: the number to sanitize
     :param minimum: the minimum acceptable number
     :param maximum: the maximum acceptable number (optional)
 
@@ -360,5 +388,7 @@ def random_sequence(token: str):
         logging.debug('P-value of %s test for token %s is %s' %
                       (func.__name__, token, p))
         if p < 0.01:
+            # print('P-value of %s test for token %s is %s' %
+            #       (func.__name__, token, p))
             return False
     return True
