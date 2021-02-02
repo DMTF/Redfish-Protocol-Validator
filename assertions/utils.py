@@ -112,9 +112,13 @@ def get_sse_stream(sut):
                         if '@odata.id' in m])
 
     if sut.server_sent_event_uri:
-        response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                                   stream=True)
-    if response.ok and sut.subscriptions_uri:
+        try:
+            response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
+                                       stream=True)
+        except Exception as e:
+            logging.debug('Caught %s while opening SSE stream' %
+                          e.__class__.__name__)
+    if response is not None and response.ok and sut.subscriptions_uri:
         # get the "after" set of EventDestination URIs
         r = sut.session.get(sut.rhost + sut.subscriptions_uri)
         if r.status_code == requests.codes.OK:

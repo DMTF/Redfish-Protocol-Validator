@@ -608,10 +608,21 @@ def test_sse_unsuccessful_response(sut: SystemUnderTest):
                 Assertion.SERV_SSE_UNSUCCESSFUL_RESPONSE, msg)
         return
 
-    response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                               headers={'Accept': 'application/json'},
-                               stream=True)
-    if response.ok:
+    response = None
+    exc_name = ''
+    try:
+        response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
+                                   headers={'Accept': 'application/json'},
+                                   stream=True)
+    except Exception as e:
+        exc_name = e.__class__.__name__
+    if response is None:
+        msg = ('Caught %s while opening SSE stream with incorrect Accept '
+               'header of "application/json"; expected response with status '
+               'code of 400 or greater' % exc_name)
+        sut.log(Result.FAIL, 'GET', '', sut.server_sent_event_uri,
+                Assertion.SERV_SSE_UNSUCCESSFUL_RESPONSE, msg)
+    elif response.ok:
         msg = ('Response from GET request to URL %s was successful; unable to '
                'test this assertion' % sut.server_sent_event_uri)
         sut.log(Result.NOT_TESTED, 'GET', response.status_code,

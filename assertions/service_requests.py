@@ -70,7 +70,13 @@ def test_accept_header(sut: SystemUnderTest):
     uri = sut.server_sent_event_uri
     header_values = ['text/event-stream', 'text/event-stream;charset=utf-8']
     if uri:
-        test_header(sut, header, header_values, uri, assertion, stream=True)
+        try:
+            test_header(sut, header, header_values, uri, assertion,
+                        stream=True)
+        except Exception as e:
+            msg = ('Caught %s while opening SSE stream with valid '
+                   '"text/event-stream" Accept headers' % e.__class__.__name__)
+            sut.log(Result.FAIL, 'GET', '', uri, assertion, msg)
 
 
 def test_authorization_header(sut: SystemUnderTest):

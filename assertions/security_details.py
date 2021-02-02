@@ -577,8 +577,18 @@ def test_session_create_https_only(sut: SystemUnderTest):
             'OData-Version': '4.0'
         }
         http_rhost = 'http' + sut.rhost[5:]
-        response = requests.post(http_rhost + sut.sessions_uri, json=payload,
-                                 headers=headers, verify=sut.verify)
+        try:
+            response = requests.post(
+                http_rhost + sut.sessions_uri, json=payload, headers=headers,
+                verify=sut.verify)
+        except Exception as e:
+            sut.set_avoid_http_redirect(True)
+            msg = ('Caught %s; unable to test this assertion' %
+                   e.__class__.__name__)
+            sut.log(Result.NOT_TESTED, 'POST', '',
+                    sut.sessions_uri, Assertion.SEC_SESSION_CREATE_HTTPS_ONLY,
+                    msg)
+            return
     elif sut.scheme == 'http':
         # scheme was already HTTP; just fetch response already made
         response = sut.get_response('POST', sut.sessions_uri)
@@ -627,9 +637,19 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
         session.headers.update({'X-Auth-Token': token})
         session.verify = sut.verify
         # open the SSE stream
-        response = session.get(sut.rhost + sut.server_sent_event_uri,
-                               stream=True)
-        if response.ok:
+        response = None
+        exc_name = ''
+        try:
+            response = session.get(sut.rhost + sut.server_sent_event_uri,
+                                   stream=True)
+        except Exception as e:
+            exc_name = e.__class__.__name__
+        if response is None:
+            msg = ('Caught %s while opening SSE stream; unable to test this '
+                   'assertion' % exc_name)
+            sut.log(Result.NOT_TESTED, 'GET', '', new_session_uri,
+                    Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS, msg)
+        elif response.ok:
             # delete the session
             r = session.delete(sut.rhost + new_session_uri)
             if r.ok:
@@ -667,7 +687,8 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
                         new_session_uri,
                         Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS, msg)
             # close the SSE stream
-            response.close()
+            if response is not None:
+                response.close()
         else:
             msg = ('Opening ServerSentEventUri %s failed with status %s; '
                    'unable to test this assertion' %
