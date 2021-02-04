@@ -552,7 +552,7 @@ def test_sse_successful_response(sut: SystemUnderTest):
     if response is None:
         response, _ = utils.get_sse_stream(sut)
 
-    if response.ok:
+    if response is not None and response.ok:
         failed = False
         if response.status_code != requests.codes.OK:
             msg = ('Response from GET request to URL %s succeeded with status '
@@ -595,8 +595,8 @@ def test_sse_successful_response(sut: SystemUnderTest):
     else:
         msg = ('Response from GET request to URL %s was not successful; '
                'unable to test this assertion' % sut.server_sent_event_uri)
-        sut.log(Result.NOT_TESTED, 'GET', response.status_code,
-                sut.server_sent_event_uri,
+        code = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'GET', code, sut.server_sent_event_uri,
                 Assertion.SERV_SSE_SUCCESSFUL_RESPONSE, msg)
 
 
@@ -822,7 +822,7 @@ def test_sse_open_creates_event_dest(sut: SystemUnderTest):
 
     response, event_dest_uri = utils.get_sse_stream(sut)
 
-    if response.ok:
+    if response is not None and response.ok:
         if event_dest_uri:
             sut.log(Result.PASS, '', '', event_dest_uri,
                     Assertion.SERV_SSE_OPEN_CREATES_EVENT_DEST,
@@ -837,8 +837,8 @@ def test_sse_open_creates_event_dest(sut: SystemUnderTest):
             response.close()
     else:
         msg = 'Open of SSE stream failed; unable to test this assertion'
-        sut.log(Result.NOT_TESTED, 'GET', response.status_code,
-                sut.server_sent_event_uri,
+        code = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'GET', code, sut.server_sent_event_uri,
                 Assertion.SERV_SSE_OPEN_CREATES_EVENT_DEST, msg)
     return None, None
 
