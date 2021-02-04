@@ -21,7 +21,7 @@ aenum
 colorama
 pyasn1
 pyasn1-modules
-requests
+requests>=2.23.0
 sseclient-py
 urllib3
 ```
