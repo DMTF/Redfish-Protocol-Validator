@@ -103,33 +103,38 @@ def get_sse_stream(sut):
     response = None
     event_dest_uri = None
     subs = set()
-    # get the "before" set of EventDestination URIs
-    if sut.subscriptions_uri:
-        r = sut.session.get(sut.rhost + sut.subscriptions_uri)
-        if r.status_code == requests.codes.OK:
-            data = r.json()
-            subs = set([m.get('@odata.id') for m in data.get('Members', [])
-                        if '@odata.id' in m])
-
-    if sut.server_sent_event_uri:
-        response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                                   stream=True)
-    if response.ok and sut.subscriptions_uri:
-        # get the "after" set of EventDestination URIs
-        r = sut.session.get(sut.rhost + sut.subscriptions_uri)
-        if r.status_code == requests.codes.OK:
-            data = r.json()
-            new_subs = set([m.get('@odata.id') for m in data.get('Members', [])
+    try:
+        # get the "before" set of EventDestination URIs
+        if sut.subscriptions_uri:
+            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            if r.status_code == requests.codes.OK:
+                data = r.json()
+                subs = set([m.get('@odata.id') for m in data.get('Members', [])
                             if '@odata.id' in m])
-            diff = new_subs.difference(subs)
-            if len(diff) == 1:
-                event_dest_uri = diff.pop()
-            elif len(diff) == 0:
-                logging.debug('No EventDestination resource created when SSE '
-                              'stream opened')
-            else:
-                logging.debug('More than one (%s) EventDestination resources '
-                              'created when SSE stream opened' % len(diff))
+
+        if sut.server_sent_event_uri:
+            response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
+                                       stream=True)
+        if response is not None and response.ok and sut.subscriptions_uri:
+            # get the "after" set of EventDestination URIs
+            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            if r.status_code == requests.codes.OK:
+                data = r.json()
+                new_subs = set([m.get('@odata.id') for m in
+                                data.get('Members', []) if '@odata.id' in m])
+                diff = new_subs.difference(subs)
+                if len(diff) == 1:
+                    event_dest_uri = diff.pop()
+                elif len(diff) == 0:
+                    logging.debug('No EventDestination resource created when '
+                                  'SSE stream opened')
+                else:
+                    logging.debug('More than one (%s) EventDestination '
+                                  'resources created when SSE stream opened'
+                                  % len(diff))
+    except Exception as e:
+        logging.warning('Caught %s while opening SSE stream and getting '
+                        'EventDestination URI' % e.__class__.__name__)
     return response, event_dest_uri
 
 

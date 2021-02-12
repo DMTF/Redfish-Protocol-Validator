@@ -552,7 +552,7 @@ def test_sse_successful_response(sut: SystemUnderTest):
     if response is None:
         response, _ = utils.get_sse_stream(sut)
 
-    if response.ok:
+    if response is not None and response.ok:
         failed = False
         if response.status_code != requests.codes.OK:
             msg = ('Response from GET request to URL %s succeeded with status '
@@ -595,8 +595,8 @@ def test_sse_successful_response(sut: SystemUnderTest):
     else:
         msg = ('Response from GET request to URL %s was not successful; '
                'unable to test this assertion' % sut.server_sent_event_uri)
-        sut.log(Result.NOT_TESTED, 'GET', response.status_code,
-                sut.server_sent_event_uri,
+        code = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'GET', code, sut.server_sent_event_uri,
                 Assertion.SERV_SSE_SUCCESSFUL_RESPONSE, msg)
 
 
@@ -608,10 +608,21 @@ def test_sse_unsuccessful_response(sut: SystemUnderTest):
                 Assertion.SERV_SSE_UNSUCCESSFUL_RESPONSE, msg)
         return
 
-    response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                               headers={'Accept': 'application/json'},
-                               stream=True)
-    if response.ok:
+    response = None
+    exc_name = ''
+    try:
+        response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
+                                   headers={'Accept': 'application/json'},
+                                   stream=True)
+    except Exception as e:
+        exc_name = e.__class__.__name__
+    if response is None:
+        msg = ('Caught %s while opening SSE stream with incorrect Accept '
+               'header of "application/json"; expected response with status '
+               'code of 400 or greater' % exc_name)
+        sut.log(Result.FAIL, 'GET', '', sut.server_sent_event_uri,
+                Assertion.SERV_SSE_UNSUCCESSFUL_RESPONSE, msg)
+    elif response.ok:
         msg = ('Response from GET request to URL %s was successful; unable to '
                'test this assertion' % sut.server_sent_event_uri)
         sut.log(Result.NOT_TESTED, 'GET', response.status_code,
@@ -811,7 +822,7 @@ def test_sse_open_creates_event_dest(sut: SystemUnderTest):
 
     response, event_dest_uri = utils.get_sse_stream(sut)
 
-    if response.ok:
+    if response is not None and response.ok:
         if event_dest_uri:
             sut.log(Result.PASS, '', '', event_dest_uri,
                     Assertion.SERV_SSE_OPEN_CREATES_EVENT_DEST,
@@ -826,8 +837,8 @@ def test_sse_open_creates_event_dest(sut: SystemUnderTest):
             response.close()
     else:
         msg = 'Open of SSE stream failed; unable to test this assertion'
-        sut.log(Result.NOT_TESTED, 'GET', response.status_code,
-                sut.server_sent_event_uri,
+        code = response.status_code if response is not None else ''
+        sut.log(Result.NOT_TESTED, 'GET', code, sut.server_sent_event_uri,
                 Assertion.SERV_SSE_OPEN_CREATES_EVENT_DEST, msg)
     return None, None
 

@@ -392,6 +392,10 @@ def http_requests(sut: SystemUnderTest):
                         (sut.scheme, sut.rhost))
         return
 
+    redirect_msg = ('Caught %s while trying to trigger a redirect. To avoid '
+                    'this warning and speed up the validation run, try adding '
+                    'the --avoid-http-redirect command-line argument.')
+
     uri = '/redfish/v1/'
     if sut.scheme == 'http':
         # already using http, just fetch previous NO_AUTH response
@@ -400,9 +404,13 @@ def http_requests(sut: SystemUnderTest):
             sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
     elif not sut.avoid_http_redirect:
         # request using HTTP and no auth (should fail or redirect to HTTPS)
-        r = requests.get(http_rhost + uri, headers=headers,
-                         verify=sut.verify)
-        sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
+        try:
+            r = requests.get(http_rhost + uri, headers=headers,
+                             verify=sut.verify)
+            sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
+        except Exception as e:
+            logging.warning(redirect_msg % e.__class__.__name__)
+            sut.set_avoid_http_redirect(True)
 
     uri = sut.sessions_uri
     if sut.scheme == 'http':
@@ -416,14 +424,22 @@ def http_requests(sut: SystemUnderTest):
             sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
     elif not sut.avoid_http_redirect:
         # request using HTTP and basic auth (should fail or redirect to HTTPS)
-        r = requests.get(http_rhost + uri, headers=headers,
-                         auth=(sut.username, sut.password),
-                         verify=sut.verify)
-        sut.add_response(uri, r, request_type=RequestType.HTTP_BASIC_AUTH)
+        try:
+            r = requests.get(http_rhost + uri, headers=headers,
+                             auth=(sut.username, sut.password),
+                             verify=sut.verify)
+            sut.add_response(uri, r, request_type=RequestType.HTTP_BASIC_AUTH)
+        except Exception as e:
+            logging.warning(redirect_msg % e.__class__.__name__)
+            sut.set_avoid_http_redirect(True)
         # request using HTTP and no auth (should fail or redirect to HTTPS)
-        r = requests.get(http_rhost + uri, headers=headers,
-                         verify=sut.verify)
-        sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
+        try:
+            r = requests.get(http_rhost + uri, headers=headers,
+                             verify=sut.verify)
+            sut.add_response(uri, r, request_type=RequestType.HTTP_NO_AUTH)
+        except Exception as e:
+            logging.warning(redirect_msg % e.__class__.__name__)
+            sut.set_avoid_http_redirect(True)
 
 
 def bad_auth_requests(sut: SystemUnderTest):
