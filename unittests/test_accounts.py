@@ -30,7 +30,7 @@ class Accounts(TestCase):
         self.role_uri2 = '/redfish/v1/AccountService/Roles/Administrator'
         self.sut.set_nav_prop_uri('Accounts', self.accounts_uri)
         self.sut.set_nav_prop_uri('Roles', self.roles_uri)
-        self.session = mock.Mock(spec=requests.Session)
+        self.session = mock.MagicMock(spec=requests.Session)
         payload = {
             'Members': [
                 {'@odata.id': self.account_uri1},

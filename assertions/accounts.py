@@ -147,6 +147,14 @@ def add_account_via_patch(sut: SystemUnderTest, session, user, role, password,
     success = response.status_code == requests.codes.OK
     if success:
         response = session.get(sut.rhost + uri)
+        if response.ok:
+            # Enable the account if it not already enabled
+            data = response.json()
+            if 'Enabled' in data and data['Enabled'] is False:
+                headers = utils.get_etag_header(sut, session, uri)
+                payload = {'Enabled': True}
+                session.patch(sut.rhost + uri, json=payload,
+                              headers=headers)
         sut.add_response(uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=request_type)
@@ -202,32 +210,16 @@ def add_account(sut: SystemUnderTest, session,
 
 def patch_account(sut: SystemUnderTest, session, acct_uri,
                   request_type=RequestType.NORMAL):
-    # patch with proper ETag
-    payload = {'Password': new_password(sut)}
-    headers = utils.get_etag_header(sut, session, acct_uri)
-    response = session.patch(sut.rhost + acct_uri, json=payload,
-                             headers=headers)
-    sut.add_response(acct_uri, response,
-                     resource_type=ResourceType.MANAGER_ACCOUNT,
-                     request_type=request_type)
-    if request_type == RequestType.NORMAL and 'If-Match' in headers:
-        # patch with previous ETag, which should fail
-        payload = {'Password': new_password(sut)}
-        new_headers = utils.get_etag_header(sut, session, acct_uri)
-        r = session.patch(sut.rhost + acct_uri, json=payload,
-                          headers=headers)
-        logging.debug('PATCH %s: Before password change ETag is %s; after '
-                      'change ETag is %s' % (acct_uri, headers.get('If-Match'),
-                                             new_headers.get('If-Match')))
-        sut.add_response(acct_uri, r,
-                         resource_type=ResourceType.MANAGER_ACCOUNT,
-                         request_type=RequestType.BAD_ETAG)
+
     if request_type == RequestType.NORMAL:
         # patch several props, mix of updatable and non-updatable
-        payload = {'Password': new_password(sut), 'BogusProp': 'foo'}
+        pwd = new_password(sut)
+        payload = {'Password': pwd, 'BogusProp': 'foo'}
         headers = utils.get_etag_header(sut, session, acct_uri)
         response = session.patch(sut.rhost + acct_uri, json=payload,
                                  headers=headers)
+        if response.ok:
+            new_pwd = pwd
         sut.add_response(acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.PATCH_MIXED_PROPS)
@@ -249,7 +241,35 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
         sut.add_response(acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.PATCH_ODATA_PROPS)
-    return response
+
+    new_pwd = None
+    # patch with proper ETag
+    pwd = new_password(sut)
+    payload = {'Password': pwd}
+    headers = utils.get_etag_header(sut, session, acct_uri)
+    response = session.patch(sut.rhost + acct_uri, json=payload,
+                             headers=headers)
+    if response.ok:
+        new_pwd = pwd
+    sut.add_response(acct_uri, response,
+                     resource_type=ResourceType.MANAGER_ACCOUNT,
+                     request_type=request_type)
+    if request_type == RequestType.NORMAL and 'If-Match' in headers:
+        # patch with previous ETag, which should fail
+        pwd = new_password(sut)
+        payload = {'Password': pwd}
+        new_headers = utils.get_etag_header(sut, session, acct_uri)
+        r = session.patch(sut.rhost + acct_uri, json=payload,
+                          headers=headers)
+        if r.ok:
+            new_pwd = pwd
+        logging.debug('PATCH %s: Before password change ETag is %s; after '
+                      'change ETag is %s' % (acct_uri, headers.get('If-Match'),
+                                             new_headers.get('If-Match')))
+        sut.add_response(acct_uri, r,
+                         resource_type=ResourceType.MANAGER_ACCOUNT,
+                         request_type=RequestType.BAD_ETAG)
+    return new_pwd
 
 
 def delete_account_via_patch(sut: SystemUnderTest, session, user, acct_uri,
