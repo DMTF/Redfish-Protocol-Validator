@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.1] - 2021-02-15
+- Added exception handling around redirect and SSE testing to ensure better error reporting
+
 ## [1.0.0] - 2020-11-06
 - Added remaining tests for service responses
 
