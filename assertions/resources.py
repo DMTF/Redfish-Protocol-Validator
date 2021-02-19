@@ -261,14 +261,21 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
 
 def patch_other_account(sut: SystemUnderTest, session, user, password):
     """Create a new account and try to modify it with other creds"""
-    new_user, new_password, new_acct_uri = create_account(
-        sut, session, request_type=RequestType.NORMAL)
-    if new_acct_uri:
-        new_session = requests.Session()
-        new_session.auth = (user, password)
-        new_session.verify = sut.verify
-        patch_account(sut, new_session, new_acct_uri,
-                      request_type=RequestType.MODIFY_OTHER)
+    new_user, new_password, new_acct_uri = None, None, None
+    try:
+        new_user, new_password, new_acct_uri = create_account(
+            sut, session, request_type=RequestType.NORMAL)
+        if new_acct_uri:
+            new_session = requests.Session()
+            new_session.auth = (user, password)
+            new_session.verify = sut.verify
+            pwd = patch_account(sut, new_session, new_acct_uri,
+                                request_type=RequestType.MODIFY_OTHER)
+            if pwd:
+                new_password = pwd
+    except Exception as e:
+        logging.error('Caught exception while creating or patching other '
+                      'account; Exception: %s; continuing with test' % str(e))
     return new_user, new_password, new_acct_uri
 
 
@@ -321,8 +328,10 @@ def data_modification_requests(sut: SystemUnderTest):
                 if 'PasswordChangeRequired' in data:
                     acct.password_change_required(sut, sut.session, new_user,
                                                   new_pwd, new_uri, data, etag)
-            patch_account(sut, sut.session, new_uri,
-                          request_type=RequestType.NORMAL)
+            pwd = patch_account(sut, sut.session, new_uri,
+                                request_type=RequestType.NORMAL)
+            if pwd:
+                new_pwd = pwd
             other_user, other_pwd, other_uri = patch_other_account(
                 sut, sut.session, new_user, new_pwd)
     except Exception as e:
@@ -446,12 +455,12 @@ def bad_auth_requests(sut: SystemUnderTest):
     headers = {
         'OData-Version': '4.0'
     }
-    uri = sut.sessions_uri
     # request with bad basic auth
     # Keep these invalid basic auth attempts to a minimum. Some services will
     # block clients after a number of failed attempts.
     # e.g. "Login attempt alert for rfpv66af from 192.168.1.101 using REDFISH,
     #       IP will be blocked for 600 seconds."
+    uri = sut.sessions_uri
     h = headers.copy()
     r = requests.get(sut.rhost + uri, headers=h,
                      auth=(acct.new_username(set()), acct.new_password(sut)),
