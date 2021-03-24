@@ -70,6 +70,21 @@ class ServiceRequests(TestCase):
                       'header Accept:' % (uri, requests.codes.NOT_ACCEPTABLE),
                       result['msg'])
 
+    def test_test_accept_header_exception(self):
+        self.sut.set_server_sent_event_uri(self.sse_uri)
+        r = add_response(self.sut, self.sse_uri, method='GET',
+                         status_code=requests.codes.OK)
+        # first 19 GETs return a result, 20th gets a ConnectionError
+        self.mock_session.get.side_effect = [r] * 19 + [ConnectionError]
+        req.test_accept_header(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_HEADERS_ACCEPT,
+            'GET', self.sse_uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('Caught ConnectionError while opening SSE',
+                      result['msg'])
+
     def test_test_authorization_header_not_tested(self):
         req.test_authorization_header(self.sut)
         result = get_result(self.sut, Assertion.REQ_HEADERS_AUTHORIZATION,

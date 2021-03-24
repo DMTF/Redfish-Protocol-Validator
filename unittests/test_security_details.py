@@ -644,6 +644,19 @@ class SecurityDetails(TestCase):
         self.assertIn('Unexpected scheme (ftp)',
                       result['msg'])
 
+    @mock.patch('assertions.resources.requests.post')
+    def test_test_session_create_https_only_exception(self, mock_post):
+        sut = SystemUnderTest('https://127.0.0.1:8000', 'oper', 'xyzzy')
+        sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
+        mock_post.side_effect = ConnectionError
+        sec.test_session_create_https_only(sut)
+        result = get_result(sut, Assertion.SEC_SESSION_CREATE_HTTPS_ONLY,
+                            'POST', sut.sessions_uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Caught ConnectionError; unable to test',
+                      result['msg'])
+
     def test_test_session_termination_side_effects_not_tested1(self):
         sec.test_session_termination_side_effects(self.sut)
         result = get_result(self.sut,
@@ -718,6 +731,24 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('Deleting session %s failed' % sess_uri, result['msg'])
+
+    @mock.patch('assertions.sessions.create_session')
+    @mock.patch('assertions.security_details.requests.Session')
+    def test_test_session_termination_side_effects_exception(
+            self, mock_session, mock_create_session):
+        self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
+        sess_uri = '/redfish/v1/SessionService/Sessions/9'
+        token = '87a5cd20'
+        mock_create_session.return_value = sess_uri, token
+        mock_session.return_value.get.side_effect = ConnectionError
+        sec.test_session_termination_side_effects(self.sut)
+        result = get_result(self.sut,
+                            Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS,
+                            'GET', self.sut.server_sent_event_uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.NOT_TESTED, result['result'])
+        self.assertIn('Caught ConnectionError while opening SSE',
+                      result['msg'])
 
     @mock.patch('assertions.sessions.create_session')
     @mock.patch('assertions.security_details.requests.Session')

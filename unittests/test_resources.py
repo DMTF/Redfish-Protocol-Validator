@@ -354,6 +354,17 @@ class Resources(TestCase):
             self.sut, self.session, user, acct_uri,
             request_type=RequestType.NORMAL)
 
+    @mock.patch('assertions.sessions.logging.error')
+    @mock.patch('assertions.accounts.add_account')
+    def test_patch_other_account_exception(
+            self, mock_add_acct, mock_error):
+        user = 'rfpvc91c'
+        pwd = 'pa325e6a'
+        mock_add_acct.side_effect = ConnectionError
+        resources.patch_other_account(self.sut, self.session, user, pwd)
+        args = mock_error.call_args[0]
+        self.assertIn('Caught exception while creating or patching', args[0])
+
     def test_unsupported_requests(self):
         request = mock.Mock(spec=requests.Request)
         request.method = 'TRACE'
@@ -402,6 +413,18 @@ class Resources(TestCase):
         responses = self.sut.get_responses_by_method(
             'GET', request_type=RequestType.HTTP_NO_AUTH)
         self.assertEqual(len(responses), 2)
+
+    @mock.patch('assertions.resources.logging.warning')
+    @mock.patch('assertions.resources.requests.get')
+    def test_http_requests_https_scheme_exception(self, mock_get, mock_warn):
+        mock_get.side_effect = ConnectionError
+        mock_sut = mock.MagicMock(spec=SystemUnderTest)
+        mock_sut.scheme = 'https'
+        mock_sut.avoid_http_redirect = False
+        resources.http_requests(mock_sut)
+        args = mock_warn.call_args[0]
+        self.assertIn('Caught ConnectionError while trying to trigger',
+                      args[0])
 
     @mock.patch('assertions.sessions.requests.get')
     def test_http_requests_http_scheme(self, mock_get):

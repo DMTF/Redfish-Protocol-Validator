@@ -116,6 +116,20 @@ class Accounts(TestCase):
         self.assertTrue(user.startswith('rfpv'))
         self.assertEqual(uri, self.account_uri3)
 
+    def test_add_account_via_patch_enable(self):
+        etag = '0123456789abcdef'
+        self.session.get.return_value.status_code = requests.codes.OK
+        self.session.get.return_value.ok = True
+        self.session.get.return_value.json.return_value = {'Enabled': False}
+        self.session.get.return_value.headers = {'ETag': etag}
+        self.session.post.return_value.status_code = (
+            requests.codes.METHOD_NOT_ALLOWED)
+        self.session.patch.return_value.status_code = requests.codes.OK
+        user, pwd, uri = accounts.add_account(self.sut, self.session)
+        self.session.patch.assert_called_with(
+            self.sut.rhost + self.account_uri3, json={'Enabled': True},
+            headers={'If-Match': etag})
+
     @mock.patch('assertions.accounts.logging.error')
     def test_add_account_via_patch_fail1(self, mock_logging_error):
         payload = {'UserName': 'alice', 'Enabled': True}
