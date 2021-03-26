@@ -825,6 +825,15 @@ class ServiceDetails(TestCase):
         self.assertIn('Response from GET request to URL %s was not successful'
                       % self.sse_uri, result['msg'])
 
+    @mock.patch('assertions.utils.logging.warning')
+    def test_test_sse_successful_response_exception(self, mock_warn):
+        self.sut.set_server_sent_event_uri(self.sse_uri)
+        self.mock_session.get.side_effect = ConnectionError
+        service.test_sse_successful_response(self.sut)
+        args = mock_warn.call_args[0]
+        self.assertIn('Caught ConnectionError while opening SSE',
+                      args[0])
+
     def test_test_sse_successful_response_fail1(self):
         self.sut.set_server_sent_event_uri(self.sse_uri)
         get_resp = add_response(self.sut, self.sse_uri, 'GET',
@@ -1011,6 +1020,18 @@ class ServiceDetails(TestCase):
         self.assertIn('Property "code" is not a string', result['msg'])
         self.assertIn('Property "message" is not a string', result['msg'])
         self.assertIn('Property "@Message.ExtendedInfo" is not a list',
+                      result['msg'])
+
+    def test_test_sse_unsuccessful_response_exception(self):
+        self.sut.set_server_sent_event_uri(self.sse_uri)
+        self.mock_session.get.side_effect = ConnectionError
+        service.test_sse_unsuccessful_response(self.sut)
+        result = get_result(
+            self.sut, Assertion.SERV_SSE_UNSUCCESSFUL_RESPONSE,
+            'GET', self.sse_uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('Caught ConnectionError while opening SSE',
                       result['msg'])
 
     def test_test_sse_unsuccessful_response_pass(self):

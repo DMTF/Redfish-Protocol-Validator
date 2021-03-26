@@ -647,7 +647,7 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
         if response is None:
             msg = ('Caught %s while opening SSE stream; unable to test this '
                    'assertion' % exc_name)
-            sut.log(Result.NOT_TESTED, 'GET', '', new_session_uri,
+            sut.log(Result.NOT_TESTED, 'GET', '', sut.server_sent_event_uri,
                     Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS, msg)
         elif response.ok:
             # delete the session
