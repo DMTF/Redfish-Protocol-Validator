@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.3] - 2021-04-02
+- Made fix to testing an SSE connection is left open after a session is deleted
+
 ## [1.0.2] - 2021-02-20
 - Fixed bugs in account testing that would cause login failures
 - Added exception handling to user account management
