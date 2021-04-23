@@ -119,9 +119,9 @@ def test_certs_conform_to_x509v3(sut: SystemUnderTest):
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
             conn = context.wrap_socket(socket.socket(socket.AF_INET),
-                                       server_hostname=rhost.netloc)
+                                       server_hostname=rhost.hostname)
             port = 443 if rhost.port is None else rhost.port
-            conn.connect((rhost.netloc, port))
+            conn.connect((rhost.hostname, port))
             bin_cert = conn.getpeercert(binary_form=True)
             cert = decoder.decode(bin_cert, asn1Spec=rfc5280.Certificate())[0]
         except Exception as e:

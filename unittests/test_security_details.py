@@ -349,11 +349,14 @@ class SecurityDetails(TestCase):
                 }
             }
         ]
+        mock_conn = mock.Mock()
+        self.mock_ssl_ctx.return_value.wrap_socket.return_value = mock_conn
         sec.test_certs_conform_to_x509v3(self.sut)
         result = get_result(self.sut, Assertion.SEC_CERTS_CONFORM_X509V3,
                             '', '')
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
+        mock_conn.connect.assert_called_once_with(('127.0.0.1', 8000))
 
     def test_test_certs_conform_to_x509v3_fail(self):
         # duck typing the decode result; it's not really array of dict()
