@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.4] - 2021-04-23
+- Corrected socket connect() call to use hostname instead of netloc
+
 ## [1.0.3] - 2021-04-02
 - Made fix to testing an SSE connection is left open after a session is deleted
 
