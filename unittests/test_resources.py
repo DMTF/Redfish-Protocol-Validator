@@ -367,14 +367,14 @@ class Resources(TestCase):
 
     def test_unsupported_requests(self):
         request = mock.Mock(spec=requests.Request)
-        request.method = 'TRACE'
+        request.method = 'DELETE'
         response = mock.Mock(spec=requests.Response)
         response.status_code = requests.codes.METHOD_NOT_ALLOWED
         response.request = request
         self.session.request.return_value = response
         resources.unsupported_requests(self.sut)
         self.session.request.called_once_with(
-            'TRACE', self.sut.rhost + '/redfish/v1/')
+            'DELETE', self.sut.rhost + '/redfish/v1/')
 
     @mock.patch('assertions.sessions.requests.get')
     def test_basic_auth_requests(self, mock_get):

@@ -204,19 +204,19 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
     """Perform tests on unsupported HTTP methods."""
     # Test Assertion.PROTO_HTTP_UNSUPPORTED_METHODS
     uri = '/redfish/v1/'
-    response = sut.get_response('TRACE', uri)
+    response = sut.get_response('DELETE', uri)
     if response is None:
-        sut.log(Result.NOT_TESTED, 'TRACE', '', uri,
+        sut.log(Result.NOT_TESTED, 'DELETE', '', uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                 'No response found for TRACE method request')
     elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
           response.status_code == requests.codes.NOT_IMPLEMENTED):
-        sut.log(Result.PASS, 'TRACE', response.status_code, uri,
+        sut.log(Result.PASS, 'DELETE', response.status_code, uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS, 'Test passed')
     else:
-        sut.log(Result.FAIL, 'TRACE', response.status_code, uri,
+        sut.log(Result.FAIL, 'DELETE', response.status_code, uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                'TRACE method returned status %s; expected status %s' %
+                'DELETE method returned status %s; expected status %s' %
                 (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
 
 

@@ -369,9 +369,9 @@ def data_modification_requests_no_auth(sut: SystemUnderTest, no_auth_session):
 
 
 def unsupported_requests(sut: SystemUnderTest):
-    # TRACE method
+    # DELETE on service root is never allowed
     uri = '/redfish/v1/'
-    response = sut.session.request('TRACE', sut.rhost + uri)
+    response = sut.session.request('DELETE', sut.rhost + uri)
     sut.add_response(uri, response)
 
 
