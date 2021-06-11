@@ -21,7 +21,7 @@ def test_event_service_subscription(sut: SystemUnderTest):
         payload = {
             'Context': 'RPV test subscription',
             'Protocol': 'Redfish',
-            'Destination': 'https://contoso.com/Destination1'
+            'Destination': 'https://192.168.1.50/Destination1'
         }
         response = sut.session.post(sut.rhost + sut.subscriptions_uri,
                                     json=payload)
