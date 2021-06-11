@@ -72,7 +72,7 @@ def test_event_error_on_bad_request(sut: SystemUnderTest):
         payload = {
             'Context': 'RPV test subscription',
             'Protocol': 'FTP',  # invalid EventDestinationProtocol
-            'Destination': 'https://contoso.com/Destination1'
+            'Destination': 'https://192.168.1.50/Destination1'
         }
         response = sut.session.post(sut.rhost + sut.subscriptions_uri,
                                     json=payload)
@@ -117,7 +117,7 @@ def test_event_error_on_mutually_excl_props(sut: SystemUnderTest):
         payload = {
             'Context': 'RPV test subscription',
             'Protocol': 'Redfish',
-            'Destination': 'https://contoso.com/Destination1',
+            'Destination': 'https://192.168.1.50/Destination1',
             'RegistryPrefixes': [
                 'Base'
             ],
