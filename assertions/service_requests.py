@@ -526,6 +526,10 @@ def test_query_ignore_unsupported(sut: SystemUnderTest):
 def test_query_unsupported_dollar_params_ext_error(
         sut: SystemUnderTest, uri, response):
     """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR."""
+
+    # Removing test for now; there are no standard messages that allow a service to specify the query parameter not supported
+
+    """
     if ('application/json' in response.headers.get('Content-Type', '') and
             '@Message.ExtendedInfo' in response.text):
         data = response.json()
@@ -546,7 +550,7 @@ def test_query_unsupported_dollar_params_ext_error(
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
                 msg)
-
+    """
 
 def test_query_unsupported_dollar_params(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS."""
