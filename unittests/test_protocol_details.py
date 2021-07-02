@@ -332,32 +332,32 @@ class ProtocolDetails(TestCase):
                       result['msg'])
 
     def test_test_http_unsupported_methods_pass1(self):
-        add_response(self.sut, '/redfish/v1/', 'TRACE',
+        add_response(self.sut, '/redfish/v1/', 'DELETE',
                      requests.codes.METHOD_NOT_ALLOWED)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                            'TRACE', '/redfish/v1/')
+                            'DELETE', '/redfish/v1/')
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_http_unsupported_methods_pass2(self):
-        add_response(self.sut, '/redfish/v1/', 'TRACE',
+        add_response(self.sut, '/redfish/v1/', 'DELETE',
                      requests.codes.NOT_IMPLEMENTED)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                            'TRACE', '/redfish/v1/')
+                            'DELETE', '/redfish/v1/')
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
     def test_test_http_unsupported_methods_fail(self):
-        add_response(self.sut, '/redfish/v1/', 'TRACE',
+        add_response(self.sut, '/redfish/v1/', 'DELETE',
                      requests.codes.BAD_REQUEST)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                            'TRACE', '/redfish/v1/')
+                            'DELETE', '/redfish/v1/')
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('TRACE method returned status', result['msg'])
+        self.assertIn('DELETE method returned status', result['msg'])
 
     def test_test_protocol_details_cover(self):
         proto.test_protocol_details(self.sut)
