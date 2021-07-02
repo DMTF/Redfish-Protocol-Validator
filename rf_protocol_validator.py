@@ -24,7 +24,7 @@ from assertions import utils
 from assertions.constants import Result
 from assertions.system_under_test import SystemUnderTest
 
-tool_version = '1.0.4'
+tool_version = '1.0.5'
 
 
 def perform_tests(sut: SystemUnderTest):

@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.0.5] - 2021-07-02
+- Changed HTTP method for checking Allow header presence on an HTTP 405 response from TRACE to DELETE
+- Changed event subscription tests to create subscriptions using IP addresses instead of network names
+- Removed message checks for unsupported query parameters
+
 ## [1.0.4] - 2021-04-23
 - Corrected socket connect() call to use hostname instead of netloc
 
