@@ -1412,7 +1412,7 @@ class SecurityDetails(TestCase):
         uri = '/redfish/v1/AccountsService/Accounts/10'
         headers = {'Authorization': 'Basic cmZwdmM1YmY6cDUzMDU5ZWE='}
         response = add_response(
-            self.sut, uri, 'PATCH', requests.codes.UNAUTHORIZED,
+            self.sut, uri, 'PATCH', requests.codes.FORBIDDEN,
             res_type=ResourceType.MANAGER_ACCOUNT,
             request_type=RequestType.MODIFY_OTHER)
         response.request.headers = headers
@@ -1427,7 +1427,7 @@ class SecurityDetails(TestCase):
         uri = '/redfish/v1/AccountsService/Accounts/10'
         headers = {'Authorization': 'Basic cmZwdmM1YmY6cDUzMDU5ZWE='}
         response = add_response(
-            self.sut, uri, 'PATCH', requests.codes.FORBIDDEN,
+            self.sut, uri, 'PATCH', requests.codes.UNAUTHORIZED,
             res_type=ResourceType.MANAGER_ACCOUNT,
             request_type=RequestType.MODIFY_OTHER)
         response.request.headers = headers
@@ -1438,8 +1438,8 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.WARN, result['result'])
         self.assertIn('failed with status %s, but expected it to fail with '
-                      'status %s' % (requests.codes.FORBIDDEN,
-                                     requests.codes.UNAUTHORIZED),
+                      'status %s' % (requests.codes.UNAUTHORIZED,
+                                     requests.codes.FORBIDDEN),
                       result['msg'])
 
     def test_test_priv_operation_to_priv_mapping_fail(self):
