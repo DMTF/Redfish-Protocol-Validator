@@ -1065,16 +1065,17 @@ def test_priv_operation_to_priv_mapping(sut: SystemUnderTest):
                     Assertion.SEC_PRIV_OPERATION_TO_PRIV_MAPPING,
                     msg)
         else:
-            if response.status_code == requests.codes.UNAUTHORIZED:
+            if response.status_code == requests.codes.FORBIDDEN or response.status_code == requests.codes.NOT_FOUND:
                 sut.log(Result.PASS, 'PATCH', response.status_code, uri,
                         Assertion.SEC_PRIV_OPERATION_TO_PRIV_MAPPING,
                         'Test passed')
             else:
                 msg = ('PATCH request to account %s using credentials of '
                        'other user %s failed with status %s, but expected it '
-                       'to fail with status %s; extended error: %s' % (
+                       'to fail with status %s or %s; extended error: %s' % (
                         uri, user, response.status_code,
-                        requests.codes.UNAUTHORIZED,
+                        requests.codes.FORBIDDEN,
+                        requests.codes.NOT_FOUND,
                         utils.get_extended_error(response)))
                 sut.log(Result.WARN, 'PATCH', response.status_code, uri,
                         Assertion.SEC_PRIV_OPERATION_TO_PRIV_MAPPING,
