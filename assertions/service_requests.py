@@ -1000,6 +1000,11 @@ def test_patch_array_truncate(sut: SystemUnderTest):
             else:
                 array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
+                # Remove trailing "null" instance; services might implement
+                # this as a fixed array and show the array size by padding with
+                # null entries
+                while array and array[-1] is None:
+                    array.pop()
                 if array == expected_array:
                     sut.log(Result.PASS, 'PATCH', response.status_code,
                             uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE,

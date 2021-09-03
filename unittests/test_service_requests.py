@@ -1495,6 +1495,28 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
+    def test_test_patch_array_truncate_pass2(self):
+        uri = self.mgr_net_proto_uri
+        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov', None]
+        r1 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK)
+        r2 = add_response(self.sut, uri, 'PATCH',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': array,
+                                'ProtocolEnabled': False}})
+        r3 = add_response(self.sut, uri, 'GET',
+                          status_code=requests.codes.OK,
+                          json={'NTP': {'NTPServers': array,
+                                'ProtocolEnabled': False}})
+        self.mock_session.patch.side_effect = [r1, r2]
+        self.mock_session.get.return_value = r3
+        req.test_patch_array_truncate(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
+            'PATCH', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     @mock.patch('assertions.service_requests.logging.warning')
     def test_patch_array_restore_warning(self, mock_warning):
         uri = self.mgr_net_proto_uri
