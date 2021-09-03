@@ -1267,7 +1267,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('Array element %s was not removed' %
-                      'time-b-b.nist.gov', result['msg'])
+                      'time-a-b.nist.gov', result['msg'])
 
     def test_test_patch_array_element_remove_not_tested(self):
         uri = self.mgr_net_proto_uri
