@@ -1293,12 +1293,12 @@ class ServiceRequests(TestCase):
         r2 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers':
-                                ['time-a-b.nist.gov', 'time-c-b.nist.gov'],
+                                ['time-b-b.nist.gov'],
                                 'ProtocolEnabled': False}})
         r3 = add_response(self.sut, uri, 'GET',
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers':
-                                ['time-a-b.nist.gov', 'time-c-b.nist.gov'],
+                                ['time-b-b.nist.gov'],
                                 'ProtocolEnabled': False}})
         self.mock_session.patch.side_effect = [r1, r2]
         self.mock_session.get.return_value = r3
@@ -1345,7 +1345,7 @@ class ServiceRequests(TestCase):
         r2 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers':
-                                [{}, {}, 'time-d-b.nist.gov'],
+                                [{}, 'time-d-b.nist.gov'],
                                 'ProtocolEnabled': False}})
         r3 = add_response(self.sut, uri, 'GET',
                           status_code=requests.codes.NOT_FOUND)
@@ -1357,7 +1357,7 @@ class ServiceRequests(TestCase):
             'PATCH', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        missing = ['time-a-b.nist.gov', 'time-b-b.nist.gov']
+        missing = ['time-a-b.nist.gov']
         self.assertIn('left unchanged, but were not found in the response: %s'
                       % missing, result['msg'])
 
@@ -1384,14 +1384,12 @@ class ServiceRequests(TestCase):
         r2 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers':
-                                ['time-a-b.nist.gov', 'time-b-b.nist.gov',
-                                 'time-d-b.nist.gov'],
+                                ['time-a-b.nist.gov', 'time-d-b.nist.gov'],
                                 'ProtocolEnabled': False}})
         r3 = add_response(self.sut, uri, 'GET',
                           status_code=requests.codes.OK,
                           json={'NTP': {'NTPServers':
-                                ['time-a-b.nist.gov', 'time-b-b.nist.gov',
-                                 'time-d-b.nist.gov'],
+                                ['time-a-b.nist.gov', 'time-d-b.nist.gov'],
                                 'ProtocolEnabled': False}})
         self.mock_session.patch.side_effect = [r1, r2]
         self.mock_session.get.return_value = r3
@@ -1434,8 +1432,8 @@ class ServiceRequests(TestCase):
 
     def test_test_patch_array_truncate_fail3(self):
         uri = self.mgr_net_proto_uri
-        expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
-        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov', 'time-c-b.nist.gov']
+        expected_array = ['time-b-b.nist.gov']
+        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
         r1 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK)
         r2 = add_response(self.sut, uri, 'PATCH',
@@ -1475,7 +1473,7 @@ class ServiceRequests(TestCase):
 
     def test_test_patch_array_truncate_pass(self):
         uri = self.mgr_net_proto_uri
-        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+        array = ['time-b-b.nist.gov']
         r1 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK)
         r2 = add_response(self.sut, uri, 'PATCH',
@@ -1497,7 +1495,7 @@ class ServiceRequests(TestCase):
 
     def test_test_patch_array_truncate_pass2(self):
         uri = self.mgr_net_proto_uri
-        array = ['time-b-b.nist.gov', 'time-c-b.nist.gov', None]
+        array = ['time-b-b.nist.gov', None]
         r1 = add_response(self.sut, uri, 'PATCH',
                           status_code=requests.codes.OK)
         r2 = add_response(self.sut, uri, 'PATCH',
