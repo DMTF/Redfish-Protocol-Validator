@@ -826,17 +826,15 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
         'NTP': {
             'NTPServers': [
                 'time-a-b.nist.gov',
-                'time-b-b.nist.gov',
-                'time-c-b.nist.gov'
+                'time-b-b.nist.gov'
             ]
         }
     }
     payload2 = {
         'NTP': {
             'NTPServers': [
-                'time-a-b.nist.gov',
                 None,
-                'time-c-b.nist.gov'
+                'time-b-b.nist.gov'
             ]
         }
     }
@@ -855,10 +853,10 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
             else:
                 array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
-                if 'time-b-b.nist.gov' in array:
+                if 'time-a-b.nist.gov' in array:
                     msg = ('Array element %s was not removed; resource: %s; '
                            'PATCH payload: %s; resulting array: %s' %
-                           ('time-b-b.nist.gov', payload1,
+                           ('time-a-b.nist.gov', payload1,
                             payload2, array))
                     sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                             Assertion.REQ_PATCH_ARRAY_ELEMENT_REMOVE, msg)
@@ -893,15 +891,13 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
         'NTP': {
             'NTPServers': [
                 'time-a-b.nist.gov',
-                'time-b-b.nist.gov',
-                'time-c-b.nist.gov'
+                'time-b-b.nist.gov'
             ]
         }
     }
     payload2 = {
         'NTP': {
             'NTPServers': [
-                {},
                 {},
                 'time-d-b.nist.gov'
             ]
@@ -922,8 +918,7 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
             else:
                 array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
-                if ('time-a-b.nist.gov' in array and
-                        'time-b-b.nist.gov' in array):
+                if 'time-a-b.nist.gov' in array:
                     sut.log(Result.PASS, 'PATCH', response.status_code, uri,
                             Assertion.REQ_PATCH_ARRAY_ELEMENT_UNCHANGED,
                             'Test passed')
@@ -931,8 +926,6 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
                     missing = []
                     if 'time-a-b.nist.gov' not in array:
                         missing.append('time-a-b.nist.gov')
-                    if 'time-b-b.nist.gov' not in array:
-                        missing.append('time-b-b.nist.gov')
                     msg = ('After PATCH, the following NTPServers array '
                            'elements should have been left unchanged, but '
                            'were not found in the response: %s; resource: %s; '
@@ -971,20 +964,18 @@ def test_patch_array_truncate(sut: SystemUnderTest):
         'NTP': {
             'NTPServers': [
                 'time-a-b.nist.gov',
-                'time-b-b.nist.gov',
-                'time-c-b.nist.gov'
+                'time-b-b.nist.gov'
             ]
         }
     }
     payload2 = {
         'NTP': {
             'NTPServers': [
-                'time-b-b.nist.gov',
-                'time-c-b.nist.gov'
+                'time-b-b.nist.gov'
             ]
         }
     }
-    expected_array = ['time-b-b.nist.gov', 'time-c-b.nist.gov']
+    expected_array = ['time-b-b.nist.gov']
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
     response = sut.session.patch(sut.rhost + uri, json=payload1,
@@ -1000,6 +991,11 @@ def test_patch_array_truncate(sut: SystemUnderTest):
             else:
                 array = response.json().get('NTP', {}).get('NTPServers', None)
             if isinstance(array, list):
+                # Remove trailing "null" instance; services might implement
+                # this as a fixed array and show the array size by padding with
+                # null entries
+                while array and array[-1] is None:
+                    array.pop()
                 if array == expected_array:
                     sut.log(Result.PASS, 'PATCH', response.status_code,
                             uri, Assertion.REQ_PATCH_ARRAY_TRUNCATE,
