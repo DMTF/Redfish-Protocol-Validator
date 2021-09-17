@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.0.7] - 2021-09-17
+- Fixed the array truncate test to allow for 'null' padding in responses
+- Changed the minimum array size for several array tests from three to two
+
 ## [1.0.6] - 2021-08-13
 - Corrected expected status code for SEC_PRIV_OPERATION_TO_PRIV_MAPPING to be 403 or 404
 
