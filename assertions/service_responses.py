@@ -114,8 +114,17 @@ def test_allow_header_get_or_head(sut: SystemUnderTest):
     uri = '/redfish/v1/'
     for method in ['GET', 'HEAD']:
         response = sut.get_response(method, uri)
-        test_header_present(sut, 'Allow', uri, method, response,
-                            Assertion.RESP_HEADERS_ALLOW_GET_OR_HEAD)
+        if response is None:
+            msg = 'No response found for %s request to %s' % (method, uri)
+            sut.log(Result.NOT_TESTED, method, '', uri,
+                    Assertion.RESP_HEADERS_ALLOW_GET_OR_HEAD, msg)
+        elif response.status_code == requests.codes.NOT_IMPLEMENTED:
+            msg = '%s not implemented on URI %s' % (method, uri)
+            sut.log(Result.NOT_TESTED, method, response.status_code, uri,
+                    Assertion.RESP_HEADERS_ALLOW_GET_OR_HEAD, msg)
+        else:
+            test_header_present(sut, 'Allow', uri, method, response,
+                                Assertion.RESP_HEADERS_ALLOW_GET_OR_HEAD)
 
 
 def test_cache_control_header(sut: SystemUnderTest):

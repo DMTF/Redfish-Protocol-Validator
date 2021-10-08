@@ -621,6 +621,11 @@ def test_head_differ_from_get(sut: SystemUnderTest):
                        response.headers.get('Content-Length', '<missing>')))
             sut.log(Result.FAIL, 'HEAD', response.status_code, uri,
                     Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
+    elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
+            response.status_code == requests.codes.NOT_IMPLEMENTED):
+        msg = 'HEAD not supported on URI %s' % uri
+        sut.log(Result.NOT_TESTED, 'HEAD', response.status_code, uri,
+                Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
     else:
         msg = ('HEAD request to uri %s failed with status %s'
                % (uri, response.status_code))
