@@ -924,14 +924,14 @@ class ServiceRequests(TestCase):
     def test_test_head_differ_from_get_fail2(self):
         uri = '/redfish/v1/'
         add_response(self.sut, uri, method='HEAD',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+                     status_code=requests.codes.BAD_REQUEST)
         req.test_head_differ_from_get(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_HEAD_DIFFERS_FROM_GET, 'HEAD', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('HEAD request to uri %s failed with status %s' %
-                      (uri, requests.codes.METHOD_NOT_ALLOWED),
+                      (uri, requests.codes.BAD_REQUEST),
                       result['msg'])
 
     def test_test_data_mod_errors_not_tested(self):
