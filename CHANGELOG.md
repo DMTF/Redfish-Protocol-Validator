@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.0.8] - 2021-10-08
+- Corrected HEAD tests to allow for the case where HEAD is not supported
+- Corrected PATCH mixed property test to allow for the service to reject the request entirely
+- Corrected error response checking for unsupported properties in the PATCH request to allow for the message to be outside of the extended info array
+
 ## [1.0.7] - 2021-09-17
 - Fixed the array truncate test to allow for 'null' padding in responses
 - Changed the minimum array size for several array tests from three to two
