@@ -985,7 +985,7 @@ class ServiceRequests(TestCase):
     def test_test_patch_mixed_props_fail1(self):
         uri = self.account_uri
         add_response(self.sut, uri, method='PATCH',
-                     status_code=requests.codes.BAD_REQUEST,
+                     status_code=requests.codes.FORBIDDEN,
                      request_type=RequestType.PATCH_MIXED_PROPS)
         req.test_patch_mixed_props(self.sut)
         result = get_result(self.sut, Assertion.REQ_PATCH_MIXED_PROPS,
@@ -993,7 +993,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('The service response returned status code %s; expected '
-                      '%s' % (requests.codes.BAD_REQUEST, requests.codes.OK),
+                      '%s' % (requests.codes.FORBIDDEN, requests.codes.OK),
                       result['msg'])
 
     def test_test_patch_mixed_props_fail2(self):

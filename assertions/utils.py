@@ -90,6 +90,10 @@ def is_text_in_extended_error(text: str, body: dict):
     data = []
     if 'error' in body and '@Message.ExtendedInfo' in body['error']:
         data = body['error']['@Message.ExtendedInfo']
+    elif 'error' in body and 'message' in body['error']:
+        # Simple error message; just inspect the message string
+        if text in body['error']['message']:
+            return True
     elif '@Message.ExtendedInfo' in body:
         data = body['@Message.ExtendedInfo']
     for d in data:
