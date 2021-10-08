@@ -676,6 +676,9 @@ def test_patch_mixed_props(sut: SystemUnderTest):
                        'representation')
                 sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
                         Assertion.REQ_PATCH_MIXED_PROPS, msg)
+        elif response.status_code == requests.codes.BAD_REQUEST:
+            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                    Assertion.REQ_PATCH_MIXED_PROPS, 'Test passed')
         else:
             msg = ('The service response returned status code %s; expected '
                    '%s; extended error: %s'

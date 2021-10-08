@@ -223,19 +223,20 @@ class Assertion(NoValue):
         'have been modified or created as a result of the operation.'
     )
     REQ_PATCH_MIXED_PROPS = (
-        'Modify several properties where one or more properties can never be '
-        'updated: Services shall return the HTTP 200 OK status code and a '
-        'resource representation with a message annotation that lists the '
-        'non-updatable properties.'
+        'A partial success of a PATCH operation occurs when a modification '
+        'request for multiple properties results in at least one property '
+        'updated successfully, but one or more properties could not be '
+        'updated. In these cases, the service shall return the HTTP 200 OK '
+        'status code and a resource representation with extended information '
+        'that lists the properties that could not be updated.  The '
+        'implementation may reject the update on certain properties based on '
+        'its own policies and, in this case, not make the requested update.'
     )
     REQ_PATCH_BAD_PROP = (
-        # TODO(billdodd): There appears to be an error in the spec here. The
-        #     response should be an error message, not be a resource
-        #     representation. Update the text here when the spec is updated.
-        'Modify a single property that can never be updated: Services shall '
-        'return the HTTP 400 Bad Request status code and a resource '
-        'representation with a message annotation that shows the '
-        'non-updatable property.'
+        'If all properties in the update request are read-only, unknown, or '
+        'unsupported, but the resource can be updated, the service shall '
+        'return the HTTP 400 Bad Request status code and an error response '
+        'with messages that show the non-updatable properties.'
     )
     REQ_PATCH_RO_RESOURCE = (
         'Modify a resource or all properties that can never be updated: '
