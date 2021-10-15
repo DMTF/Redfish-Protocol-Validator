@@ -225,24 +225,36 @@ def test_media_types(sut: SystemUnderTest, uri, response):
     if (uri != '/redfish/v1/$metadata' and response.request.method != 'HEAD'
             and response.status_code in [requests.codes.OK,
                                          requests.codes.CREATED]):
-        # Test Assertion.PROTO_JSON_ALL_RESOURCES
-        result, msg = response_content_type_is_json(uri, response)
-        sut.log(result, response.request.method, response.status_code, uri,
-                Assertion.PROTO_JSON_ALL_RESOURCES, msg)
+        if (response.status_code == requests.codes.CREATED and response.request.method == 'POST' and
+                len(response.text) == 0):
+            sut.log(Result.NOT_TESTED, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_JSON_ALL_RESOURCES, 'No response body')
+            sut.log(Result.NOT_TESTED, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_JSON_RFC, 'No response body')
+        else:
+            # Test Assertion.PROTO_JSON_ALL_RESOURCES
+            result, msg = response_content_type_is_json(uri, response)
+            sut.log(result, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_JSON_ALL_RESOURCES, msg)
 
-        # Test Assertion.PROTO_JSON_RFC
-        result, msg = response_is_json(uri, response)
-        sut.log(result, response.request.method, response.status_code, uri,
-                Assertion.PROTO_JSON_RFC, msg)
+            # Test Assertion.PROTO_JSON_RFC
+            result, msg = response_is_json(uri, response)
+            sut.log(result, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_JSON_RFC, msg)
 
     # Test Assertion.PROTO_JSON_ACCEPTED
     if response.request.body:
         if response.status_code in [requests.codes.OK, requests.codes.CREATED,
                                     requests.codes.NOT_ACCEPTABLE,
                                     requests.codes.UNSUPPORTED_MEDIA_TYPE]:
-            result, msg = response_is_json(uri, response)
-            sut.log(result, response.request.method, response.status_code,
-                    uri, Assertion.PROTO_JSON_ACCEPTED, msg)
+            if (response.status_code == requests.codes.CREATED and response.request.method == 'POST' and
+                    len(response.text) == 0):
+                sut.log(Result.NOT_TESTED, response.request.method, response.status_code, uri,
+                        Assertion.PROTO_JSON_ACCEPTED, 'No response body')
+            else:
+                result, msg = response_is_json(uri, response)
+                sut.log(result, response.request.method, response.status_code,
+                        uri, Assertion.PROTO_JSON_ACCEPTED, msg)
 
 
 def test_valid_etag(sut: SystemUnderTest, uri, response):
