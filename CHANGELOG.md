@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.0.9] - 2021-10-15
+- Updated media type tests to skip POST responses that do not provide a response body
+
 ## [1.0.8] - 2021-10-08
 - Corrected HEAD tests to allow for the case where HEAD is not supported
 - Corrected PATCH mixed property test to allow for the service to reject the request entirely
