@@ -11,6 +11,7 @@ from pathlib import Path
 
 import requests
 from urllib3.exceptions import InsecureRequestWarning
+from http.client import HTTPConnection
 
 from assertions import protocol_details
 from assertions import report
@@ -68,6 +69,8 @@ def main():
     # set logging level
     log_level = getattr(logging, args.log_level.upper())
     logging.basicConfig(level=log_level)
+    if log_level == logging.DEBUG:
+        HTTPConnection.debuglevel = 1
 
     # set up cert verify option
     verify = args.ca_bundle if args.ca_bundle else not args.no_cert_check
