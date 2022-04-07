@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.0] - 2022-04-07
+- Enabled HTTP tracing when 'log-level' is set to 'DEBUG'
+- Added step to enable the newly created user account when testing the password change requirements
+
 ## [1.0.9] - 2021-10-15
 - Updated media type tests to skip POST responses that do not provide a response body
 
