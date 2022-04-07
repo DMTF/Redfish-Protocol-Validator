@@ -320,11 +320,14 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
                              uri, data, etag):
     if 'PasswordChangeRequired' not in data:
         return
-    # set PasswordChangeRequired if not already set
-    if data['PasswordChangeRequired'] is False:
+    # set PasswordChangeRequired if not already set or if the account needs to be enabled
+    account_enabled = data.get('Enabled', True)
+    if data['PasswordChangeRequired'] is False or not account_enabled:
         payload = {
             'PasswordChangeRequired': True
         }
+        if not account_enabled:
+            payload['Enabled'] = True
         headers = {'If-Match': etag} if etag else {}
         response = session.patch(sut.rhost + uri, json=payload,
                                  headers=headers)
