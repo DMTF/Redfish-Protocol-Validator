@@ -3,9 +3,10 @@
 # License: BSD 3-Clause License. For full text see link:
 #     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
-from base64 import b64decode
 import socket
 import ssl
+from base64 import b64decode
+from ipaddress import ip_address
 from urllib.parse import urlparse
 
 import requests
@@ -14,8 +15,7 @@ from pyasn1_modules import rfc5280
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 
-from assertions import sessions
-from assertions import utils
+from assertions import sessions, utils
 from assertions.constants import Assertion, RequestType, ResourceType, Result
 from assertions.system_under_test import SystemUnderTest
 
@@ -114,11 +114,15 @@ def test_certs_conform_to_x509v3(sut: SystemUnderTest):
     """Perform test for Assertion.SEC_CERTS_CONFORM_X509V3."""
     rhost = urlparse(sut.rhost)
     if rhost.scheme == 'https':
+        if ip_address(rhost.hostname).version == 4:
+            af_type = socket.AF_INET
+        else:
+            af_type = socket.AF_INET6
         try:
             context = ssl.create_default_context()
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
-            conn = context.wrap_socket(socket.socket(socket.AF_INET),
+            conn = context.wrap_socket(socket.socket(af_type),
                                        server_hostname=rhost.hostname)
             port = 443 if rhost.port is None else rhost.port
             conn.connect((rhost.hostname, port))
