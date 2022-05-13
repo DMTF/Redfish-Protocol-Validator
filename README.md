@@ -79,3 +79,11 @@ You may install `tox` by running:
 Running the unit tests:
 
 `tox`
+
+## Release Process
+
+1. Go to the "Actions" page
+2. Select the "Release and Publish" workflow
+3. Click "Run workflow"
+4. Fill out the form
+5. Click "Run workflow"
