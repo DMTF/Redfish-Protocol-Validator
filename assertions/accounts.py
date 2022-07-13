@@ -255,17 +255,15 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
                      resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=request_type)
     if request_type == RequestType.NORMAL and 'If-Match' in headers:
-        # patch with previous ETag, which should fail
+        # patch with invalid ETag, which should fail
         pwd = new_password(sut)
         payload = {'Password': pwd}
         new_headers = utils.get_etag_header(sut, session, acct_uri)
+        bad_headers = {'If-Match': new_headers['If-Match'] + 'foobar'}
         r = session.patch(sut.rhost + acct_uri, json=payload,
-                          headers=headers)
+                          headers=bad_headers)
         if r.ok:
             new_pwd = pwd
-        logging.debug('PATCH %s: Before password change ETag is %s; after '
-                      'change ETag is %s' % (acct_uri, headers.get('If-Match'),
-                                             new_headers.get('If-Match')))
         sut.add_response(acct_uri, r,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.BAD_ETAG)

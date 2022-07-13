@@ -711,7 +711,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
     for uri, response in responses.items():
         found_response = True
         if response.ok:
-            msg = ('%s request to account URI %s with stale If-Match header '
+            msg = ('%s request to account URI %s with invalid If-Match header '
                    'succeeded; expected it to fail with status %s'
                    % (response.request.method, uri,
                       requests.codes.PRECONDITION_FAILED))
@@ -724,7 +724,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, 'Test passed')
             else:
-                msg = ('%s request to account URI %s with stale If-Match '
+                msg = ('%s request to account URI %s with invalid If-Match '
                        'header failed with status %s; expected it to fail '
                        'with status %s; extended error: %s' %
                        (response.request.method, uri, response.status_code,
