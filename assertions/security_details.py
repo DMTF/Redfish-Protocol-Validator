@@ -734,7 +734,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)
     if not found_response:
-        msg = ('No PATCH request to account resource with stale If-Match '
+        msg = ('No PATCH request to account resource with invalid If-Match '
                'header found; unable to test this assertion')
         sut.log(Result.NOT_TESTED, 'PATCH', '', '',
                 Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)

@@ -850,7 +850,7 @@ class SecurityDetails(TestCase):
                             'PATCH', '')
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No PATCH request to account resource with stale',
+        self.assertIn('No PATCH request to account resource with invalid',
                       result['msg'])
 
     def test_test_accounts_support_etags_warn(self):
@@ -878,7 +878,7 @@ class SecurityDetails(TestCase):
                             'PATCH', self.account_uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('URI %s with stale If-Match header succeeded' %
+        self.assertIn('URI %s with invalid If-Match header succeeded' %
                       self.account_uri, result['msg'])
 
     def test_test_password_change_required_pass(self):
