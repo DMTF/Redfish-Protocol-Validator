@@ -1,16 +1,16 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from datetime import datetime
 from pathlib import Path
 from unittest import mock, TestCase
 
-from assertions.constants import Assertion, Result
-from assertions.report import html_report, json_results, tsv_report
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator.constants import Assertion, Result
+from redfish_protocol_validator.report import html_report, json_results, tsv_report
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 class Report(TestCase):

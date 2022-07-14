@@ -1,16 +1,16 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
-from assertions import resources
-from assertions.constants import RequestType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import resources
+from redfish_protocol_validator.constants import RequestType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 from unittests.utils import add_response
 
 
@@ -231,12 +231,12 @@ class Resources(TestCase):
         self.assertEqual(sut.manufacturer, 'Contoso')
         self.assertEqual(sut.model, 'Contoso 2001')
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.sessions.delete_session')
-    @mock.patch('assertions.accounts.add_account')
-    @mock.patch('assertions.accounts.patch_account')
-    @mock.patch('assertions.accounts.delete_account')
-    @mock.patch('assertions.accounts.password_change_required')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.sessions.delete_session')
+    @mock.patch('redfish_protocol_validator.accounts.add_account')
+    @mock.patch('redfish_protocol_validator.accounts.patch_account')
+    @mock.patch('redfish_protocol_validator.accounts.delete_account')
+    @mock.patch('redfish_protocol_validator.accounts.password_change_required')
     def test_data_modification_requests(self, mock_pwd_change, mock_del_acct,
                                         mock_patch_acct, mock_add_acct,
                                         mock_delete_session,
@@ -272,13 +272,13 @@ class Resources(TestCase):
         self.assertEqual(mock_del_acct.call_count, 2)
         self.assertEqual(mock_pwd_change.call_count, 1)
 
-    @mock.patch('assertions.sessions.logging.error')
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.sessions.delete_session')
-    @mock.patch('assertions.accounts.add_account')
-    @mock.patch('assertions.accounts.patch_account')
-    @mock.patch('assertions.accounts.delete_account')
-    @mock.patch('assertions.accounts.password_change_required')
+    @mock.patch('redfish_protocol_validator.sessions.logging.error')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.sessions.delete_session')
+    @mock.patch('redfish_protocol_validator.accounts.add_account')
+    @mock.patch('redfish_protocol_validator.accounts.patch_account')
+    @mock.patch('redfish_protocol_validator.accounts.delete_account')
+    @mock.patch('redfish_protocol_validator.accounts.password_change_required')
     def test_data_modification_requests_exception(
             self, mock_pwd_change, mock_del_acct, mock_patch_acct,
             mock_add_acct, mock_delete_session, mock_create_session,
@@ -317,11 +317,11 @@ class Resources(TestCase):
         args = mock_error.call_args[0]
         self.assertIn('Caught exception while creating or patching', args[0])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.sessions.delete_session')
-    @mock.patch('assertions.accounts.add_account')
-    @mock.patch('assertions.accounts.patch_account')
-    @mock.patch('assertions.accounts.delete_account')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.sessions.delete_session')
+    @mock.patch('redfish_protocol_validator.accounts.add_account')
+    @mock.patch('redfish_protocol_validator.accounts.patch_account')
+    @mock.patch('redfish_protocol_validator.accounts.delete_account')
     def test_data_modification_requests_no_auth(
             self, mock_del_acct, mock_patch_acct, mock_add_acct,
             mock_delete_session, mock_create_session):
@@ -354,8 +354,8 @@ class Resources(TestCase):
             self.sut, self.session, user, acct_uri,
             request_type=RequestType.NORMAL)
 
-    @mock.patch('assertions.sessions.logging.error')
-    @mock.patch('assertions.accounts.add_account')
+    @mock.patch('redfish_protocol_validator.sessions.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.add_account')
     def test_patch_other_account_exception(
             self, mock_add_acct, mock_error):
         user = 'rfpvc91c'
@@ -376,7 +376,7 @@ class Resources(TestCase):
         self.session.request.called_once_with(
             'DELETE', self.sut.rhost + '/redfish/v1/')
 
-    @mock.patch('assertions.sessions.requests.get')
+    @mock.patch('redfish_protocol_validator.sessions.requests.get')
     def test_basic_auth_requests(self, mock_get):
         headers = {'OData-Version': '4.0'}
         mock_get.return_value.status_code = requests.codes.OK
@@ -389,7 +389,7 @@ class Resources(TestCase):
             'GET', request_type=RequestType.BASIC_AUTH)
         self.assertEqual(len(responses), 2)
 
-    @mock.patch('assertions.sessions.requests.get')
+    @mock.patch('redfish_protocol_validator.sessions.requests.get')
     def test_http_requests_https_scheme(self, mock_get):
         headers = {'OData-Version': '4.0'}
         if self.sut.scheme == 'https':
@@ -414,8 +414,8 @@ class Resources(TestCase):
             'GET', request_type=RequestType.HTTP_NO_AUTH)
         self.assertEqual(len(responses), 2)
 
-    @mock.patch('assertions.resources.logging.warning')
-    @mock.patch('assertions.resources.requests.get')
+    @mock.patch('redfish_protocol_validator.resources.logging.warning')
+    @mock.patch('redfish_protocol_validator.resources.requests.get')
     def test_http_requests_https_scheme_exception(self, mock_get, mock_warn):
         mock_get.side_effect = ConnectionError
         mock_sut = mock.MagicMock(spec=SystemUnderTest)
@@ -426,7 +426,7 @@ class Resources(TestCase):
         self.assertIn('Caught ConnectionError while trying to trigger',
                       args[0])
 
-    @mock.patch('assertions.sessions.requests.get')
+    @mock.patch('redfish_protocol_validator.sessions.requests.get')
     def test_http_requests_http_scheme(self, mock_get):
         sut = SystemUnderTest('http://127.0.0.1:8000', 'oper', 'xyzzy')
         sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
@@ -446,14 +446,14 @@ class Resources(TestCase):
             'GET', request_type=RequestType.HTTP_NO_AUTH)
         self.assertEqual(len(responses), 2)
 
-    @mock.patch('assertions.sessions.logging.warning')
+    @mock.patch('redfish_protocol_validator.sessions.logging.warning')
     def test_http_requests_other_scheme(self, mock_warning):
         sut = SystemUnderTest('ftp://127.0.0.1:8000', 'oper', 'xyzzy')
         resources.http_requests(sut)
         args = mock_warning.call_args[0]
         self.assertIn('Unexpected scheme (ftp)', args[0])
 
-    @mock.patch('assertions.sessions.requests.get')
+    @mock.patch('redfish_protocol_validator.sessions.requests.get')
     def test_bad_auth_requests(self, mock_get):
         request = mock.Mock(spec=requests.Request)
         request.method = 'GET'

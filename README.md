@@ -8,9 +8,16 @@ The Redfish Protocol Validator tests the HTTP protocol behavior of a Redfish ser
 
 ## Installation
 
-The Redfish Protocol Validator can be installed by cloning the Git repository:
+From PyPI:
+
+    pip install redfish_protocol_validator
+
+From GitHub:
 
     git clone https://github.com/DMTF/Redfish-Protocol-Validator.git
+    cd Redfish-Protocol-Validator
+    python setup.py sdist
+    pip install dist/redfish_protocol_validator-x.x.x.tar.gz
 
 ## Requirements
 
@@ -28,7 +35,7 @@ sseclient-py
 urllib3
 ```
 
-You may install the external packages by running:
+If installing from GitHub, you may install the external packages by running:
 
     pip install -r requirements.txt
 
@@ -70,9 +77,9 @@ optional arguments:
 
 Example:
 
-    python rf_protocol_validator.py -r https://192.168.1.100 -u USERNAME -p PASSWORD
+    rf_protocol_validator.py -r https://192.168.1.100 -u USERNAME -p PASSWORD
 
-## Unit tests
+## Unit Tests
 
 The Redfish Protocol Validator unit tests are executed using the `tox` package.
 

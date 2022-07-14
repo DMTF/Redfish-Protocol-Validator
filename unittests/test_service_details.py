@@ -1,17 +1,17 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
-from assertions import service_details as service
-from assertions.constants import Assertion, RequestType, Result, SSDP_ALL
-from assertions.constants import SSDP_REDFISH
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import service_details as service
+from redfish_protocol_validator.constants import Assertion, RequestType, Result, SSDP_ALL
+from redfish_protocol_validator.constants import SSDP_REDFISH
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 from unittests.utils import add_response, get_result
 
 
@@ -174,7 +174,7 @@ class ServiceDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    @mock.patch('assertions.service_details.utils.discover_ssdp')
+    @mock.patch('redfish_protocol_validator.service_details.utils.discover_ssdp')
     def test_pre_ssdp(self, mock_discover_ssdp):
         self.sut.set_mgr_net_proto_uri(
             '/redfish/v1/Managers/BMC/NetworkProtocol')
@@ -263,7 +263,7 @@ class ServiceDetails(TestCase):
         self.assertIn('Attempt to disable SSDP failed',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.utils.discover_ssdp')
+    @mock.patch('redfish_protocol_validator.service_details.utils.discover_ssdp')
     def test_test_ssdp_can_be_disabled_fail2(self, mock_discover_ssdp):
         services = {
             self.uuid: {'USN': 'uuid:%s' % self.uuid}
@@ -286,7 +286,7 @@ class ServiceDetails(TestCase):
         self.assertIn('Service responded to SSDP query after disabling SSDP',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.utils.discover_ssdp')
+    @mock.patch('redfish_protocol_validator.service_details.utils.discover_ssdp')
     def test_test_ssdp_can_be_disabled_pass(self, mock_discover_ssdp):
         services = {
             self.uuid: {'USN': 'uuid:%s' % self.uuid}
@@ -825,7 +825,7 @@ class ServiceDetails(TestCase):
         self.assertIn('Response from GET request to URL %s was not successful'
                       % self.sse_uri, result['msg'])
 
-    @mock.patch('assertions.utils.logging.warning')
+    @mock.patch('redfish_protocol_validator.utils.logging.warning')
     def test_test_sse_successful_response_exception(self, mock_warn):
         self.sut.set_server_sent_event_uri(self.sse_uri)
         self.mock_session.get.side_effect = ConnectionError
@@ -1081,7 +1081,7 @@ class ServiceDetails(TestCase):
         self.assertIn('No ServerSentEvent events read',
                       result['msg'])
 
-    @mock.patch('assertions.utils.time.time')
+    @mock.patch('redfish_protocol_validator.utils.time.time')
     def test_test_sse_blank_lines_between_events_timeout(self, mock_time):
         sse_response = [
             b': stream keep-alive\n\n',
@@ -1191,7 +1191,7 @@ class ServiceDetails(TestCase):
         self.assertIn('No EventDestination URI found',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.time.sleep')
+    @mock.patch('redfish_protocol_validator.service_details.time.sleep')
     def test_test_sse_event_dest_deleted_on_close_not_tested3(
             self, mock_sleep):
         response = mock.Mock()
@@ -1209,7 +1209,7 @@ class ServiceDetails(TestCase):
         self.assertIn('Unexpected status on GET to EventDestination resource',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.time.sleep')
+    @mock.patch('redfish_protocol_validator.service_details.time.sleep')
     def test_test_sse_event_dest_deleted_on_close_fail(
             self, mock_sleep):
         response = mock.Mock()
@@ -1227,7 +1227,7 @@ class ServiceDetails(TestCase):
         self.assertIn('EventDestination resource not deleted',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.time.sleep')
+    @mock.patch('redfish_protocol_validator.service_details.time.sleep')
     def test_test_sse_event_dest_deleted_on_close_pass(
             self, mock_sleep):
         response = mock.Mock()
@@ -1432,7 +1432,7 @@ class ServiceDetails(TestCase):
         self.assertIn('Delete of EventDestination resource %s failed' %
                       event_dest, result['msg'])
 
-    @mock.patch('assertions.service_details.time.sleep')
+    @mock.patch('redfish_protocol_validator.service_details.time.sleep')
     def test_test_sse_close_connection_if_event_dest_deleted_fail2(
             self, mock_sleep):
         event_dest = '/redfish/v1/EventService/Subscriptions/1'
@@ -1455,7 +1455,7 @@ class ServiceDetails(TestCase):
         self.assertIn('resource, the connection appears to still be open',
                       result['msg'])
 
-    @mock.patch('assertions.service_details.time.sleep')
+    @mock.patch('redfish_protocol_validator.service_details.time.sleep')
     def test_test_sse_close_connection_if_event_dest_deleted_pass(
             self, mock_sleep):
         event_dest = '/redfish/v1/EventService/Subscriptions/1'
@@ -1754,7 +1754,7 @@ class ServiceDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    @mock.patch('assertions.service_details.utils.discover_ssdp')
+    @mock.patch('redfish_protocol_validator.service_details.utils.discover_ssdp')
     def test_test_service_details_cover(self, mock_discover_ssdp):
         service.test_service_details(self.sut)
 

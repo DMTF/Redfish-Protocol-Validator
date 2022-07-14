@@ -1,15 +1,15 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
-from assertions import sessions
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import sessions
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 class Sessions(TestCase):
@@ -21,7 +21,7 @@ class Sessions(TestCase):
             'OData-Version': '4.0'
         }
 
-    @mock.patch('assertions.sessions.requests.post')
+    @mock.patch('redfish_protocol_validator.sessions.requests.post')
     def test_bad_login(self, mock_post):
         post_resp = mock.Mock(spec=requests.Response)
         post_resp.status_code = requests.codes.BAD_REQUEST
@@ -32,7 +32,7 @@ class Sessions(TestCase):
         sessions.bad_login(self.sut)
         self.assertEqual(mock_post.call_count, 1)
 
-    @mock.patch('assertions.sessions.requests.post')
+    @mock.patch('redfish_protocol_validator.sessions.requests.post')
     def test_create_session(self, mock_post):
         token = '87a5cd20'
         url = 'http://127.0.0.1:8000/redfish/v1/sessions/1234'
@@ -45,8 +45,8 @@ class Sessions(TestCase):
         new_uri, _ = sessions.create_session(self.sut)
         self.assertEqual(uri, new_uri)
 
-    @mock.patch('assertions.sessions.requests.post')
-    @mock.patch('assertions.sessions.logging.warning')
+    @mock.patch('redfish_protocol_validator.sessions.requests.post')
+    @mock.patch('redfish_protocol_validator.sessions.logging.warning')
     def test_create_session_post_fail(self, mock_warning, mock_post):
         mock_post.return_value.status_code = requests.codes.BAD_REQUEST
         mock_post.return_value.ok = False
@@ -62,7 +62,7 @@ class Sessions(TestCase):
         sessions.delete_session(self.sut, session, uri)
         session.delete.assert_called_once_with(self.sut.rhost + uri)
 
-    @mock.patch('assertions.sessions.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.requests.Session')
     def test_no_auth_session(self, mock_session):
         session = mock.Mock(spec=requests.Session)
         mock_session.return_value = session

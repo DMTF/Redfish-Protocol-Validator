@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
@@ -9,9 +9,9 @@ from unittest import mock, TestCase
 import requests
 from requests.exceptions import SSLError
 
-from assertions import security_details as sec
-from assertions.constants import Assertion, Result, RequestType, ResourceType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import security_details as sec
+from redfish_protocol_validator.constants import Assertion, Result, RequestType, ResourceType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 from unittests.utils import add_response, get_result
 
 
@@ -24,21 +24,21 @@ class SecurityDetails(TestCase):
         self.account_uri = '/redfish/v1/AccountsService/Accounts/3'
         self.mock_session = mock.MagicMock(spec=requests.Session)
         self.sut._set_session(self.mock_session)
-        patch_post = mock.patch('assertions.security_details.requests.post')
+        patch_post = mock.patch('redfish_protocol_validator.security_details.requests.post')
         self.mock_post = patch_post.start()
         self.addCleanup(patch_post.stop)
-        patch_get = mock.patch('assertions.security_details.requests.get')
+        patch_get = mock.patch('redfish_protocol_validator.security_details.requests.get')
         self.mock_get = patch_get.start()
         self.addCleanup(patch_get.stop)
         patch_ssl_ctx = mock.patch(
-            'assertions.security_details.ssl.SSLContext')
+            'redfish_protocol_validator.security_details.ssl.SSLContext')
         self.mock_ssl_ctx = patch_ssl_ctx.start()
         self.addCleanup(patch_ssl_ctx.stop)
         patch_ssl_sock = mock.patch(
-            'assertions.security_details.ssl.SSLSocket')
+            'redfish_protocol_validator.security_details.ssl.SSLSocket')
         self.mock_ssl_sock = patch_ssl_sock.start()
         self.addCleanup(patch_ssl_sock.stop)
-        patch_decoder = mock.patch('assertions.security_details.decoder')
+        patch_decoder = mock.patch('redfish_protocol_validator.security_details.decoder')
         self.mock_decoder = patch_decoder.start()
         self.addCleanup(patch_decoder.stop)
         add_response(self.sut, self.sut.sessions_uri, 'GET', requests.codes.OK)
@@ -76,7 +76,7 @@ class SecurityDetails(TestCase):
                      'GET', requests.codes.OK,
                      res_type=ResourceType.MANAGER_ACCOUNT)
 
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_tls_1_1_pass(self, mock_session):
         mock_session.return_value.mount.return_value = None
         sec.test_tls_1_1(self.sut)
@@ -85,7 +85,7 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_tls_1_1_fail(self, mock_session):
         mock_session.return_value.mount.return_value = None
         mock_session.return_value.get.side_effect = SSLError
@@ -647,7 +647,7 @@ class SecurityDetails(TestCase):
         self.assertIn('Unexpected scheme (ftp)',
                       result['msg'])
 
-    @mock.patch('assertions.resources.requests.post')
+    @mock.patch('redfish_protocol_validator.resources.requests.post')
     def test_test_session_create_https_only_exception(self, mock_post):
         sut = SystemUnderTest('https://127.0.0.1:8000', 'oper', 'xyzzy')
         sut.set_sessions_uri('/redfish/v1/SessionService/Sessions')
@@ -669,7 +669,7 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('No ServerSentEventUri available', result['msg'])
 
-    @mock.patch('assertions.sessions.requests.post')
+    @mock.patch('redfish_protocol_validator.sessions.requests.post')
     def test_test_session_termination_side_effects_not_tested2(
             self, mock_post):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -688,8 +688,8 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('Failed to create session', result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_not_tested3(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -710,8 +710,8 @@ class SecurityDetails(TestCase):
         self.assertIn('Opening ServerSentEventUri %s failed' %
                       self.sut.server_sent_event_uri, result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_not_tested4(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -735,8 +735,8 @@ class SecurityDetails(TestCase):
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('Deleting session %s failed' % sess_uri, result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_exception(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -753,8 +753,8 @@ class SecurityDetails(TestCase):
         self.assertIn('Caught ConnectionError while opening SSE',
                       result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_fail1(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -781,8 +781,8 @@ class SecurityDetails(TestCase):
                       'ServerSentEventUri stream %s after' %
                       self.sut.server_sent_event_uri, result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_fail2(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')
@@ -808,8 +808,8 @@ class SecurityDetails(TestCase):
         self.assertIn('Unable to read from ServerSentEventUri stream %s after'
                       % self.sut.server_sent_event_uri, result['msg'])
 
-    @mock.patch('assertions.sessions.create_session')
-    @mock.patch('assertions.security_details.requests.Session')
+    @mock.patch('redfish_protocol_validator.sessions.create_session')
+    @mock.patch('redfish_protocol_validator.security_details.requests.Session')
     def test_test_session_termination_side_effects_pass(
             self, mock_session, mock_create_session):
         self.sut.set_server_sent_event_uri('/redfish/v1/EventService/SSE')

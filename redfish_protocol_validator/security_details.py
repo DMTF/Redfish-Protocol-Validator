@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 from base64 import b64decode
 import socket
@@ -14,10 +14,10 @@ from pyasn1_modules import rfc5280
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 
-from assertions import sessions
-from assertions import utils
-from assertions.constants import Assertion, RequestType, ResourceType, Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import sessions
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Assertion, RequestType, ResourceType, Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 class Tls11HttpAdapter(HTTPAdapter):

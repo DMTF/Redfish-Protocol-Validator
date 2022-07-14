@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import string
 import unittest
@@ -9,9 +9,9 @@ from unittest import mock, TestCase
 
 import requests
 
-from assertions import accounts
-from assertions.constants import ResourceType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import accounts
+from redfish_protocol_validator.constants import ResourceType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 from unittests.utils import add_response
 
 
@@ -64,7 +64,7 @@ class Accounts(TestCase):
         role = accounts.select_standard_role(self.sut, self.session)
         self.assertEqual(role, 'ReadOnly')
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_select_standard_role_fail(self, mock_logging_error):
         payload = {'Id': 'Guest'}
         add_response(self.sut, self.role_uri1, json=payload,
@@ -130,7 +130,7 @@ class Accounts(TestCase):
             self.sut.rhost + self.account_uri3, json={'Enabled': True},
             headers={'If-Match': etag})
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_add_account_via_patch_fail1(self, mock_logging_error):
         payload = {'UserName': 'alice', 'Enabled': True}
         add_response(self.sut, self.account_uri3, json=payload,
@@ -164,7 +164,7 @@ class Accounts(TestCase):
         self.assertTrue(user.startswith('rfpv'))
         self.assertEqual(uri, new_uri)
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_add_account_no_collection(self, mock_logging_error):
         self.sut.set_nav_prop_uri('Accounts', None)
         user, pwd, uri = accounts.add_account(self.sut, self.session)
@@ -174,7 +174,7 @@ class Accounts(TestCase):
         args = mock_logging_error.call_args[0]
         self.assertIn('No accounts collection found', args[0])
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_add_account_collection_get_fail(self, mock_logging_error):
         add_response(self.sut, self.accounts_uri, json={},
                      status_code=requests.codes.NOT_FOUND)
@@ -260,7 +260,7 @@ class Accounts(TestCase):
         self.assertEqual(self.session.delete.call_count, 1)
         self.assertEqual(self.session.patch.call_count, 1)
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_delete_account_via_patch_bad_username(self, mock_logging_error):
         self.session.delete.return_value.status_code = (
             requests.codes.METHOD_NOT_ALLOWED)
@@ -273,7 +273,7 @@ class Accounts(TestCase):
         args = mock_logging_error.call_args[0]
         self.assertIn('did not match expected username', args[0])
 
-    @mock.patch('assertions.accounts.logging.error')
+    @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_delete_account_via_patch_get_failed(self, mock_logging_error):
         self.session.delete.return_value.status_code = (
             requests.codes.METHOD_NOT_ALLOWED)
@@ -320,9 +320,9 @@ class Accounts(TestCase):
                                 self.account_uri1)
         self.assertEqual(self.session.patch.call_count, 1)
 
-    @mock.patch('assertions.accounts.requests.get')
-    @mock.patch('assertions.accounts.requests.post')
-    @mock.patch('assertions.accounts.requests.patch')
+    @mock.patch('redfish_protocol_validator.accounts.requests.get')
+    @mock.patch('redfish_protocol_validator.accounts.requests.post')
+    @mock.patch('redfish_protocol_validator.accounts.requests.patch')
     def test_password_change_required1(self, mock_patch, mock_post, mock_get):
         user = 'bob'
         pwd = 'xyzzy'
@@ -336,9 +336,9 @@ class Accounts(TestCase):
         self.assertEqual(mock_post.call_count, 1)
         self.assertEqual(mock_patch.call_count, 1)
 
-    @mock.patch('assertions.accounts.requests.get')
-    @mock.patch('assertions.accounts.requests.post')
-    @mock.patch('assertions.accounts.requests.patch')
+    @mock.patch('redfish_protocol_validator.accounts.requests.get')
+    @mock.patch('redfish_protocol_validator.accounts.requests.post')
+    @mock.patch('redfish_protocol_validator.accounts.requests.patch')
     def test_password_change_required2(self, mock_patch, mock_post, mock_get):
         user = 'bob'
         pwd = 'xyzzy'
@@ -361,9 +361,9 @@ class Accounts(TestCase):
         self.assertEqual(mock_post.call_count, 0)
         self.assertEqual(mock_patch.call_count, 0)
 
-    @mock.patch('assertions.accounts.requests.get')
-    @mock.patch('assertions.accounts.requests.post')
-    @mock.patch('assertions.accounts.requests.patch')
+    @mock.patch('redfish_protocol_validator.accounts.requests.get')
+    @mock.patch('redfish_protocol_validator.accounts.requests.post')
+    @mock.patch('redfish_protocol_validator.accounts.requests.patch')
     def test_password_change_required_no_prop(self, mock_patch, mock_post,
                                               mock_get):
         user = 'bob'

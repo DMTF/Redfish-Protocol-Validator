@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import re
 import xml.etree.ElementTree as ET
@@ -9,9 +9,9 @@ from urllib.parse import urlparse
 
 import requests
 
-from assertions import utils
-from assertions.constants import Assertion, ResourceType, Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Assertion, ResourceType, Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 safe_chars_regex = re.compile(
     r"^([A-Za-z0-9!$&'()*+,\-./:;=@_]|%[A-Fa-f0-9]{2})*\Z")

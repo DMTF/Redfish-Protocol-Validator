@@ -1,16 +1,16 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
 from urllib.parse import urlparse
 
 import requests
 
-from assertions import utils
-from assertions.constants import Assertion, RequestType, Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Assertion, RequestType, Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
