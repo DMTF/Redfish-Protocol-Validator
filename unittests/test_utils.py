@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
@@ -9,9 +9,9 @@ from unittest import mock, TestCase
 import colorama
 import requests
 
-from assertions import utils
-from assertions.constants import Assertion, Result, SSDP_REDFISH
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Assertion, Result, SSDP_REDFISH
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 class MyTimeout(OSError):
@@ -155,8 +155,8 @@ class Utils(TestCase):
         self.assertEqual(keys, set())
 
     @mock.patch('builtins.print')
-    @mock.patch('assertions.utils.colorama.init')
-    @mock.patch('assertions.utils.colorama.deinit')
+    @mock.patch('redfish_protocol_validator.utils.colorama.init')
+    @mock.patch('redfish_protocol_validator.utils.colorama.deinit')
     def test_print_summary_all_pass(self, mock_colorama_deinit,
                                     mock_colorama_init, mock_print):
         utils.print_summary(self.sut)
@@ -173,8 +173,8 @@ class Utils(TestCase):
         self.assertNotIn(colorama.Fore.YELLOW, args[0])
 
     @mock.patch('builtins.print')
-    @mock.patch('assertions.utils.colorama.init')
-    @mock.patch('assertions.utils.colorama.deinit')
+    @mock.patch('redfish_protocol_validator.utils.colorama.init')
+    @mock.patch('redfish_protocol_validator.utils.colorama.deinit')
     def test_print_summary_not_all_pass(self, mock_colorama_deinit,
                                         mock_colorama_init, mock_print):
         self.sut.log(Result.FAIL, 'GET', 200, '/redfish/v1/accounts/1',
@@ -242,8 +242,8 @@ class Utils(TestCase):
         self.assertEqual(256, utils.sanitize(256, minimum=1))
         pass
 
-    @mock.patch('assertions.utils.socket')
-    @mock.patch('assertions.utils.http.client')
+    @mock.patch('redfish_protocol_validator.utils.socket')
+    @mock.patch('redfish_protocol_validator.utils.http.client')
     def test_discover_ssdp_ipv4(self, mock_http_client, mock_socket):
         mock_sock = mock.Mock()
         mock_sock.recv.return_value = b'foo'
@@ -253,8 +253,8 @@ class Utils(TestCase):
         services = utils.discover_ssdp()
         self.assertEqual({}, services)
 
-    @mock.patch('assertions.utils.socket')
-    @mock.patch('assertions.utils.http.client')
+    @mock.patch('redfish_protocol_validator.utils.socket')
+    @mock.patch('redfish_protocol_validator.utils.http.client')
     def test_discover_ssdp_ipv6(self, mock_http_client, mock_socket):
         mock_sock = mock.Mock()
         mock_sock.recv.return_value = b'foo'
@@ -264,8 +264,8 @@ class Utils(TestCase):
         services = utils.discover_ssdp(protocol='ipv6')
         self.assertEqual({}, services)
 
-    @mock.patch('assertions.utils.socket')
-    @mock.patch('assertions.utils.http.client')
+    @mock.patch('redfish_protocol_validator.utils.socket')
+    @mock.patch('redfish_protocol_validator.utils.http.client')
     def test_discover_ssdp_iface(self, mock_http_client, mock_socket):
         mock_sock = mock.Mock()
         mock_sock.recv.return_value = b'foo'
@@ -275,8 +275,8 @@ class Utils(TestCase):
         services = utils.discover_ssdp(iface='eth0')
         self.assertEqual({}, services)
 
-    @mock.patch('assertions.utils.socket')
-    @mock.patch('assertions.utils.http.client')
+    @mock.patch('redfish_protocol_validator.utils.socket')
+    @mock.patch('redfish_protocol_validator.utils.http.client')
     def test_discover_ssdp_bad_proto(self, mock_http_client, mock_socket):
         mock_sock = mock.Mock()
         mock_sock.recv.return_value = b'foo'

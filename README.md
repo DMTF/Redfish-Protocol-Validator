@@ -1,14 +1,23 @@
 # Redfish Protocol Validator
 
-Copyright 2020 DMTF. All rights reserved.
+Copyright 2020-2022 DMTF. All rights reserved.
 
 ## About
 
-The Redfish Protocol Validator tests the HTTP protocol behavior of a Redfish service to validate that it conforms to the Redfish specification.
+The Redfish Protocol Validator tests the HTTP protocol behavior of a Redfish service to validate that it conforms to the Redfish Specification.
 
 ## Installation
 
-`git clone https://github.com/DMTF/Redfish-Protocol-Validator.git`
+From PyPI:
+
+    pip install redfish_protocol_validator
+
+From GitHub:
+
+    git clone https://github.com/DMTF/Redfish-Protocol-Validator.git
+    cd Redfish-Protocol-Validator
+    python setup.py sdist
+    pip install dist/redfish_protocol_validator-x.x.x.tar.gz
 
 ## Requirements
 
@@ -26,9 +35,9 @@ sseclient-py
 urllib3
 ```
 
-You may install the external packages by running:
+If installing from GitHub, you may install the external packages by running:
 
-`pip install -r requirements.txt`
+    pip install -r requirements.txt
 
 ## Usage
 
@@ -42,15 +51,17 @@ usage: rf_protocol_validator.py [-h] [--version] --user USER --password
 
 Validate the protocol conformance of a Redfish service
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
+required arguments:
   --user USER, -u USER  the username for authentication
   --password PASSWORD, -p PASSWORD
                         the password for authentication
   --rhost RHOST, -r RHOST
                         address of the Redfish service (with scheme)
-  --log-level LOG_LEVEL
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         the logging level (default: WARNING)
   --report-dir REPORT_DIR
                         the directory for generated report files (default:
@@ -66,19 +77,21 @@ optional arguments:
                         the file or directory containing trusted CAs
 ```
 
-Example: `python rf_protocol_validator.py -r https://192.168.1.100 -u USERNAME -p PASSWORD`
+Example:
 
-## Unit tests
+    rf_protocol_validator.py -r https://192.168.1.100 -u USERNAME -p PASSWORD
 
-The Redfish-Protocol-Validator unit tests are executed using the `tox` package.
+## Unit Tests
+
+The Redfish Protocol Validator unit tests are executed using the `tox` package.
 
 You may install `tox` by running:
 
-`pip install tox`
+    pip install tox
 
 Running the unit tests:
 
-`tox`
+    tox
 
 ## Release Process
 

@@ -1,18 +1,18 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
 import random
 
 import requests
 
-from assertions import accounts as acct
-from assertions import sessions
-from assertions import utils
-from assertions.constants import RequestType, ResourceType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import accounts as acct
+from redfish_protocol_validator import sessions
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import RequestType, ResourceType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def set_mfr_model_fw(sut: SystemUnderTest, data):

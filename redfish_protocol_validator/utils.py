@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import http.client
 import io
@@ -16,7 +16,7 @@ import colorama
 import requests
 import sseclient
 
-from assertions.constants import Result, SSDP_REDFISH
+from redfish_protocol_validator.constants import Result, SSDP_REDFISH
 
 _color_map = {
         Result.PASS: (colorama.Fore.GREEN, colorama.Style.RESET_ALL),

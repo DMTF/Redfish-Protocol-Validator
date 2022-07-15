@@ -1,16 +1,16 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
 from urllib.parse import urlparse
 
 import requests
 
-from assertions import accounts
-from assertions.constants import RequestType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import accounts
+from redfish_protocol_validator.constants import RequestType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def bad_login(sut: SystemUnderTest):

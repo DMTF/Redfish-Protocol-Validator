@@ -1,15 +1,15 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
-from assertions.constants import Assertion, ResourceType, Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator.constants import Assertion, ResourceType, Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 from unittests.utils import add_response
 
 
@@ -150,7 +150,7 @@ class Sut(TestCase):
         self.assertEqual(self.sut.privilege_registry_uri,
                          self.privilege_registry_uri)
 
-    @mock.patch('assertions.system_under_test.logging.error')
+    @mock.patch('redfish_protocol_validator.system_under_test.logging.error')
     def test_bad_nav_prop(self, mock_error):
         self.sut.set_nav_prop_uri('Foo', '/redfish/v1/Foo')
         self.assertEqual(mock_error.call_count, 1)
@@ -306,13 +306,13 @@ class Sut(TestCase):
         self.assertEqual(self.sut.summary_count(Result.WARN), 0)
         self.assertEqual(self.sut.summary_count(Result.NOT_TESTED), 0)
 
-    @mock.patch('assertions.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
     def test_get_sessions_uri_default(self, mock_get):
         mock_get.return_value.status_code = requests.codes.OK
         uri = self.sut._get_sessions_uri(self.headers)
         self.assertEqual(uri, '/redfish/v1/SessionService/Sessions')
 
-    @mock.patch('assertions.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
     def test_get_sessions_uri_via_links(self, mock_get):
         response = mock.Mock(spec=requests.Response)
         response.status_code = requests.codes.OK
@@ -327,7 +327,7 @@ class Sut(TestCase):
         uri = self.sut._get_sessions_uri(self.headers)
         self.assertEqual(uri, '/redfish/v1/Sessions')
 
-    @mock.patch('assertions.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
     def test_get_sessions_uri_via_session_service(self, mock_get):
         response1 = mock.Mock(spec=requests.Response)
         response1.status_code = requests.codes.OK
@@ -347,9 +347,9 @@ class Sut(TestCase):
         uri = self.sut._get_sessions_uri(self.headers)
         self.assertEqual(uri, '/redfish/v1/Sessions')
 
-    @mock.patch('assertions.system_under_test.requests.get')
-    @mock.patch('assertions.system_under_test.requests.post')
-    @mock.patch('assertions.system_under_test.requests.Session')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.post')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.Session')
     def test_login(self, mock_session, mock_post, mock_get):
         mock_get.return_value.status_code = requests.codes.OK
         post_resp = mock.Mock(spec=requests.Response)
@@ -369,8 +369,8 @@ class Sut(TestCase):
                          '/redfish/v1/sessions/1234')
         self.assertEqual(self.sut.active_session_key, token)
 
-    @mock.patch('assertions.system_under_test.requests.get')
-    @mock.patch('assertions.system_under_test.requests.post')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.post')
     def test_login_basic_auth(self, mock_post, mock_get):
         mock_get.return_value.status_code = requests.codes.OK
         post_resp = mock.Mock(spec=requests.Response)
@@ -383,9 +383,9 @@ class Sut(TestCase):
         self.assertIsNone(self.sut.active_session_key)
         self.assertEqual(session.auth, (self.sut.username, self.sut.password))
 
-    @mock.patch('assertions.system_under_test.requests.get')
-    @mock.patch('assertions.system_under_test.requests.post')
-    @mock.patch('assertions.system_under_test.requests.Session')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.post')
+    @mock.patch('redfish_protocol_validator.system_under_test.requests.Session')
     def test_login_no_token_header(self, mock_session, mock_post, mock_get):
         mock_get.return_value.status_code = requests.codes.OK
         post_resp = mock.Mock(spec=requests.Response)
@@ -419,7 +419,7 @@ class Sut(TestCase):
         self.assertIsNone(self.sut.active_session_key)
         self.assertIsNone(self.sut.active_session_uri)
 
-    @mock.patch('assertions.system_under_test.logging.error')
+    @mock.patch('redfish_protocol_validator.system_under_test.logging.error')
     def test_logout_fail(self, mock_error):
         token = '87a5cd20'
         url = 'http://127.0.0.1:8000/redfish/v1/sessions/1234'

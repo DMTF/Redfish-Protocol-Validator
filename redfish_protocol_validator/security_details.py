@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 from base64 import b64decode
 import socket
@@ -14,10 +14,10 @@ from pyasn1_modules import rfc5280
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 
-from assertions import sessions
-from assertions import utils
-from assertions.constants import Assertion, RequestType, ResourceType, Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import sessions
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Assertion, RequestType, ResourceType, Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 class Tls11HttpAdapter(HTTPAdapter):
@@ -711,7 +711,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
     for uri, response in responses.items():
         found_response = True
         if response.ok:
-            msg = ('%s request to account URI %s with stale If-Match header '
+            msg = ('%s request to account URI %s with invalid If-Match header '
                    'succeeded; expected it to fail with status %s'
                    % (response.request.method, uri,
                       requests.codes.PRECONDITION_FAILED))
@@ -724,7 +724,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, 'Test passed')
             else:
-                msg = ('%s request to account URI %s with stale If-Match '
+                msg = ('%s request to account URI %s with invalid If-Match '
                        'header failed with status %s; expected it to fail '
                        'with status %s; extended error: %s' %
                        (response.request.method, uri, response.status_code,
@@ -734,7 +734,7 @@ def test_accounts_support_etags(sut: SystemUnderTest):
                         response.status_code, uri,
                         Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)
     if not found_response:
-        msg = ('No PATCH request to account resource with stale If-Match '
+        msg = ('No PATCH request to account resource with invalid If-Match '
                'header found; unable to test this assertion')
         sut.log(Result.NOT_TESTED, 'PATCH', '', '',
                 Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS, msg)

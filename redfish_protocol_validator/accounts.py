@@ -1,7 +1,7 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import logging
 import random
@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 
 import requests
 
-from assertions import utils
-from assertions.constants import RequestType, ResourceType
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import RequestType, ResourceType
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def get_user_names(sut: SystemUnderTest, session,
@@ -255,17 +255,15 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
                      resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=request_type)
     if request_type == RequestType.NORMAL and 'If-Match' in headers:
-        # patch with previous ETag, which should fail
+        # patch with invalid ETag, which should fail
         pwd = new_password(sut)
         payload = {'Password': pwd}
         new_headers = utils.get_etag_header(sut, session, acct_uri)
+        bad_headers = {'If-Match': new_headers['If-Match'] + 'foobar'}
         r = session.patch(sut.rhost + acct_uri, json=payload,
-                          headers=headers)
+                          headers=bad_headers)
         if r.ok:
             new_pwd = pwd
-        logging.debug('PATCH %s: Before password change ETag is %s; after '
-                      'change ETag is %s' % (acct_uri, headers.get('If-Match'),
-                                             new_headers.get('If-Match')))
         sut.add_response(acct_uri, r,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.BAD_ETAG)

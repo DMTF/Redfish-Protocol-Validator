@@ -1,12 +1,12 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import TestCase
 
-from assertions.constants import Assertion, ResourceType, Result
+from redfish_protocol_validator.constants import Assertion, ResourceType, Result
 
 
 class Constants(TestCase):

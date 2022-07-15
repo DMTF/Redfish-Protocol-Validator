@@ -1,16 +1,16 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import unittest
 from unittest import mock, TestCase
 
 import requests
 
-from assertions import service_requests as req
-from assertions.system_under_test import SystemUnderTest
-from assertions.constants import Assertion, RequestType, Result
+from redfish_protocol_validator import service_requests as req
+from redfish_protocol_validator.system_under_test import SystemUnderTest
+from redfish_protocol_validator.constants import Assertion, RequestType, Result
 from unittests.utils import add_response, get_result
 
 
@@ -1515,7 +1515,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    @mock.patch('assertions.service_requests.logging.warning')
+    @mock.patch('redfish_protocol_validator.service_requests.logging.warning')
     def test_patch_array_restore_warning(self, mock_warning):
         uri = self.mgr_net_proto_uri
         response = add_response(self.sut, uri, 'PATCH',
@@ -1600,7 +1600,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_to_members_prop_fail(self, mock_post):
         uri = self.sut.sessions_uri + '/Members'
         response = add_response(self.sut, uri, 'POST',
@@ -1615,7 +1615,7 @@ class ServiceRequests(TestCase):
         self.assertIn('POST to Members property URI %s failed with status %s'
                       % (uri, requests.codes.NOT_FOUND), result['msg'])
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_to_members_prop_pass(self, mock_post):
         uri = self.sut.sessions_uri + '/Members'
         session_uri = '/redfish/v1/SessionService/Sessions/123'
@@ -1677,7 +1677,7 @@ class ServiceRequests(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.assertIn('Test passed', result['msg'])
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_not_tested1(self, mock_post):
         uri = self.sut.sessions_uri
         response = add_response(
@@ -1692,7 +1692,7 @@ class ServiceRequests(TestCase):
         self.assertIn('POST request to %s failed with status code %s' %
                       (uri, requests.codes.BAD_REQUEST), result['msg'])
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_warn(self, mock_post):
         uri = self.sut.sessions_uri
         session_uri = '/redfish/v1/Sessions/123'
@@ -1714,7 +1714,7 @@ class ServiceRequests(TestCase):
             self.sut.rhost + session_uri)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_not_tested2(self, mock_post):
         uri = self.sut.sessions_uri
         session_uri = '/redfish/v1/Sessions/123'
@@ -1737,7 +1737,7 @@ class ServiceRequests(TestCase):
             self.sut.rhost + session_uri)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_fail(self, mock_post):
         uri = self.sut.sessions_uri
         session_uri = '/redfish/v1/Sessions/123'
@@ -1760,7 +1760,7 @@ class ServiceRequests(TestCase):
             self.sut.rhost + session_uri)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_pass(self, mock_post):
         uri = self.sut.sessions_uri
         session_uri1 = '/redfish/v1/Sessions/123'
@@ -1858,7 +1858,7 @@ class ServiceRequests(TestCase):
         self.assertEqual(uri2, result['uri'])
         self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
 
-    @mock.patch('assertions.service_requests.requests.post')
+    @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_service_requests_cover(self, mock_post):
         req.test_service_requests(self.sut)
 

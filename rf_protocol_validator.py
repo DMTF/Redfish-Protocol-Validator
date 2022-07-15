@@ -1,7 +1,8 @@
+#! /usr/bin/python
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import argparse
 import logging
@@ -13,17 +14,17 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 from http.client import HTTPConnection
 
-from assertions import protocol_details
-from assertions import report
-from assertions import resources
-from assertions import security_details
-from assertions import service_details
-from assertions import service_requests
-from assertions import service_responses
-from assertions import sessions
-from assertions import utils
-from assertions.constants import Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import protocol_details
+from redfish_protocol_validator import report
+from redfish_protocol_validator import resources
+from redfish_protocol_validator import security_details
+from redfish_protocol_validator import service_details
+from redfish_protocol_validator import service_requests
+from redfish_protocol_validator import service_responses
+from redfish_protocol_validator import sessions
+from redfish_protocol_validator import utils
+from redfish_protocol_validator.constants import Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 tool_version = '1.1.0'
 
@@ -49,7 +50,8 @@ def main():
     parser.add_argument('--rhost', '-r', type=str, required=True,
                         help='address of the Redfish service (with scheme)')
     parser.add_argument('--log-level', type=str, default='WARNING',
-                        help='the logging level (default: WARNING)')
+                        help='the logging level (default: WARNING)',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
     parser.add_argument('--report-dir', type=str, default='reports',
                         help='the directory for generated report files '
                              '(default: "reports")')

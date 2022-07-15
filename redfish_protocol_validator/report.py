@@ -1,15 +1,15 @@
 # Copyright Notice:
-# Copyright 2020 DMTF. All rights reserved.
+# Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-#     https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
 
 import html as html_mod
 import json
 from datetime import datetime
 
-from assertions import redfish_logo
-from assertions.constants import Result
-from assertions.system_under_test import SystemUnderTest
+from redfish_protocol_validator import redfish_logo
+from redfish_protocol_validator.constants import Result
+from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 html_template = """
 <html>
