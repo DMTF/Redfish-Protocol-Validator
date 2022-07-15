@@ -50,7 +50,8 @@ def main():
     parser.add_argument('--rhost', '-r', type=str, required=True,
                         help='address of the Redfish service (with scheme)')
     parser.add_argument('--log-level', type=str, default='WARNING',
-                        help='the logging level (default: WARNING)')
+                        help='the logging level (default: WARNING)',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
     parser.add_argument('--report-dir', type=str, default='reports',
                         help='the directory for generated report files '
                              '(default: "reports")')

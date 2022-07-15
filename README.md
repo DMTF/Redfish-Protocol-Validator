@@ -59,7 +59,7 @@ optional arguments:
                         the password for authentication
   --rhost RHOST, -r RHOST
                         address of the Redfish service (with scheme)
-  --log-level LOG_LEVEL
+  --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         the logging level (default: WARNING)
   --report-dir REPORT_DIR
                         the directory for generated report files (default:
