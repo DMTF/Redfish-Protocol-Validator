@@ -4,7 +4,7 @@ Copyright 2020-2022 DMTF. All rights reserved.
 
 ## About
 
-The Redfish Protocol Validator tests the HTTP protocol behavior of a Redfish service to validate that it conforms to the Redfish specification.
+The Redfish Protocol Validator tests the HTTP protocol behavior of a Redfish service to validate that it conforms to the Redfish Specification.
 
 ## Installation
 
@@ -51,14 +51,16 @@ usage: rf_protocol_validator.py [-h] [--version] --user USER --password
 
 Validate the protocol conformance of a Redfish service
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
+required arguments:
   --user USER, -u USER  the username for authentication
   --password PASSWORD, -p PASSWORD
                         the password for authentication
   --rhost RHOST, -r RHOST
                         address of the Redfish service (with scheme)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         the logging level (default: WARNING)
   --report-dir REPORT_DIR
