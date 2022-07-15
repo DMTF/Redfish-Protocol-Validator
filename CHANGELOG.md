@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.1] - 2022-07-15
+- Modified ETag testing to not assume previous ETags are now invalid
+- Modified project for PyPI publication
+
 ## [1.1.0] - 2022-04-07
 - Enabled HTTP tracing when 'log-level' is set to 'DEBUG'
 - Added step to enable the newly created user account when testing the password change requirements
