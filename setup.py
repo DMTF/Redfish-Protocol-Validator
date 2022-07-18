@@ -26,7 +26,9 @@ setup(
     keywords="Redfish",
     url="https://github.com/DMTF/Redfish-Protocol-Validator",
     packages=["redfish_protocol_validator"],
-    scripts=['rf_protocol_validator.py'],
+    entry_points={
+        'console_scripts': ['rf_protocol_validator=redfish_protocol_validator.console_scripts:main']
+    },
     install_requires=["aenum", "colorama", "pyasn1", "pyasn1-modules",
                       "requests>=2.23.0", "sseclient-py", "urllib3"]
 )
