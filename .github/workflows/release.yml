@@ -53,7 +53,7 @@ jobs:
         echo 'EOF' >> $GITHUB_ENV
     - name: Update version numbers
       run: |
-        sed -i -E 's/tool_version = .+/tool_version = '\'${{github.event.inputs.version}}\''/' redfish_protocol_validator/rf_protocol_validator.py
+        sed -i -E 's/tool_version = .+/tool_version = '\'${{github.event.inputs.version}}\''/' redfish_protocol_validator/console_scripts.py
         sed -i -E 's/    version=.+,/    version="'${{github.event.inputs.version}}'",/' setup.py
     - name: Update the changelog
       run: |
@@ -67,7 +67,7 @@ jobs:
       run: |
         git config user.name "GitHub Release Workflow"
         git config user.email "<>"
-        git add CHANGELOG.md setup.py redfish_protocol_validator/rf_protocol_validator.py
+        git add CHANGELOG.md setup.py redfish_protocol_validator/console_scripts.py
         git commit -s -m "${{github.event.inputs.version}} versioning"
         git push origin master
     - name: Make the release
