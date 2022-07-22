@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.2] - 2022-07-22
+- Minor updates to script packaging
+
 ## [1.1.1] - 2022-07-15
 - Modified ETag testing to not assume previous ETags are now invalid
 - Modified project for PyPI publication
