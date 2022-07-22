@@ -79,7 +79,7 @@ optional arguments:
 
 Example:
 
-    rf_protocol_validator.py -r https://192.168.1.100 -u USERNAME -p PASSWORD
+    rf_protocol_validator -r https://192.168.1.100 -u USERNAME -p PASSWORD
 
 ## Unit Tests
 
