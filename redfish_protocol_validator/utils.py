@@ -293,7 +293,7 @@ def discover_ssdp(port=1900, ttl=2, response_time=3, iface=None,
         'Host: {}:{}\r\n'
         'Man: "ssdp:discover"\r\n'
         "ST: {}\r\n"
-        "MX: {}\r\n"
+        "MX: {}\r\n\r\n"
     ).format(mcast_ip, port, search_target, response_time)
     socket.setdefaulttimeout(response_time + 2)
 
