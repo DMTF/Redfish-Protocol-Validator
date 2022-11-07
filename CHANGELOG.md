@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.3] - 2022-11-07
+- Corrected the SSDP request format to add a missing CRLF
+- Extended the test for checking that and event subscription is deleted when an SSE stream is closed from 3 seconds to 60 seconds
+
 ## [1.1.2] - 2022-07-22
 - Minor updates to script packaging
 
