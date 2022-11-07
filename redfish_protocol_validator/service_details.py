@@ -766,9 +766,9 @@ def test_sse_event_dest_deleted_on_close(sut: SystemUnderTest, response):
 
     # response closed above in assertion test_sse_connection_open_until_closed
 
-    # wait for up to 3 seconds for EventDestination resource to be deleted
+    # wait for up to 60 seconds for EventDestination resource to be deleted
     status = requests.codes.OK
-    for i in range(3):
+    for i in range(60):
         r = sut.session.get(sut.rhost + sut.event_dest_uri)
         if r.ok:
             # resource still present
