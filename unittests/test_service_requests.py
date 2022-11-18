@@ -1830,7 +1830,8 @@ class ServiceRequests(TestCase):
     def test_test_delete_non_deletable_resource_warn(self):
         uri = '/redfish/v1/SessionService/Sessions/123'
         add_response(self.sut, uri, 'DELETE',
-                     status_code=requests.codes.BAD_REQUEST)
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         req.test_delete_non_deletable_resource(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
@@ -1846,9 +1847,11 @@ class ServiceRequests(TestCase):
         uri1 = '/redfish/v1/SessionService/Sessions/123'
         uri2 = '/redfish/v1/SessionService/Sessions/456'
         add_response(self.sut, uri1, 'DELETE',
-                     status_code=requests.codes.BAD_REQUEST)
+                     status_code=requests.codes.BAD_REQUEST,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         add_response(self.sut, uri2, 'DELETE',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED)
+                     status_code=requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         req.test_delete_non_deletable_resource(self.sut)
         result = get_result(
             self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,

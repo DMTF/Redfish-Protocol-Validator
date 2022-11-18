@@ -333,7 +333,8 @@ class ProtocolDetails(TestCase):
 
     def test_test_http_unsupported_methods_pass1(self):
         add_response(self.sut, '/redfish/v1/', 'DELETE',
-                     requests.codes.METHOD_NOT_ALLOWED)
+                     requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                             'DELETE', '/redfish/v1/')
@@ -342,7 +343,8 @@ class ProtocolDetails(TestCase):
 
     def test_test_http_unsupported_methods_pass2(self):
         add_response(self.sut, '/redfish/v1/', 'DELETE',
-                     requests.codes.NOT_IMPLEMENTED)
+                     requests.codes.NOT_IMPLEMENTED,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                             'DELETE', '/redfish/v1/')
@@ -351,7 +353,8 @@ class ProtocolDetails(TestCase):
 
     def test_test_http_unsupported_methods_fail(self):
         add_response(self.sut, '/redfish/v1/', 'DELETE',
-                     requests.codes.BAD_REQUEST)
+                     requests.codes.BAD_REQUEST,
+                     request_type=RequestType.UNSUPPORTED_REQ)
         proto.test_http_unsupported_methods(self.sut)
         result = get_result(self.sut, Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
                             'DELETE', '/redfish/v1/')
