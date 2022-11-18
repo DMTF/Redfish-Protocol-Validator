@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.4] - 2022-11-18
+- Tagged the DELETE request to service root as UNSUPPORTED_REQ to better isolate DELETE testing from when it's expected to succeed
+
 ## [1.1.3] - 2022-11-07
 - Corrected the SSDP request format to add a missing CRLF
 - Extended the test for checking that and event subscription is deleted when an SSE stream is closed from 3 seconds to 60 seconds
