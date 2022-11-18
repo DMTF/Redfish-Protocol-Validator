@@ -45,6 +45,7 @@ class RequestType(NoValue):
     PATCH_RO_RESOURCE = auto()
     PATCH_COLLECTION = auto()
     PATCH_ODATA_PROPS = auto()
+    UNSUPPORTED_REQ = auto()
 
 
 class Assertion(NoValue):

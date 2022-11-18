@@ -372,7 +372,7 @@ def unsupported_requests(sut: SystemUnderTest):
     # DELETE on service root is never allowed
     uri = '/redfish/v1/'
     response = sut.session.request('DELETE', sut.rhost + uri)
-    sut.add_response(uri, response)
+    sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
 
 
 def basic_auth_requests(sut: SystemUnderTest):
