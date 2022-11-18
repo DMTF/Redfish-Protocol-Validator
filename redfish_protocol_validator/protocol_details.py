@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import requests
 
 from redfish_protocol_validator import utils
-from redfish_protocol_validator.constants import Assertion, ResourceType, Result
+from redfish_protocol_validator.constants import Assertion, ResourceType, RequestType, Result
 from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 safe_chars_regex = re.compile(
@@ -204,11 +204,11 @@ def test_http_unsupported_methods(sut: SystemUnderTest):
     """Perform tests on unsupported HTTP methods."""
     # Test Assertion.PROTO_HTTP_UNSUPPORTED_METHODS
     uri = '/redfish/v1/'
-    response = sut.get_response('DELETE', uri)
+    response = sut.get_response('DELETE', uri, request_type=RequestType.UNSUPPORTED_REQ)
     if response is None:
         sut.log(Result.NOT_TESTED, 'DELETE', '', uri,
                 Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                'No response found for TRACE method request')
+                'No response found for DELETE method request')
     elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
           response.status_code == requests.codes.NOT_IMPLEMENTED):
         sut.log(Result.PASS, 'DELETE', response.status_code, uri,

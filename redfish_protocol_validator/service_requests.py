@@ -1248,7 +1248,9 @@ def test_delete_non_deletable_resource(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE."""
     passed = False
     warn_uri, warn_response = None, None
-    for uri, response in sut.get_responses_by_method('DELETE').items():
+    fail_uri, fail_response = None, None
+    for uri, response in sut.get_responses_by_method('DELETE',
+                                                     request_type=RequestType.UNSUPPORTED_REQ).items():
         if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
             sut.log(Result.PASS, 'DELETE', response.status_code, uri,
                     Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, 'Test passed')
@@ -1256,15 +1258,25 @@ def test_delete_non_deletable_resource(sut: SystemUnderTest):
             break
         elif not response.ok:
             warn_uri, warn_response = uri, response
+        else:
+            fail_uri, fail_response = uri, response
 
     if not passed:
-        if warn_uri:
-            msg = ('DELETE request for resource %s failed with status %s; '
-                   'extended error: %s' %
-                   (warn_uri, warn_response.status_code,
-                    utils.get_extended_error(warn_response)))
-            sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
-                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
+        if warn_uri or fail_uri:
+            if fail_uri:
+                msg = ('DELETE request for resource %s failed with status %s; '
+                       'extended error: %s' %
+                       (fail_uri, fail_response.status_code,
+                        utils.get_extended_error(fail_response)))
+                sut.log(Result.FAIL, 'DELETE', fail_response.status_code, fail_uri,
+                        Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
+            else:
+                msg = ('DELETE request for resource %s failed with status %s; '
+                       'extended error: %s' %
+                       (warn_uri, warn_response.status_code,
+                        utils.get_extended_error(warn_response)))
+                sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
+                        Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
         else:
             msg = ('No failed DELETE responses found; unable to test this '
                    'assertion')
