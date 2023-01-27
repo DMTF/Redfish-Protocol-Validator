@@ -241,7 +241,7 @@ def process_ssdp_response(response, discovered_services, pattern):
 
 
 redfish_usn_pattern = re.compile(
-        r'^uuid:([a-f0-9\-]+)::urn:dmtf-org:service:redfish-rest:1(:\d)?$')
+        r'^uuid:([a-f0-9\-]+)::urn:dmtf-org:service:redfish-rest:1(:\d+)?$')
 
 redfish_st_pattern = re.compile(
         r'^urn:dmtf-org:service:redfish-rest:1(:\d)?$')
