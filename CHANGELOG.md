@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.5] - 2023-01-27
+- Corrected the USN pattern for SSDP responses to allow for a multi-digit minor version
+
 ## [1.1.4] - 2022-11-18
 - Tagged the DELETE request to service root as UNSUPPORTED_REQ to better isolate DELETE testing from when it's expected to succeed
 
