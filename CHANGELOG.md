@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.6] - 2023-02-10
+- Updated the expected pattern for the ST header in SSDP responses to allow for multi-digit minor versions
+
 ## [1.1.5] - 2023-01-27
 - Corrected the USN pattern for SSDP responses to allow for a multi-digit minor version
 
