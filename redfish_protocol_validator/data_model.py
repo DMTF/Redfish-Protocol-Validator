@@ -30,7 +30,7 @@ def test_settings_resources(sut):
             check_settings_type = False
 
             # Try to get the settings resource URI
-            settings_uri = response_data.get('@Redfish.Settings').get('SettingsObject').get('@odata.id')
+            settings_uri = response_data.get('@Redfish.Settings', {}).get('SettingsObject', {}).get('@odata.id')
 
             if settings_uri is not None:
                 # Settings annotation found; pass
@@ -53,6 +53,12 @@ def test_settings_resources(sut):
                                 response.status_code, uri,
                                 Assertion.DATA_SETTINGS_RES_SETTINGS_ANNOTATION, msg)
                         break
+                if not settings_response.ok:
+                    # No responses
+                    msg = ('%s does not contain a settings resource' % uri)
+                    sut.log(Result.NOT_TESTED, response.request.method,
+                            response.status_code, uri,
+                            Assertion.DATA_SETTINGS_RES_SETTINGS_ANNOTATION, msg)
 
             # If there's a settings resource, compare the resource types
             if check_settings_type:
