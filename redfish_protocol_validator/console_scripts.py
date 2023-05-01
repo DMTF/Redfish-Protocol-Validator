@@ -13,6 +13,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 from http.client import HTTPConnection
 
+from redfish_protocol_validator import data_model
 from redfish_protocol_validator import protocol_details
 from redfish_protocol_validator import report
 from redfish_protocol_validator import resources
@@ -33,6 +34,7 @@ def perform_tests(sut: SystemUnderTest):
     protocol_details.test_protocol_details(sut)
     service_requests.test_service_requests(sut)
     service_responses.test_service_responses(sut)
+    data_model.test_data_model(sut)
     service_details.test_service_details(sut)
     security_details.test_security_details(sut)
 

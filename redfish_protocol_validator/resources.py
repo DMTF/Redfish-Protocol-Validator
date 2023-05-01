@@ -104,18 +104,35 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     sut.set_service_uuid(root.get('UUID'))
     sut.set_supported_query_params(root.get('ProtocolFeaturesSupported', {}))
 
-    for prop in ['Systems', 'Chassis']:
-        if prop in root:
-            uri = root[prop]['@odata.id']
-            sut.set_nav_prop_uri(prop, uri)
-            r = sut.session.get(sut.rhost + uri)
-            yield {'uri': uri, 'response': r}
-            if r.ok:
-                data = r.json()
-                if 'Members' in data and len(data['Members']):
-                    uri = data['Members'][0]['@odata.id']
-                    r = sut.session.get(sut.rhost + uri)
-                    yield {'uri': uri, 'response': r}
+    if 'Chassis' in root:
+        uri = root['Chassis']['@odata.id']
+        sut.set_nav_prop_uri('Chassis', uri)
+        r = sut.session.get(sut.rhost + uri)
+        yield {'uri': uri, 'response': r}
+        if r.ok:
+            data = r.json()
+            if 'Members' in data and len(data['Members']):
+                uri = data['Members'][0]['@odata.id']
+                r = sut.session.get(sut.rhost + uri)
+                yield {'uri': uri, 'response': r}
+
+    if 'Systems' in root:
+        uri = root['Systems']['@odata.id']
+        sut.set_nav_prop_uri('Systems', uri)
+        r = sut.session.get(sut.rhost + uri)
+        yield {'uri': uri, 'response': r}
+        if r.ok:
+            data = r.json()
+            if 'Members' in data and len(data['Members']):
+                uri = data['Members'][0]['@odata.id']
+                r = sut.session.get(sut.rhost + uri)
+                yield {'uri': uri, 'response': r}
+                if r.ok:
+                    d = r.json()
+                    if 'Bios' in d:
+                        uri = d['Bios']['@odata.id']
+                        r = sut.session.get(sut.rhost + uri)
+                        yield {'uri': uri, 'response': r, 'resource_type': ResourceType.BIOS}
 
     if 'Managers' in root:
         uri = root['Managers']['@odata.id']

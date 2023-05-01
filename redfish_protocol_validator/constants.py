@@ -25,6 +25,7 @@ class Result(NoValue):
 class ResourceType(NoValue):
     MANAGER_ACCOUNT = auto()
     ROLE = auto()
+    BIOS = auto()
 
 
 class RequestType(NoValue):
@@ -384,6 +385,16 @@ class Assertion(NoValue):
         'The JSON object shall include a value property set to a JSON array '
         'that contains an entry for the Service Root and each resource that '
         'is a direct child of the Service Root.'
+    )
+    # Data model assertions (prefix of "DATA_")
+    DATA_SETTINGS_RES_SETTINGS_ANNOTATION = (
+        'For resources that support a future intended state, the response '
+        'shall contain a property with the @Redfish.Settings payload '
+        'annotation.'
+    )
+    DATA_SETTINGS_RES_DATA_TYPE = (
+        'The settings resource shall be of the same schema definition as the '
+        'active resource.'
     )
     # Service details assertions (prefix of "SERV_")
     SERV_EVENT_POST_RESP = (

@@ -91,6 +91,7 @@ sections = [
     ('PROTO_', 'Protocol Details'),
     ('REQ_', 'Service Requests'),
     ('RESP_', 'Service Responses'),
+    ('DATA_', 'Data Model'),
     ('SERV_', 'Service Details'),
     ('SEC_', 'Security Details'),
 ]
