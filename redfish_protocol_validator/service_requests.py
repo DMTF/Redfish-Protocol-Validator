@@ -1156,7 +1156,7 @@ def test_post_create_not_supported(sut: SystemUnderTest):
             if 'POST' in allow.upper():
                 msg = ('POST request to URI %s failed with %s; extended '
                        'error: %s; GET response contains an Allow header '
-                       'without POST specified' %
+                       'with POST specified' %
                        (sut.accounts_uri, response.status_code,
                         utils.get_extended_error(response)))
                 sut.log(Result.WARN, 'POST', response.status_code,
