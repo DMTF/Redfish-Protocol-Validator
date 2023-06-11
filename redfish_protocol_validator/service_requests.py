@@ -1151,7 +1151,10 @@ def test_post_create_not_supported(sut: SystemUnderTest):
                 Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
                 'Test passed')
     else:
-        allow = sut.get_response('GET', sut.accounts_uri).headers.get('Allow')
+        try:
+            allow = sut.get_response('GET', sut.accounts_uri).headers.get('Allow')
+        except:
+            allow = None
         if allow:
             if 'POST' in allow.upper():
                 msg = ('POST request to URI %s failed with %s; extended '
