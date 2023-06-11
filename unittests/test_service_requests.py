@@ -1645,6 +1645,7 @@ class ServiceRequests(TestCase):
 
     def test_test_post_create_not_supported_fail(self):
         uri = self.sut.accounts_uri
+        add_response(self.sut, uri, json={}, headers={'Allow': 'GET'})
         add_response(self.sut, uri, 'POST',
                      status_code=requests.codes.BAD_REQUEST)
         req.test_post_create_not_supported(self.sut)
