@@ -94,15 +94,15 @@ def new_password(sut: SystemUnderTest, length=16, upper=1, lower=1,
     # Get the min and max password length and override 'length' if needed
     # Use either limit if one is specified
     response = sut.get_response('GET', sut.account_service_uri)
-    if response.ok:
-        try:
+    try:
+        if response.ok:
             data = response.json()
             if 'MinPasswordLength' in data and length < data['MinPasswordLength']:
                 length = data['MinPasswordLength']
             elif 'MaxPasswordLength' in data and length > data['MaxPasswordLength']:
                 length = data['MaxPasswordLength']
-        except:
-            pass
+    except:
+        pass
 
     ascii_symbols = '_-.'
     pwd = random.sample(string.ascii_uppercase, upper)
