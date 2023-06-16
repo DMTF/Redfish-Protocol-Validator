@@ -1640,11 +1640,12 @@ class ServiceRequests(TestCase):
             'POST', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('Not response found for POST to Accounts URI',
+        self.assertIn('No response found for POST to Accounts URI',
                       result['msg'])
 
     def test_test_post_create_not_supported_fail(self):
         uri = self.sut.accounts_uri
+        add_response(self.sut, uri, json={}, headers={'Allow': 'GET'})
         add_response(self.sut, uri, 'POST',
                      status_code=requests.codes.BAD_REQUEST)
         req.test_post_create_not_supported(self.sut)
