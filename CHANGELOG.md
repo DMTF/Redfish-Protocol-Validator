@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.7] - 2023-06-16
+- Improved password generation for test accounts to inspect min and max password length requirements
+- Added 'Allow' header inspection for 'REQ_POST_CREATE_NOT_SUPPORTED' to see if a warning should be used instead of a failure in case the test account creation fails unexpectedly
+
 ## [1.1.6] - 2023-02-10
 - Updated the expected pattern for the ST header in SSDP responses to allow for multi-digit minor versions
 
