@@ -405,42 +405,6 @@ class Assertion(NoValue):
         'error if the body of the request contains both RegistryPrefixes and '
         'MessageIds, and shall return the HTTP 400 Bad Request status code.'
     )
-    SERV_EVENT_PERSISTENT_ACROSS_RESTARTS = (
-        'Services shall retain subscriptions as persistent across service '
-        'restarts.'
-    )
-    SERV_EVENT_PUSH_ONLY_ON_SUBSCRIPTION = (
-        'Services shall not push events by using HTTP POST unless an event '
-        'subscription has been created.'
-    )
-    SERV_EVENT_PAYLOAD_SIZE_LIMIT = (
-        'Services shall not send a push event payload larger than 1 Mebibyte '
-        '(1 MiB). If there is more than 1 MiB worth of data to send the '
-        'service shall divide the payload on the nearest Event entry such '
-        'that the total payload transmitted to the client is less than 1 MiB.'
-    )
-    SERV_EVENT_METRIC_REPORT_FORMAT = (
-        'Metric report message objects sent to the specified client endpoint '
-        'shall contain the properties, as described in the Redfish '
-        'MetricReport schema.'
-    )
-    SERV_EVENT_OTHER_FORMAT = (
-        'Event message objects POSTed to the specified client endpoint shall '
-        'contain the properties as described in the Redfish Event schema.'
-    )
-    SERV_EVENT_MESSAGE_KEY_FORMAT = (
-        '[The MessageKey variable] shall not include spaces, periods, or '
-        'special characters.'
-    )
-    SERV_EVENT_OEM_NO_ADDITIONAL_MESSAGE_ARGS = (
-        'OEMs shall not supply additional message arguments beyond those in a '
-        'standard Message Registry.'
-    )
-    SERV_EVENT_OEM_NO_CHANGED_REGISTRY_VALUES = (
-        'OEMs may substitute their own Message Registry for the standard '
-        'registry to provide the OEM section within the registry but shall '
-        'not change the standard values, such as messages, in such registries.'
-    )
     SERV_SSDP_CAN_BE_DISABLED = (
         'Use of SSDP is optional, and if implemented, shall enable the user '
         'to disable the protocol through the ManagerNetworkProtocol resource.'
@@ -477,12 +441,6 @@ class Assertion(NoValue):
     SERV_SSDP_M_SEARCH_RESPONSE_FORMAT = (
         'The response to an M-SEARCH multicast or unicast query shall use '
         'the [example format shown].'
-    )
-    SERV_SSDP_DISABLE_ADDITIONAL_UPNP_MESSAGES = (
-        'If [additional UPnP-defined SSDP messages to announce their '
-        'availability to software are] implemented, services shall allow the '
-        'end user to disable the traffic separately from the M-SEARCH '
-        'response functionality.'
     )
     SERV_SSE_SUCCESSFUL_RESPONSE = (
         'Successful resource responses for SSE shall return the HTTP 200 OK '
@@ -606,11 +564,6 @@ class Assertion(NoValue):
     SEC_BASIC_AUTH_OVER_HTTPS = (
         'All requests that use HTTP Basic authentication shall require HTTPS.'
     )
-    SEC_CHANNEL_AUTH_HEADER = (
-        # TODO(bdodd): needs clarification in the spec
-        'An authentication header shall accompany every request that '
-        'establishes a secure channel.'
-    )
     SEC_REQUIRE_LOGIN_SESSIONS = (
         'Service shall provide login sessions that conform with this '
         'specification.'
@@ -662,10 +615,6 @@ class Assertion(NoValue):
         '@Message.ExtendedInfo object that contains the '
         'PasswordChangeRequired message from the Base Message Registry.'
     )
-    SEC_PRIV_EQUIVALENT_ROLES = (
-        # TODO(bdodd): Difficult; try to implement at a future date
-        'Two roles with the same privileges shall behave equivalently.'
-    )
     SEC_PRIV_ONE_ROLE_PRE_USER = (
         'Each user shall be assigned exactly one role.'
     )
@@ -681,21 +630,9 @@ class Assertion(NoValue):
         'A predefined role or a custom role shall be assigned to a user when '
         'a manager account is created.'
     )
-    SEC_PRIV_MODEL_SAME_FOR_ETAG_AND_ITS_DATA = (
-        # TODO(bdodd): Not sure how to test this
-        'Services shall enforce the same privilege model for ETag-related '
-        'activity as is enforced for the data being represented by the ETag.'
-    )
     SEC_PRIV_OPERATION_TO_PRIV_MAPPING = (
         'For every request that a client makes to a service, the service '
         'shall determine that the authenticated identity of the requester has '
         'the authorization to complete the requested operation on the '
         'resource in the request.'
-    )
-    SEC_PRIV_REDFISH_FORUM_PRIV_REGISTRY_DEF = (
-        # TODO(bdodd): See notes from Mike R. on testing
-        'If a service provides a Privilege Registry, the service shall use '
-        'the Redfish Forum\'s Privilege Registry definition as a base '
-        'operation-to-privilege mapping definition for operations that the '
-        'service supports to promote interoperability for Redfish clients.'
     )
