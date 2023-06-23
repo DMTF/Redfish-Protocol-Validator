@@ -1202,7 +1202,8 @@ class SecurityDetails(TestCase):
 
     def test_test_priv_predefined_roles_not_modifiable_pass(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
-        test_priv = 'RfProtoValTestPriv'
+        test_priv = ['Login', 'ConfigureManager', 'ConfigureUsers',
+                     'ConfigureComponents', 'ConfigureSelf']
         etag = 'abcd1234'
         payload = {
             'Id': 'ReadOnly',
@@ -1232,7 +1233,8 @@ class SecurityDetails(TestCase):
 
     def test_test_priv_predefined_roles_not_modifiable_fail1(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
-        test_priv = 'RfProtoValTestPriv'
+        test_priv = ['Login', 'ConfigureManager', 'ConfigureUsers',
+                     'ConfigureComponents', 'ConfigureSelf']
         etag = 'abcd1234'
         payload = {
             'Id': 'ReadOnly',
@@ -1251,7 +1253,7 @@ class SecurityDetails(TestCase):
         sec.test_priv_predefined_roles_not_modifiable(self.sut)
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
-            json={'AssignedPrivileges': [{}, {}, test_priv]},
+            json={'AssignedPrivileges': test_priv},
             headers={'If-Match': etag})
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
@@ -1287,11 +1289,7 @@ class SecurityDetails(TestCase):
         mock_get2.headers = {'ETag': etag}
         mock_get2.json.return_value = {
             'Id': 'ReadOnly',
-            'AssignedPrivileges': [
-                'Login',
-                'ConfigureSelf',
-                test_priv
-            ]
+            'AssignedPrivileges': test_priv
         }
         self.mock_session.get.side_effect = [mock_get1, mock_get2]
         self.mock_session.patch.return_value.ok = True
