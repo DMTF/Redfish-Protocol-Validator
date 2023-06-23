@@ -482,7 +482,6 @@ class SystemUnderTest(object):
                             response.status_code)
         session.headers.update({'OData-Version': '4.0'})
         session.headers.update({'Accept-Encoding': 'identity'})
-        # TODO(bdodd): any other default headers to set?
         # session.headers.update({'Accept': 'application/json'})
         session.verify = self.verify
         self._set_session(session)

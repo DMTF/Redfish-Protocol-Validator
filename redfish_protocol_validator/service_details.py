@@ -166,52 +166,6 @@ def test_event_error_on_mutually_excl_props(sut: SystemUnderTest):
                 Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, msg)
 
 
-def test_subscriptions_persistent_across_restart(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_PERSISTENT_ACROSS_RESTARTS."""
-    # TODO(bdodd): This may be difficult to implement in a way that does not
-    #  disrupt the tool since there will be side-effects like destroying
-    #  existing sessions.
-    pass
-
-
-def test_events_push_only_on_subscription(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_PUSH_ONLY_ON_SUBSCRIPTION."""
-    # TODO(bdodd): Testable?
-    pass
-
-
-def test_event_payload_size_limit(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_PAYLOAD_SIZE_LIMIT."""
-    pass
-
-
-def test_event_metric_report_format(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_METRIC_REPORT_FORMAT."""
-    pass
-
-
-def test_event_other_format(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_OTHER_FORMAT."""
-    pass
-
-
-def test_event_message_key_format(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_MESSAGE_KEY_FORMAT."""
-    pass
-
-
-def test_event_oem_no_additional_message_args(sut: SystemUnderTest):
-    """Perform tests for
-    Assertion.SERV_EVENT_OEM_NO_ADDITIONAL_MESSAGE_ARGS."""
-    pass
-
-
-def test_event_oem_no_changed_registry_values(sut: SystemUnderTest):
-    """Perform tests for
-    Assertion.SERV_EVENT_OEM_NO_CHANGED_REGISTRY_VALUES."""
-    pass
-
-
 def pre_ssdp(sut: SystemUnderTest):
     """Perform prerequisite SSDP steps"""
     # discover using the redfish search target
@@ -530,13 +484,6 @@ def test_ssdp_m_search_response_format(sut: SystemUnderTest):
     else:
         sut.log(Result.PASS, '', '', '',
                 Assertion.SERV_SSDP_M_SEARCH_RESPONSE_FORMAT, 'Test passed')
-
-
-def test_ssdp_disable_additional_upnp_messages(sut: SystemUnderTest):
-    """Perform tests for
-    Assertion.SERV_SSDP_DISABLE_ADDITIONAL_UPNP_MESSAGES."""
-    # TODO(bdodd): There doesn't seem to be a standard way to test this
-    pass
 
 
 def test_sse_successful_response(sut: SystemUnderTest):
@@ -1063,22 +1010,6 @@ def test_eventing(sut: SystemUnderTest):
     test_push_style_eventing(sut)
     test_event_error_on_bad_request(sut)
     test_event_error_on_mutually_excl_props(sut)
-    test_subscriptions_persistent_across_restart(sut)
-    test_events_push_only_on_subscription(sut)
-    test_event_payload_size_limit(sut)
-    test_event_metric_report_format(sut)
-    test_event_other_format(sut)
-    test_event_message_key_format(sut)
-    test_event_oem_no_additional_message_args(sut)
-    test_event_oem_no_changed_registry_values(sut)
-
-
-def test_asynchronous_ops(sut: SystemUnderTest):
-    """Perform asynchronous operation tests"""
-    # TODO(bdodd): At this time, there seems to be no async operation that
-    #     would be implemented by many vendors and be non-invasive to test.
-    #     Revisit in future.
-    pass
 
 
 def test_discovery(sut: SystemUnderTest):
@@ -1091,7 +1022,6 @@ def test_discovery(sut: SystemUnderTest):
     test_ssdp_st_header_format(sut)
     test_ssdp_al_header_points_to_service_root(sut)
     test_ssdp_m_search_response_format(sut)
-    test_ssdp_disable_additional_upnp_messages(sut)
 
 
 def test_server_sent_events(sut: SystemUnderTest):
@@ -1112,16 +1042,8 @@ def test_server_sent_events(sut: SystemUnderTest):
     test_sse_json_metric_report_format(sut, events)
 
 
-def test_update_service(sut: SystemUnderTest):
-    """Perform update service tests"""
-    # TODO(bdodd): Initiating an update not practical at this time
-    pass
-
-
 def test_service_details(sut: SystemUnderTest):
     """Perform tests from the 'Service details' section of the spec."""
     test_eventing(sut)
-    test_asynchronous_ops(sut)
     test_discovery(sut)
     test_server_sent_events(sut)
-    test_update_service(sut)

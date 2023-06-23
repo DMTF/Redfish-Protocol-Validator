@@ -443,12 +443,6 @@ def test_basic_auth_over_https(sut: SystemUnderTest):
                     Assertion.SEC_BASIC_AUTH_OVER_HTTPS, 'Test passed')
 
 
-def test_security_channel_auth_header(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_CHANNEL_AUTH_HEADER"""
-    # TODO(bdodd): needs clarification in the spec
-    pass
-
-
 def test_require_login_sessions(sut: SystemUnderTest):
     """Perform test for Assertion.SEC_REQUIRE_LOGIN_SESSIONS"""
     response = sut.get_response('POST', sut.sessions_uri)
@@ -876,12 +870,6 @@ def test_password_change_required(sut: SystemUnderTest):
                 Assertion.SEC_PWD_CHANGE_REQ_ALLOW_PATCH_PASSWORD, msg)
 
 
-def test_priv_equivalent_roles(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_PRIV_EQUIVALENT_ROLES."""
-    # TODO(bdodd): Difficult; try to implement at a future date
-    pass
-
-
 def test_priv_one_role_per_user(sut: SystemUnderTest):
     """Perform test for Assertion.SEC_PRIV_ONE_ROLE_PRE_USER."""
     for uri, response in sut.get_responses_by_method(
@@ -947,9 +935,9 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
     uri = None
     data = {}
     role = 'ReadOnly'
-    # TODO(bdodd): Add standard priv instead of made-up one? Or delete instead?
-    test_priv = 'RfProtoValTestPriv'
-    # locate ReadOnly role
+    test_priv = ['Login', 'ConfigureManager', 'ConfigureUsers',
+                 'ConfigureComponents', 'ConfigureSelf']
+    # locate the ReadOnly role
     for uri, response in sut.get_responses_by_method(
             'GET', resource_type=ResourceType.ROLE).items():
         if response.ok:
@@ -958,22 +946,12 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                 read_only_found = True
                 break
     if read_only_found:
+        # Save the current privileges in case the PATCH is accepted
         privs = data.get('AssignedPrivileges')
-        if len(privs) and test_priv not in privs:
-            # build payload to add a new priv to AssignedPrivileges
-            new_privs = [{}] * len(privs)
-            if privs[-1] is None:
-                # rigid array type
-                for i in range(len(privs)):
-                    if privs[i] is None:
-                        new_privs[i] = test_priv
-                        break
-            else:
-                # variable or fixed array type
-                new_privs.append(test_priv)
-            payload = {'AssignedPrivileges': new_privs}
+        if privs:
+            # PATCH the test privileges
+            payload = {'AssignedPrivileges': test_priv}
             headers = utils.get_etag_header(sut, sut.session, uri)
-            # issue the PATCH
             response = sut.session.patch(sut.rhost + uri, json=payload,
                                          headers=headers)
             if response.ok:
@@ -987,34 +965,25 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                 # PATCH succeeded unexpectedly; try to PATCH it back
                 r = sut.session.get(sut.rhost + uri)
                 if r.ok:
-                    d = r.json()
-                    patched_privs = d.get('AssignedPrivileges')
-                    if test_priv in patched_privs:
-                        payload = {'AssignedPrivileges': privs}
-                        etag = r.headers.get('ETag')
-                        headers = {'If-Match': etag} if etag else {}
-                        sut.session.patch(
-                            sut.rhost + uri, json=payload, headers=headers)
+                    payload = {'AssignedPrivileges': privs}
+                    etag = r.headers.get('ETag')
+                    headers = {'If-Match': etag} if etag else {}
+                    sut.session.patch(sut.rhost + uri, json=payload,
+                                      headers=headers)
             else:
                 sut.log(Result.PASS, 'PATCH', response.status_code, uri,
                         Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
                         'Test passed')
         else:
-            if len(privs):
-                msg = ('Test privilege %s already present in predefined role '
-                       '%s; unable to test this assertion' % (test_priv, role))
-            else:
-                msg = ('No AssignedPrivileges found in role %s; unable to '
-                       'test this assertion' % role)
+            msg = ('No AssignedPrivileges found in role %s; unable to '
+                   'test this assertion' % role)
             sut.log(Result.NOT_TESTED, 'PATCH', '', uri,
-                    Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-                    msg)
+                    Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE, msg)
     else:
-        msg = ('Redefined role %s not found; unable to test this assertion'
+        msg = ('Predefined role %s not found; unable to test this assertion'
                % role)
         sut.log(Result.NOT_TESTED, 'PATCH', '', '',
-                Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-                msg)
+                Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE, msg)
 
 
 def test_priv_roles_assigned_at_account_create(sut: SystemUnderTest):
@@ -1036,12 +1005,6 @@ def test_priv_roles_assigned_at_account_create(sut: SystemUnderTest):
                     sut.log(Result.FAIL, 'GET', response.status_code, uri,
                             Assertion.SEC_PRIV_ROLE_ASSIGNED_AT_ACCOUNT_CREATE,
                             msg)
-
-
-def test_priv_model_same_for_etag_and_its_data(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_PRIV_MODEL_SAME_FOR_ETAG_AND_ITS_DATA."""
-    # TODO(bdodd): Not sure how to test this
-    pass
 
 
 def test_priv_operation_to_priv_mapping(sut: SystemUnderTest):
@@ -1088,12 +1051,6 @@ def test_priv_operation_to_priv_mapping(sut: SystemUnderTest):
                 msg)
 
 
-def test_priv_redfish_forum_priv_regisistry_def(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_PRIV_REDFISH_FORUM_PRIV_REGISTRY_DEF."""
-    # TODO(bdodd): See notes from Mike R. on testing
-    pass
-
-
 def test_authentication(sut: SystemUnderTest):
     """Perform authentication tests"""
     test_basic_auth_standalone(sut)
@@ -1107,7 +1064,6 @@ def test_authentication(sut: SystemUnderTest):
     test_no_auth_cookies(sut)
     test_support_basic_auth(sut)
     test_basic_auth_over_https(sut)
-    test_security_channel_auth_header(sut)
     test_require_login_sessions(sut)
     test_sessions_uri_location(sut)
     test_session_post_response(sut)
@@ -1116,14 +1072,11 @@ def test_authentication(sut: SystemUnderTest):
     test_session_termination_side_effects(sut)
     test_accounts_support_etags(sut)
     test_password_change_required(sut)
-    test_priv_equivalent_roles(sut)
     test_priv_one_role_per_user(sut)
     test_priv_support_predefined_roles(sut)
     test_priv_predefined_roles_not_modifiable(sut)
     test_priv_roles_assigned_at_account_create(sut)
-    test_priv_model_same_for_etag_and_its_data(sut)
     test_priv_operation_to_priv_mapping(sut)
-    test_priv_redfish_forum_priv_regisistry_def(sut)
 
 
 def test_protocols(sut: SystemUnderTest):

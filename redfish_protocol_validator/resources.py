@@ -54,18 +54,6 @@ def find_certificates(sut: SystemUnderTest, data):
                             sut.add_cert(coll_uri, uri)
 
 
-def get_all_resources(sut: SystemUnderTest, uri='/redfish/v1/',
-                      uris=None):
-    # TODO(bdodd): walk entire service, yielding the resource GET responses
-    raise NotImplementedError
-
-
-def get_select_resources(sut: SystemUnderTest, uri='/redfish/v1/',
-                         uris=None):
-    # TODO(bdodd): fetch specified URIs, yielding the resource GET responses
-    raise NotImplementedError
-
-
 def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                           uris=None):
     """

@@ -13,12 +13,6 @@ from redfish_protocol_validator.constants import Assertion, RequestType, Resourc
 from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
-def test_access_control_allow_origin_header(sut: SystemUnderTest):
-    """Perform tests for Assertion.RESP_HEADERS_ACCESS_CONTROL_ALLOW_ORIGIN."""
-    # TODO(bdodd): How can we test this?
-    pass
-
-
 def test_header_present(sut: SystemUnderTest, header, uri, method, response,
                         assertion):
     """Test that header is present in the response."""
@@ -579,7 +573,6 @@ def test_odata_service_value_prop(sut: SystemUnderTest):
 
 def test_response_headers(sut: SystemUnderTest):
     """Perform tests from the 'Response headers' sub-section of the spec."""
-    test_access_control_allow_origin_header(sut)
     test_allow_header_method_not_allowed(sut)
     test_allow_header_get_or_head(sut)
     test_cache_control_header(sut)

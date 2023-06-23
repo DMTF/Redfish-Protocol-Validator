@@ -172,16 +172,6 @@ class Resources(TestCase):
             self.sut, func=resources.get_default_resources)
         self.assertEqual(self.session.get.call_count, 27)
 
-    def test_get_all_resources(self):
-        with self.assertRaises(NotImplementedError):
-            resources.read_target_resources(
-                self.sut, func=resources.get_all_resources)
-
-    def test_get_select_resources(self):
-        with self.assertRaises(NotImplementedError):
-            resources.read_target_resources(
-                self.sut, func=resources.get_select_resources)
-
     def test_set_mfr_model_fw(self):
         uuid1 = "92384634-2938-2342-8820-489239905423"
         uuid2 = '85775665-c110-4b85-8989-e6162170b3ec'
