@@ -948,38 +948,42 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
     if read_only_found:
         # Save the current privileges in case the PATCH is accepted
         privs = data.get('AssignedPrivileges')
-
-        # PATCH the test privileges
-        payload = {'AssignedPrivileges': test_priv}
-        headers = utils.get_etag_header(sut, sut.session, uri)
-        response = sut.session.patch(sut.rhost + uri, json=payload,
-                                     headers=headers)
-        if response.ok:
-            msg = ('PATCH request to %s to modify the AssignedPrivileges '
-                   'of predefined role %s succeeded with status %s; '
-                   'expected it to fail' %
-                   (uri, role, response.status_code))
-            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
-                    Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-                    msg)
-            # PATCH succeeded unexpectedly; try to PATCH it back
-            r = sut.session.get(sut.rhost + uri)
-            if r.ok:
-                payload = {'AssignedPrivileges': privs}
-                etag = r.headers.get('ETag')
-                headers = {'If-Match': etag} if etag else {}
-                sut.session.patch(sut.rhost + uri, json=payload,
-                                  headers=headers)
+        if privs:
+            # PATCH the test privileges
+            payload = {'AssignedPrivileges': test_priv}
+            headers = utils.get_etag_header(sut, sut.session, uri)
+            response = sut.session.patch(sut.rhost + uri, json=payload,
+                                         headers=headers)
+            if response.ok:
+                msg = ('PATCH request to %s to modify the AssignedPrivileges '
+                       'of predefined role %s succeeded with status %s; '
+                       'expected it to fail' %
+                       (uri, role, response.status_code))
+                sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
+                        Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
+                        msg)
+                # PATCH succeeded unexpectedly; try to PATCH it back
+                r = sut.session.get(sut.rhost + uri)
+                if r.ok:
+                    payload = {'AssignedPrivileges': privs}
+                    etag = r.headers.get('ETag')
+                    headers = {'If-Match': etag} if etag else {}
+                    sut.session.patch(sut.rhost + uri, json=payload,
+                                      headers=headers)
+            else:
+                sut.log(Result.PASS, 'PATCH', response.status_code, uri,
+                        Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
+                        'Test passed')
         else:
-            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
-                    Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-                    'Test passed')
+            msg = ('No AssignedPrivileges found in role %s; unable to '
+                   'test this assertion' % role)
+            sut.log(Result.NOT_TESTED, 'PATCH', '', uri,
+                    Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE, msg)
     else:
         msg = ('Predefined role %s not found; unable to test this assertion'
                % role)
         sut.log(Result.NOT_TESTED, 'PATCH', '', '',
-                Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-                msg)
+                Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE, msg)
 
 
 def test_priv_roles_assigned_at_account_create(sut: SystemUnderTest):

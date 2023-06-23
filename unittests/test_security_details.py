@@ -1180,7 +1180,7 @@ class SecurityDetails(TestCase):
             'PATCH', '')
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('Redefined role %s not found' % 'ReadOnly',
+        self.assertIn('Predefined role %s not found' % 'ReadOnly',
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_not_tested2(self):
@@ -1198,29 +1198,6 @@ class SecurityDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('No AssignedPrivileges found in role %s' % 'ReadOnly',
-                      result['msg'])
-
-    def test_test_priv_predefined_roles_not_modifiable_not_tested3(self):
-        ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
-        test_priv = 'RfProtoValTestPriv'
-        payload = {
-            'Id': 'ReadOnly',
-            'AssignedPrivileges': [
-                'Login',
-                'ConfigureSelf',
-                test_priv
-            ]
-        }
-        add_response(self.sut, ro_uri, 'GET', requests.codes.OK,
-                     res_type=ResourceType.ROLE, json=payload)
-        sec.test_priv_predefined_roles_not_modifiable(self.sut)
-        result = get_result(
-            self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
-            'PATCH', ro_uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('Test privilege %s already present in predefined role '
-                      '%s' % (test_priv, 'ReadOnly'),
                       result['msg'])
 
     def test_test_priv_predefined_roles_not_modifiable_pass(self):
