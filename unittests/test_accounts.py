@@ -1,7 +1,7 @@
 # Copyright Notice:
 # Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/main/LICENSE.md
 
 import string
 import unittest
@@ -90,18 +90,18 @@ class Accounts(TestCase):
 
     def test_new_password(self):
         pass1 = accounts.new_password(self.sut)
-        self.assertEqual(len(pass1), 10)
+        self.assertEqual(len(pass1), 16)
         self.assertTrue(set(pass1).intersection(set(string.ascii_uppercase)))
         self.assertTrue(set(pass1).intersection(set(string.ascii_lowercase)))
         self.assertTrue(set(pass1).intersection(set(string.digits)))
         pass2 = accounts.new_password(self.sut)
-        self.assertEqual(len(pass2), 10)
+        self.assertEqual(len(pass2), 16)
         self.assertTrue(set(pass2).intersection(set(string.ascii_uppercase)))
         self.assertTrue(set(pass2).intersection(set(string.ascii_lowercase)))
         self.assertTrue(set(pass2).intersection(set(string.digits)))
         self.assertNotEqual(pass1, pass2)
         pass3 = accounts.new_password(self.sut, symbols=1)
-        self.assertEqual(len(pass3), 10)
+        self.assertEqual(len(pass3), 16)
         self.assertTrue(set(pass3).intersection(set(string.ascii_uppercase)))
         self.assertTrue(set(pass3).intersection(set(string.ascii_lowercase)))
         self.assertTrue(set(pass3).intersection(set(string.digits)))

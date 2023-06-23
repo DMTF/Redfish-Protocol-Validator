@@ -1,7 +1,7 @@
 # Copyright Notice:
 # Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/main/LICENSE.md
 
 import logging
 import random
@@ -89,8 +89,21 @@ def new_username(existing_users):
     return user
 
 
-def new_password(sut: SystemUnderTest, length=10, upper=1, lower=1,
-                 digits=1, symbols=0):
+def new_password(sut: SystemUnderTest, length=16, upper=1, lower=1,
+                 digits=1, symbols=1):
+    # Get the min and max password length and override 'length' if needed
+    # Use either limit if one is specified
+    response = sut.get_response('GET', sut.account_service_uri)
+    try:
+        if response.ok:
+            data = response.json()
+            if 'MinPasswordLength' in data and length < data['MinPasswordLength']:
+                length = data['MinPasswordLength']
+            elif 'MaxPasswordLength' in data and length > data['MaxPasswordLength']:
+                length = data['MaxPasswordLength']
+    except:
+        pass
+
     ascii_symbols = '_-.'
     pwd = random.sample(string.ascii_uppercase, upper)
     pwd.extend(random.sample(string.ascii_lowercase, lower))

@@ -1,7 +1,7 @@
 # Copyright Notice:
 # Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/main/LICENSE.md
 
 import logging
 from urllib.parse import urlparse
@@ -1138,7 +1138,7 @@ def test_post_create_not_supported(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_POST_CREATE_NOT_SUPPORTED."""
     response = sut.get_response('POST', sut.accounts_uri)
     if response is None:
-        msg = ('Not response found for POST to Accounts URI; unable to test '
+        msg = ('No response found for POST to Accounts URI; unable to test '
                'this assertion')
         sut.log(Result.NOT_TESTED, 'POST', '', sut.accounts_uri,
                 Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
@@ -1151,14 +1151,39 @@ def test_post_create_not_supported(sut: SystemUnderTest):
                 Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
                 'Test passed')
     else:
-        msg = ('POST request to URI %s failed with %s; expected %s; extended '
-               'error: %s' % (sut.accounts_uri, response.status_code,
-                              requests.codes.METHOD_NOT_ALLOWED,
-                              utils.get_extended_error(response)))
-        sut.log(Result.FAIL, 'POST', response.status_code, sut.accounts_uri,
-                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                msg)
-
+        try:
+            allow = sut.get_response('GET', sut.accounts_uri).headers.get('Allow')
+        except:
+            allow = None
+        if allow:
+            if 'POST' in allow.upper():
+                msg = ('POST request to URI %s failed with %s; extended '
+                       'error: %s; GET response contains an Allow header '
+                       'with POST specified' %
+                       (sut.accounts_uri, response.status_code,
+                        utils.get_extended_error(response)))
+                sut.log(Result.WARN, 'POST', response.status_code,
+                        sut.accounts_uri,
+                        Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
+            else:
+                msg = ('POST request to URI %s failed with %s; expected %s; '
+                       'extended error: %s' %
+                       (sut.accounts_uri, response.status_code,
+                        requests.codes.METHOD_NOT_ALLOWED,
+                        utils.get_extended_error(response)))
+                sut.log(Result.FAIL, 'POST', response.status_code,
+                        sut.accounts_uri,
+                        Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
+        else:
+            msg = ('POST request to URI %s failed with %s; expected %s; '
+                   'extended error: %s; GET response does not contain an '
+                   'Allow header to verify' %
+                   (sut.accounts_uri, response.status_code,
+                    requests.codes.METHOD_NOT_ALLOWED,
+                    utils.get_extended_error(response)))
+            sut.log(Result.WARN, 'POST', response.status_code,
+                    sut.accounts_uri, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
+                    msg)
 
 def test_post_create_not_idempotent(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT."""

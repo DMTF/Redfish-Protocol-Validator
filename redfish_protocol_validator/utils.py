@@ -1,7 +1,7 @@
 # Copyright Notice:
 # Copyright 2020-2022 DMTF. All rights reserved.
 # License: BSD 3-Clause License. For full text see link:
-# https://github.com/DMTF/Redfish-Protocol-Validator/blob/master/LICENSE.md
+# https://github.com/DMTF/Redfish-Protocol-Validator/blob/main/LICENSE.md
 
 import http.client
 import io
@@ -241,10 +241,10 @@ def process_ssdp_response(response, discovered_services, pattern):
 
 
 redfish_usn_pattern = re.compile(
-        r'^uuid:([a-f0-9\-]+)::urn:dmtf-org:service:redfish-rest:1(:\d)?$')
+        r'^uuid:([a-f0-9\-]+)::urn:dmtf-org:service:redfish-rest:1(:\d+)?$')
 
 redfish_st_pattern = re.compile(
-        r'^urn:dmtf-org:service:redfish-rest:1(:\d)?$')
+        r'^urn:dmtf-org:service:redfish-rest:1(:\d+)?$')
 
 uuid_pattern = re.compile(r'^uuid:([a-f0-9\-]+).*$')
 

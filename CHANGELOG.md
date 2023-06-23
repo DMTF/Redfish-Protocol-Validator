@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.1.7] - 2023-06-16
+- Improved password generation for test accounts to inspect min and max password length requirements
+- Added 'Allow' header inspection for 'REQ_POST_CREATE_NOT_SUPPORTED' to see if a warning should be used instead of a failure in case the test account creation fails unexpectedly
+
+## [1.1.6] - 2023-02-10
+- Updated the expected pattern for the ST header in SSDP responses to allow for multi-digit minor versions
+
+## [1.1.5] - 2023-01-27
+- Corrected the USN pattern for SSDP responses to allow for a multi-digit minor version
+
 ## [1.1.4] - 2022-11-18
 - Tagged the DELETE request to service root as UNSUPPORTED_REQ to better isolate DELETE testing from when it's expected to succeed
 
