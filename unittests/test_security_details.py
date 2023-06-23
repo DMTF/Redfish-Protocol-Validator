@@ -1219,11 +1219,11 @@ class SecurityDetails(TestCase):
         self.mock_session.get.return_value.headers = {'ETag': etag}
         self.mock_session.patch.return_value.ok = False
         self.mock_session.patch.return_value.status_code = (
-            requests.codes.BAD_REQUEST)
+            requests.codes.METHOD_NOT_ALLOWED)
         sec.test_priv_predefined_roles_not_modifiable(self.sut)
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
-            json={'AssignedPrivileges': [{}, {}, test_priv]},
+            json={'AssignedPrivileges': test_priv},
             headers={'If-Match': etag})
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
