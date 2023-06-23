@@ -1233,15 +1233,11 @@ class SecurityDetails(TestCase):
 
     def test_test_priv_predefined_roles_not_modifiable_fail1(self):
         ro_uri = '/redfish/v1/AccountsService/Roles/ReadOnly'
-        test_priv = ['Login', 'ConfigureManager', 'ConfigureUsers',
-                     'ConfigureComponents', 'ConfigureSelf']
         etag = 'abcd1234'
+        privs = ['Login', 'ConfigureSelf']
         payload = {
             'Id': 'ReadOnly',
-            'AssignedPrivileges': [
-                'Login',
-                'ConfigureSelf'
-            ]
+            'AssignedPrivileges': privs
         }
         add_response(self.sut, ro_uri, 'GET', requests.codes.OK,
                      res_type=ResourceType.ROLE, json=payload)
@@ -1253,7 +1249,7 @@ class SecurityDetails(TestCase):
         sec.test_priv_predefined_roles_not_modifiable(self.sut)
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
-            json={'AssignedPrivileges': test_priv},
+            json={'AssignedPrivileges': privs},
             headers={'If-Match': etag})
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
