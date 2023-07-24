@@ -360,21 +360,22 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # GET the account
     response = requests.get(sut.rhost + uri, auth=(user, password),
-                            headers=headers)
+                            headers=headers, verify=sut.verify)
     etag = utils.get_response_etag(response)
     sut.add_response(uri, response, resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # try to get protected resource
     response = requests.get(sut.rhost + sut.sessions_uri,
-                            auth=(user, password), headers=headers)
+                            auth=(user, password), headers=headers, 
+                            verify=sut.verify)
     sut.add_response(sut.sessions_uri, response,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # change password
     payload = {'Password': new_password(sut)}
     if etag:
         headers['If-Match'] = etag
-    response = requests.patch(uri, auth=(user, password), json=payload,
-                              headers=headers)
+    response = requests.patch(sut.rhost + uri, auth=(user, password), json=payload,
+                              headers=headers, verify=sut.verify)
     sut.add_response(uri, response,
                      resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
