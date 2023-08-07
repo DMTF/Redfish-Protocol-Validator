@@ -217,6 +217,7 @@ def test_ssdp_can_be_disabled(sut: SystemUnderTest):
         headers = {'If-Match': etag} if etag else {}
         r = sut.session.patch(sut.rhost + sut.mgr_net_proto_uri,
                               json=payload, headers=headers)
+        r = poll_task(sut, r)
         if r.ok:
             services = utils.discover_ssdp(search_target=SSDP_REDFISH)
             uuids = services.keys()
