@@ -154,7 +154,7 @@ def add_account_via_patch(sut: SystemUnderTest, session, user, role, password,
     if role:
         payload['RoleId'] = role
     headers = utils.get_etag_header(sut, session, uri)
-    response = session.patch(sut.rhost + uri, json=payload, headers=headers)
+    response = sut.patch(uri, json=payload, headers=headers, session=session)
     sut.add_response(uri, response, resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=request_type)
     success = response.status_code == requests.codes.OK
@@ -166,8 +166,7 @@ def add_account_via_patch(sut: SystemUnderTest, session, user, role, password,
             if 'Enabled' in data and data['Enabled'] is False:
                 headers = utils.get_etag_header(sut, session, uri)
                 payload = {'Enabled': True}
-                session.patch(sut.rhost + uri, json=payload,
-                              headers=headers)
+                sut.patch(uri, json=payload, headers=headers, session=session)
         sut.add_response(uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=request_type)
@@ -199,7 +198,7 @@ def add_account(sut: SystemUnderTest, session,
     payload = {'UserName': user, 'Password': password}
     if role:
         payload['RoleId'] = role
-    response = session.post(sut.rhost + sut.accounts_uri, json=payload)
+    response = sut.post(sut.accounts_uri, json=payload, session=session)
     sut.add_response(sut.accounts_uri, response, request_type=request_type)
 
     new_acct_uri = None
@@ -229,8 +228,8 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
         pwd = new_password(sut)
         payload = {'Password': pwd, 'BogusProp': 'foo'}
         headers = utils.get_etag_header(sut, session, acct_uri)
-        response = session.patch(sut.rhost + acct_uri, json=payload,
-                                 headers=headers)
+        response = sut.patch(acct_uri, json=payload, headers=headers,
+                             session=session)
         if response.ok:
             new_pwd = pwd
         sut.add_response(acct_uri, response,
@@ -239,8 +238,8 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
         # patch a single property that can never be updated
         payload = {'BogusProp': 'foo'}
         headers = utils.get_etag_header(sut, session, acct_uri)
-        response = session.patch(sut.rhost + acct_uri, json=payload,
-                                 headers=headers)
+        response = sut.patch(acct_uri, json=payload, headers=headers,
+                             session=session)
         sut.add_response(acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.PATCH_BAD_PROP)
@@ -249,8 +248,8 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
                     else acct_uri + '/')
         payload = {'@odata.id': odata_id}
         headers = utils.get_etag_header(sut, session, acct_uri)
-        response = session.patch(sut.rhost + acct_uri, json=payload,
-                                 headers=headers)
+        response = sut.patch(acct_uri, json=payload, headers=headers,
+                             session=session)
         sut.add_response(acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=RequestType.PATCH_ODATA_PROPS)
@@ -260,8 +259,8 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
     pwd = new_password(sut)
     payload = {'Password': pwd}
     headers = utils.get_etag_header(sut, session, acct_uri)
-    response = session.patch(sut.rhost + acct_uri, json=payload,
-                             headers=headers)
+    response = sut.patch(acct_uri, json=payload, headers=headers,
+                         session=session)
     if response.ok:
         new_pwd = pwd
     sut.add_response(acct_uri, response,
@@ -273,8 +272,8 @@ def patch_account(sut: SystemUnderTest, session, acct_uri,
         payload = {'Password': pwd}
         new_headers = utils.get_etag_header(sut, session, acct_uri)
         bad_headers = {'If-Match': new_headers['If-Match'] + 'foobar'}
-        r = session.patch(sut.rhost + acct_uri, json=payload,
-                          headers=bad_headers)
+        r = sut.patch(acct_uri, json=payload, headers=bad_headers,
+                      session=session)
         if r.ok:
             new_pwd = pwd
         sut.add_response(acct_uri, r,
@@ -293,8 +292,8 @@ def delete_account_via_patch(sut: SystemUnderTest, session, user, acct_uri,
             if data.get('Enabled', False):
                 payload['Enabled'] = False
             headers = utils.get_etag_header(sut, session, acct_uri)
-            response = session.patch(sut.rhost + acct_uri, json=payload,
-                                     headers=headers)
+            response = sut.patch(acct_uri, json=payload, headers=headers,
+                                 session=session)
             sut.add_response(acct_uri, response,
                              resource_type=ResourceType.MANAGER_ACCOUNT,
                              request_type=request_type)
@@ -318,7 +317,7 @@ def delete_account(sut: SystemUnderTest, session, user, acct_uri,
             delete_account_via_patch(sut, session, user, acct_uri,
                                      request_type=request_type)
             return
-    response = session.delete(sut.rhost + acct_uri)
+    response = sut.delete(acct_uri, session=session)
     sut.add_response(acct_uri, response,
                      resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=request_type)
@@ -340,8 +339,8 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
         if not account_enabled:
             payload['Enabled'] = True
         headers = {'If-Match': etag} if etag else {}
-        response = session.patch(sut.rhost + uri, json=payload,
-                                 headers=headers)
+        response = sut.patch(uri, json=payload, headers=headers,
+                             session=session)
         sut.add_response(uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT)
         if not response.ok:

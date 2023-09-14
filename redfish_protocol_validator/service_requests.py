@@ -848,12 +848,10 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
     }
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
-    response = sut.session.patch(sut.rhost + uri,
-                                 json=payload1, headers=headers)
+    response = sut.patch(uri, json=payload1, headers=headers)
     if response.ok:
         headers = utils.get_etag_header(sut, sut.session, uri)
-        response = sut.session.patch(
-            sut.rhost + uri, json=payload2, headers=headers)
+        response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
             if get_resp.ok:
@@ -913,12 +911,10 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
     }
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
-    response = sut.session.patch(sut.rhost + uri,
-                                 json=payload1, headers=headers)
+    response = sut.patch(uri, json=payload1, headers=headers)
     if response.ok:
         headers = utils.get_etag_header(sut, sut.session, uri)
-        response = sut.session.patch(
-            sut.rhost + uri, json=payload2, headers=headers)
+        response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
             if get_resp.ok:
@@ -986,12 +982,10 @@ def test_patch_array_truncate(sut: SystemUnderTest):
     expected_array = ['time-b-b.nist.gov']
     uri = sut.mgr_net_proto_uri
     headers = utils.get_etag_header(sut, sut.session, uri)
-    response = sut.session.patch(sut.rhost + uri, json=payload1,
-                                 headers=headers)
+    response = sut.patch(uri, json=payload1, headers=headers)
     if response.ok:
         headers = utils.get_etag_header(sut, sut.session, uri)
-        response = sut.session.patch(
-            sut.rhost + uri, json=payload2, headers=headers)
+        response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
             if get_resp.ok:
@@ -1045,8 +1039,7 @@ def patch_array_restore(sut: SystemUnderTest, array):
         }
     }
     headers = utils.get_etag_header(sut, sut.session, uri)
-    response = sut.session.patch(sut.rhost + uri,
-                                 json=payload, headers=headers)
+    response = sut.patch(uri, json=payload, headers=headers)
     if not response.ok:
         logging.warning('Attempt to PATCH %s to restore the original '
                         'NTPServers array failed with status %s; PATCH '
@@ -1124,7 +1117,7 @@ def test_post_create_to_members_prop(sut: SystemUnderTest):
         if location and isinstance(location, str):
             session_uri = urlparse(location).path
             if session_uri:
-                sut.session.delete(sut.rhost + session_uri)
+                sut.delete(session_uri)
     else:
         msg = ('POST to Members property URI %s failed with status %s; '
                'extended error: %s' %
@@ -1228,7 +1221,7 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
                         Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
             # clean-up the created session
             if session_uri2 and loc1 != loc2:
-                sut.session.delete(sut.rhost + session_uri2)
+                sut.delete(session_uri2)
         else:
             msg = ('Second POST request to %s failed with status code %s'
                    % (uri, r2.status_code))
@@ -1236,7 +1229,7 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
                     Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT, msg)
         # clean-up the created session
         if session_uri1:
-            sut.session.delete(sut.rhost + session_uri1)
+            sut.delete(session_uri1)
     else:
         msg = ('POST request to %s failed with status code %s; unable to test '
                'this assertion' % (uri, r1.status_code))

@@ -271,8 +271,7 @@ def patch_session(sut: SystemUnderTest, session_uri):
     """PATCH a session; should fail, sessions are not updatable"""
     payload = {'UserName': 'pRoToVAl'}
     headers = utils.get_etag_header(sut, sut.session, session_uri)
-    response = sut.session.patch(sut.rhost + session_uri, json=payload,
-                                 headers=headers)
+    response = sut.patch(session_uri, json=payload, headers=headers)
     sut.add_response(session_uri, response,
                      request_type=RequestType.PATCH_RO_RESOURCE)
 
@@ -281,8 +280,7 @@ def patch_collection(sut: SystemUnderTest, collection_uri):
     """PATCH a collection; should fail, collections are not updatable"""
     payload = {'Name': 'My Collection'}
     headers = utils.get_etag_header(sut, sut.session, collection_uri)
-    response = sut.session.patch(sut.rhost + collection_uri, json=payload,
-                                 headers=headers)
+    response = sut.patch(collection_uri, json=payload, headers=headers)
     sut.add_response(collection_uri, response,
                      request_type=RequestType.PATCH_COLLECTION)
 

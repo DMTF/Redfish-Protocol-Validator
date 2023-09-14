@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from redfish_protocol_validator.utils import redfish_version_to_tuple
+from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task
 from redfish_protocol_validator.constants import RequestType, Result
 
 
@@ -441,6 +441,56 @@ class SystemUnderTest(object):
                     if 'Sessions' in data:
                         return data['Sessions']['@odata.id']
         return '/redfish/v1/SessionService/Sessions'
+
+    def post(self, uri, json=None, headers=None, session=None):
+        """
+        Performs a POST request with task polling
+
+        :param uri: The URI of the POST request
+        :param json: The JSON payload to send with the POST request
+        :param headers: HTTP headers to include in the POST request
+        :param session: Session object if using a session other than the sut's
+
+        :return: A response object for the POST operation
+        """
+        if session:
+            response = session.post(self.rhost + uri, json=json, headers=headers)
+        else:
+            response = self._session.post(self.rhost + uri, json=json, headers=headers)
+        return poll_task(self, response, session)
+
+    def patch(self, uri, json=None, headers=None, session=None):
+        """
+        Performs a PATCH request with task polling
+
+        :param uri: The URI of the PATCH request
+        :param json: The JSON payload to send with the PATCH request
+        :param headers: HTTP headers to include in the PATCH request
+        :param session: Session object if using a session other than the sut's
+
+        :return: A response object for the PATCH operation
+        """
+        if session:
+            response = session.patch(self.rhost + uri, json=json, headers=headers)
+        else:
+            response = self._session.patch(self.rhost + uri, json=json, headers=headers)
+        return poll_task(self, response, session)
+
+    def delete(self, uri, headers=None, session=None):
+        """
+        Performs a DELETE request with task polling
+
+        :param uri: The URI of the POST request
+        :param headers: HTTP headers to include in the DELETE request
+        :param session: Session object if using a session other than the sut's
+
+        :return: A response object for the DELETE operation
+        """
+        if session:
+            response = session.delete(self.rhost + uri, headers=headers)
+        else:
+            response = self._session.delete(self.rhost + uri, headers=headers)
+        return poll_task(self, response, session)
 
     def login(self):
         """

@@ -63,7 +63,7 @@ def create_session(sut: SystemUnderTest):
 
 def delete_session(sut: SystemUnderTest, session, session_uri,
                    request_type=RequestType.NORMAL):
-    response = session.delete(sut.rhost + session_uri)
+    response = sut.delete(session_uri, session=session)
     sut.add_response(session_uri, response, request_type=request_type)
     return response
 

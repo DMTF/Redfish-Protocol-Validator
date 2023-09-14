@@ -645,7 +645,7 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
                     Assertion.SEC_SESSION_TERMINATION_SIDE_EFFECTS, msg)
         elif response.ok:
             # delete the session
-            r = session.delete(sut.rhost + new_session_uri)
+            r = sut.delete(new_session_uri, session=session)
             if r.ok:
                 # read from the SSE stream
                 try:
@@ -952,8 +952,7 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
             # PATCH the test privileges
             payload = {'AssignedPrivileges': test_priv}
             headers = utils.get_etag_header(sut, sut.session, uri)
-            response = sut.session.patch(sut.rhost + uri, json=payload,
-                                         headers=headers)
+            response = sut.patch(uri, json=payload, headers=headers)
             if response.ok:
                 msg = ('PATCH request to %s to modify the AssignedPrivileges '
                        'of predefined role %s succeeded with status %s; '
@@ -968,8 +967,7 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                     payload = {'AssignedPrivileges': privs}
                     etag = r.headers.get('ETag')
                     headers = {'If-Match': etag} if etag else {}
-                    sut.session.patch(sut.rhost + uri, json=payload,
-                                      headers=headers)
+                    sut.patch(uri, json=payload, headers=headers)
             else:
                 sut.log(Result.PASS, 'PATCH', response.status_code, uri,
                         Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
