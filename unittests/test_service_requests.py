@@ -1630,7 +1630,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
         self.mock_session.delete.assert_called_with(
-            self.sut.rhost + session_uri)
+            self.sut.rhost + session_uri, headers=None)
 
     def test_test_post_create_not_supported_not_tested(self):
         uri = self.sut.accounts_uri
@@ -1712,7 +1712,7 @@ class ServiceRequests(TestCase):
         self.assertIn('Second POST request to %s failed with status code %s' %
                       (uri, requests.codes.BAD_REQUEST), result['msg'])
         self.mock_session.delete.assert_called_with(
-            self.sut.rhost + session_uri)
+            self.sut.rhost + session_uri, headers=None)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1735,7 +1735,7 @@ class ServiceRequests(TestCase):
         self.assertIn('POST request to %s did not return a Location header' %
                       uri, result['msg'])
         self.mock_session.delete.assert_called_with(
-            self.sut.rhost + session_uri)
+            self.sut.rhost + session_uri, headers=None)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1758,7 +1758,7 @@ class ServiceRequests(TestCase):
         self.assertIn('the same resource URI in the Location header (%s)' %
                       session_uri, result['msg'])
         self.mock_session.delete.assert_called_with(
-            self.sut.rhost + session_uri)
+            self.sut.rhost + session_uri, headers=None)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1780,7 +1780,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
         self.mock_session.delete.assert_called_with(
-            self.sut.rhost + session_uri1)
+            self.sut.rhost + session_uri1, headers=None)
         self.assertEqual(self.mock_session.delete.call_count, 2)
 
     def test_test_delete_method_required_not_tested(self):

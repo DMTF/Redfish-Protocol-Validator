@@ -23,8 +23,7 @@ def test_event_service_subscription(sut: SystemUnderTest):
             'Protocol': 'Redfish',
             'Destination': 'https://192.168.1.50/Destination1'
         }
-        response = sut.session.post(sut.rhost + sut.subscriptions_uri,
-                                    json=payload)
+        response = sut.post(sut.subscriptions_uri, json=payload)
         sut.add_response(sut.subscriptions_uri, response,
                          request_type=RequestType.SUBSCRIPTION)
         if response.status_code == requests.codes.CREATED:
@@ -35,7 +34,7 @@ def test_event_service_subscription(sut: SystemUnderTest):
                         Assertion.SERV_EVENT_POST_RESP, 'Test passed')
                 # cleanup
                 uri = urlparse(location).path
-                r = sut.session.delete(sut.rhost + uri)
+                r = sut.delete(uri)
                 sut.add_response(uri, r, request_type=RequestType.SUBSCRIPTION)
             else:
                 msg = ('Response from event subscription POST request to %s '
@@ -74,8 +73,7 @@ def test_event_error_on_bad_request(sut: SystemUnderTest):
             'Protocol': 'FTP',  # invalid EventDestinationProtocol
             'Destination': 'https://192.168.1.50/Destination1'
         }
-        response = sut.session.post(sut.rhost + sut.subscriptions_uri,
-                                    json=payload)
+        response = sut.post(sut.subscriptions_uri, json=payload)
         sut.add_response(sut.subscriptions_uri, response,
                          request_type=RequestType.SUBSCRIPTION)
         if response.ok:
@@ -90,7 +88,7 @@ def test_event_error_on_bad_request(sut: SystemUnderTest):
             if location:
                 # cleanup
                 uri = urlparse(location).path
-                r = sut.session.delete(sut.rhost + uri)
+                r = sut.delete(uri)
                 sut.add_response(uri, r, request_type=RequestType.SUBSCRIPTION)
         elif response.status_code == requests.codes.BAD_REQUEST:
             sut.log(Result.PASS, response.request.method,
@@ -126,8 +124,7 @@ def test_event_error_on_mutually_excl_props(sut: SystemUnderTest):
                 'Base.1.0.GeneralError'
             ]
         }
-        response = sut.session.post(sut.rhost + sut.subscriptions_uri,
-                                    json=payload)
+        response = sut.post(sut.subscriptions_uri, json=payload)
         sut.add_response(sut.subscriptions_uri, response,
                          request_type=RequestType.SUBSCRIPTION)
         if response.ok:
@@ -143,7 +140,7 @@ def test_event_error_on_mutually_excl_props(sut: SystemUnderTest):
             if location:
                 # cleanup
                 uri = urlparse(location).path
-                r = sut.session.delete(sut.rhost + uri)
+                r = sut.delete(uri)
                 sut.add_response(uri, r, request_type=RequestType.SUBSCRIPTION)
         elif response.status_code == requests.codes.BAD_REQUEST:
             sut.log(Result.PASS, response.request.method,
@@ -215,8 +212,8 @@ def test_ssdp_can_be_disabled(sut: SystemUnderTest):
         payload = {'SSDP': {'ProtocolEnabled': False}}
         etag = r.headers.get('ETag')
         headers = {'If-Match': etag} if etag else {}
-        r = sut.session.patch(sut.rhost + sut.mgr_net_proto_uri,
-                              json=payload, headers=headers)
+        r = sut.patch(sut.mgr_net_proto_uri, json=payload, headers=headers)
+        r = utils.poll_task(sut, r)
         if r.ok:
             services = utils.discover_ssdp(search_target=SSDP_REDFISH)
             uuids = services.keys()
@@ -235,8 +232,7 @@ def test_ssdp_can_be_disabled(sut: SystemUnderTest):
             payload = {'SSDP': {'ProtocolEnabled': True}}
             etag = r.headers.get('ETag')
             headers = {'If-Match': etag} if etag else {}
-            sut.session.patch(sut.rhost + sut.mgr_net_proto_uri,
-                              json=payload, headers=headers)
+            sut.patch(sut.mgr_net_proto_uri, json=payload, headers=headers)
         else:
             msg = 'Attempt to disable SSDP failed'
             sut.log(Result.FAIL, 'PATCH', r.status_code,
@@ -842,7 +838,7 @@ def test_sse_close_connection_if_event_dest_deleted(
                 Assertion.SERV_SSE_CLOSE_CONNECTION_IF_EVENT_DEST_DELETED, msg)
         return
 
-    r = sut.session.delete(sut.rhost + event_dest_uri)
+    r = sut.delete(event_dest_uri)
     if r.ok:
         # give the service up to 5 seconds to close the stream
         for _ in range(5):

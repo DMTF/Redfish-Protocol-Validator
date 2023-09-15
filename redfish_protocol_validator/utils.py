@@ -103,6 +103,36 @@ def is_text_in_extended_error(text: str, body: dict):
     return False
 
 
+def poll_task(sut, response, session=None):
+    """
+    Polls a task monitor for a final response
+
+    :param sut: The system under test
+    :param response: The response object from the original operation
+    :param session: Session object if using a session other than the sut's
+
+    :return: A response object at the end of the task
+    """
+    # If the response doesn't show 202 Accepted, there's nothing to poll
+    if response.status_code != requests.codes.ACCEPTED:
+        return response
+
+    # Get the task monitor URI and poll it
+    task_monitor = response.headers.get('Location')
+    if task_monitor:
+        # Try for up to 1 minute at 5 second intervals
+        for _ in range(12):
+            time.sleep(5)
+            if session:
+                response = session.get(sut.rhost + task_monitor)
+            else:
+                response = sut.session.get(sut.rhost + task_monitor)
+            # Once the task is done, break out
+            if response.status_code != requests.codes.ACCEPTED:
+                break
+    return response
+
+
 def get_sse_stream(sut):
     response = None
     event_dest_uri = None

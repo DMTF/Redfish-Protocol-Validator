@@ -60,7 +60,8 @@ class Sessions(TestCase):
         session = mock.Mock(spec=requests.Session)
         session.delete.return_value.status_code = requests.codes.OK
         sessions.delete_session(self.sut, session, uri)
-        session.delete.assert_called_once_with(self.sut.rhost + uri)
+        session.delete.assert_called_once_with(self.sut.rhost + uri,
+                                               headers=None)
 
     @mock.patch('redfish_protocol_validator.sessions.requests.Session')
     def test_no_auth_session(self, mock_session):
