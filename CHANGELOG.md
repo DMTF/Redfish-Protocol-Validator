@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.1.9] - 2023-09-15
+- Added method to poll tasks for tests using PATCH, POST, and DELETE
+
 ## [1.1.8] - 2023-06-23
 - Cleanup of TODO notes throughout the tool
 
