@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.0] - 2023-10-27
+- Version change to fix release assets; no functional changes
+
 ## [1.1.9] - 2023-09-15
 - Added method to poll tasks for tests using PATCH, POST, and DELETE
 
