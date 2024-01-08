@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.1] - 2024-01-08
+- Removed restrictions on urllib3 versions
+
 ## [1.2.0] - 2023-10-27
 - Version change to fix release assets; no functional changes
 
