@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.2] - 2024-01-19
+- Several fixes to 'password change required' testing to ensure 'system under test' parameters are passed correctly
+
 ## [1.2.1] - 2024-01-08
 - Removed restrictions on urllib3 versions
 
