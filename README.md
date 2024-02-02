@@ -21,7 +21,7 @@ From GitHub:
 
 ## Requirements
 
-The Redfish Protocol Validator requires Python version 3 (v3.5 and later).
+The Redfish Protocol Validator requires Python3.
 
 Required external packages:
 
@@ -30,7 +30,7 @@ aenum
 colorama
 pyasn1
 pyasn1-modules
-requests>=2.23.0
+requests
 sseclient-py
 urllib3
 ```
