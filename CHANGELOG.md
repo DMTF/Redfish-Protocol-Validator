@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.3] - 2024-02-03
+- Relaxed versions of required modules to not be as strict
+
 ## [1.2.2] - 2024-01-19
 - Several fixes to 'password change required' testing to ensure 'system under test' parameters are passed correctly
 
