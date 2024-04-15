@@ -294,9 +294,34 @@ def test_odata_version_header(sut: SystemUnderTest):
     test_header_value(sut, header, '4.0', uri, method, response,
                       Assertion.RESP_HEADERS_ODATA_VERSION)
 
+def test_www_authenticate_requirement(sut: SystemUnderTest):
+    """Check for HTTPBasicAuth Property"""
+    response = sut.get_response('GET', sut.account_service_uri)
+
+    if response.ok:
+        data = response.json()
+        key = 'HTTPBasicAuth'
+        if key in data:
+            if data[key] != "Enabled":
+                #  could be either Disabled or Unadvertised
+                return False
+            else:
+                return True
+    # Any Failure will be considered as HTTPBasicAuth not present
+    return True
+
+
 
 def test_www_authenticate_header(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_WWW_AUTHENTICATE."""
+
+    if(False == test_www_authenticate_requirement(sut)):
+        msg = ('The WWW-Authenticate header is not tested because value of HTTPBasicAuth '
+                   'is either Disabled or Unadvertised ')
+        sut.log(Result.NOT_TESTED, '', '', '',
+                Assertion.RESP_HEADERS_WWW_AUTHENTICATE, msg)
+        return
+
     # a selection of URis to test
     uris = [sut.sessions_uri, sut.mgr_net_proto_uri, sut.systems_uri,
             sut.accounts_uri, sut.account_service_uri,
