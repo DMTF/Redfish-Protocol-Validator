@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.4] - 2024-04-19
+- Added conditional checking of the 'WWW-Authenticate' header based on the value of the 'HTTPBasicAuth' property
+
 ## [1.2.3] - 2024-02-03
 - Relaxed versions of required modules to not be as strict
 
