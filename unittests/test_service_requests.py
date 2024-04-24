@@ -945,7 +945,7 @@ class ServiceRequests(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('The service response returned status code %s; expected %s'
-                      % (response.status_code, requests.codes.METHOD_NOT_ALLOWED),
+                      % (requests.codes.BAD_REQUEST, requests.codes.METHOD_NOT_ALLOWED),
                       result['msg'])
 
     def test_test_data_mod_not_supported_pass(self):
