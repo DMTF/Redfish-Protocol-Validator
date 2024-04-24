@@ -76,8 +76,7 @@ def test_header_value(sut: SystemUnderTest, header, value, uri, method,
 def test_allow_header_method_not_allowed(sut: SystemUnderTest):
     """Perform tests for Assertion.RESP_HEADERS_ALLOW_METHOD_NOT_ALLOWED."""
     found_method_not_allowed = False
-    for req_type in [RequestType.NORMAL, RequestType.PATCH_COLLECTION,
-                     RequestType.PATCH_RO_RESOURCE, RequestType.UNSUPPORTED_REQ]:
+    for req_type in [RequestType.NORMAL, RequestType.UNSUPPORTED_REQ]:
         for uri, response in sut.get_all_responses(request_type=req_type):
             if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
                 found_method_not_allowed = True

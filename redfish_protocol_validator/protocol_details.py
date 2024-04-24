@@ -203,21 +203,17 @@ def test_http_supported_methods(sut: SystemUnderTest):
 def test_http_unsupported_methods(sut: SystemUnderTest):
     """Perform tests on unsupported HTTP methods."""
     # Test Assertion.PROTO_HTTP_UNSUPPORTED_METHODS
-    uri = '/redfish/v1/'
-    response = sut.get_response('DELETE', uri, request_type=RequestType.UNSUPPORTED_REQ)
-    if response is None:
-        sut.log(Result.NOT_TESTED, 'DELETE', '', uri,
-                Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                'No response found for DELETE method request')
-    elif (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
-          response.status_code == requests.codes.NOT_IMPLEMENTED):
-        sut.log(Result.PASS, 'DELETE', response.status_code, uri,
-                Assertion.PROTO_HTTP_UNSUPPORTED_METHODS, 'Test passed')
-    else:
-        sut.log(Result.FAIL, 'DELETE', response.status_code, uri,
-                Assertion.PROTO_HTTP_UNSUPPORTED_METHODS,
-                'DELETE method returned status %s; expected status %s' %
-                (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+    for uri, response in sut.get_all_responses(request_type=RequestType.UNSUPPORTED_REQ):
+        if (response.status_code == requests.codes.METHOD_NOT_ALLOWED or
+            response.status_code == requests.codes.NOT_IMPLEMENTED):
+            sut.log(Result.PASS, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_HTTP_UNSUPPORTED_METHODS, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s or %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED,
+                      requests.codes.NOT_IMPLEMENTED))
+            sut.log(Result.FAIL, response.request.method, response.status_code, uri,
+                    Assertion.PROTO_HTTP_UNSUPPORTED_METHODS, msg)
 
 
 def test_media_types(sut: SystemUnderTest, uri, response):

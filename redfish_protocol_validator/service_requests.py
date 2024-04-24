@@ -633,6 +633,22 @@ def test_head_differ_from_get(sut: SystemUnderTest):
                 Assertion.REQ_HEAD_DIFFERS_FROM_GET, msg)
 
 
+def test_data_mod_not_supported(sut: SystemUnderTest):
+    """Perform tests for Assertion.REQ_DATA_MOD_NOT_SUPPORTED."""
+    for uri, response in sut.get_all_responses(request_type=RequestType.UNSUPPORTED_REQ):
+        if response.request.method == 'FAKEMETHODFORTEST':
+            # Not applicable for this clause; skip
+            continue
+        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
+            sut.log(Result.PASS, response.request.method, response.status_code, uri,
+                    Assertion.REQ_DATA_MOD_NOT_SUPPORTED, 'Test passed')
+        else:
+            msg = ('The service response returned status code %s; expected %s'
+                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
+            sut.log(Result.FAIL, response.request.method, response.status_code, uri,
+                    Assertion.REQ_DATA_MOD_NOT_SUPPORTED, msg)
+
+
 def test_data_mod_errors(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_DATA_MOD_ERRORS."""
     found_error = False
@@ -730,50 +746,6 @@ def test_patch_bad_prop(sut: SystemUnderTest):
                'this assertion')
         sut.log(Result.NOT_TESTED, '', '', '',
                 Assertion.REQ_PATCH_BAD_PROP, msg)
-
-
-def test_patch_ro_resource(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_PATCH_RO_RESOURCE."""
-    found_response = False
-    for uri, response in sut.get_responses_by_method(
-            'PATCH', request_type=RequestType.PATCH_RO_RESOURCE).items():
-        found_response = True
-        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
-            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
-                    Assertion.REQ_PATCH_RO_RESOURCE, 'Test passed')
-        else:
-            msg = ('The service response returned status code %s; expected %s'
-                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
-            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
-                    Assertion.REQ_PATCH_RO_RESOURCE, msg)
-
-    if not found_response:
-        msg = ('No PATCH responses found for this condition; unable to test '
-               'this assertion')
-        sut.log(Result.NOT_TESTED, '', '', '',
-                Assertion.REQ_PATCH_RO_RESOURCE, msg)
-
-
-def test_patch_collection(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_PATCH_COLLECTION."""
-    found_response = False
-    for uri, response in sut.get_responses_by_method(
-            'PATCH', request_type=RequestType.PATCH_COLLECTION).items():
-        found_response = True
-        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
-            sut.log(Result.PASS, 'PATCH', response.status_code, uri,
-                    Assertion.REQ_PATCH_COLLECTION, 'Test passed')
-        else:
-            msg = ('The service response returned status code %s; expected %s'
-                   % (response.status_code, requests.codes.METHOD_NOT_ALLOWED))
-            sut.log(Result.FAIL, 'PATCH', response.status_code, uri,
-                    Assertion.REQ_PATCH_COLLECTION, msg)
-
-    if not found_response:
-        msg = ('No PATCH responses found for this condition; unable to test '
-               'this assertion')
-        sut.log(Result.NOT_TESTED, '', '', '',
-                Assertion.REQ_PATCH_COLLECTION, msg)
 
 
 def test_patch_odata_props(sut: SystemUnderTest):
@@ -1046,11 +1018,6 @@ def patch_array_restore(sut: SystemUnderTest, array):
                         'payload: %s' % (uri, response.status_code, payload))
 
 
-def test_put_not_implemented(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_PUT_NOT_IMPLEMENTED."""
-    # TODO(bdodd): Need a good resource to try to replace
-
-
 def test_post_create_via_collection(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_POST_CREATE_VIA_COLLECTION."""
     response = sut.get_response('POST', sut.sessions_uri)
@@ -1126,57 +1093,6 @@ def test_post_create_to_members_prop(sut: SystemUnderTest):
                 Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
                 msg)
 
-
-def test_post_create_not_supported(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_POST_CREATE_NOT_SUPPORTED."""
-    response = sut.get_response('POST', sut.accounts_uri)
-    if response is None:
-        msg = ('No response found for POST to Accounts URI; unable to test '
-               'this assertion')
-        sut.log(Result.NOT_TESTED, 'POST', '', sut.accounts_uri,
-                Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
-    elif response.ok:
-        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
-                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                'Service supports creation of resources')
-    elif response.status_code == requests.codes.METHOD_NOT_ALLOWED:
-        sut.log(Result.PASS, 'POST', response.status_code, sut.accounts_uri,
-                Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                'Test passed')
-    else:
-        try:
-            allow = sut.get_response('GET', sut.accounts_uri).headers.get('Allow')
-        except:
-            allow = None
-        if allow:
-            if 'POST' in allow.upper():
-                msg = ('POST request to URI %s failed with %s; extended '
-                       'error: %s; GET response contains an Allow header '
-                       'with POST specified' %
-                       (sut.accounts_uri, response.status_code,
-                        utils.get_extended_error(response)))
-                sut.log(Result.WARN, 'POST', response.status_code,
-                        sut.accounts_uri,
-                        Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
-            else:
-                msg = ('POST request to URI %s failed with %s; expected %s; '
-                       'extended error: %s' %
-                       (sut.accounts_uri, response.status_code,
-                        requests.codes.METHOD_NOT_ALLOWED,
-                        utils.get_extended_error(response)))
-                sut.log(Result.FAIL, 'POST', response.status_code,
-                        sut.accounts_uri,
-                        Assertion.REQ_POST_CREATE_NOT_SUPPORTED, msg)
-        else:
-            msg = ('POST request to URI %s failed with %s; expected %s; '
-                   'extended error: %s; GET response does not contain an '
-                   'Allow header to verify' %
-                   (sut.accounts_uri, response.status_code,
-                    requests.codes.METHOD_NOT_ALLOWED,
-                    utils.get_extended_error(response)))
-            sut.log(Result.WARN, 'POST', response.status_code,
-                    sut.accounts_uri, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                    msg)
 
 def test_post_create_not_idempotent(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_POST_CREATE_NOT_IDEMPOTENT."""
@@ -1262,46 +1178,6 @@ def test_delete_method_required(sut: SystemUnderTest):
                     Assertion.REQ_DELETE_METHOD_REQUIRED, msg)
 
 
-def test_delete_non_deletable_resource(sut: SystemUnderTest):
-    """Perform tests for Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE."""
-    passed = False
-    warn_uri, warn_response = None, None
-    fail_uri, fail_response = None, None
-    for uri, response in sut.get_responses_by_method('DELETE',
-                                                     request_type=RequestType.UNSUPPORTED_REQ).items():
-        if response.status_code == requests.codes.METHOD_NOT_ALLOWED:
-            sut.log(Result.PASS, 'DELETE', response.status_code, uri,
-                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, 'Test passed')
-            passed = True
-            break
-        elif not response.ok:
-            warn_uri, warn_response = uri, response
-        else:
-            fail_uri, fail_response = uri, response
-
-    if not passed:
-        if warn_uri or fail_uri:
-            if fail_uri:
-                msg = ('DELETE request for resource %s failed with status %s; '
-                       'extended error: %s' %
-                       (fail_uri, fail_response.status_code,
-                        utils.get_extended_error(fail_response)))
-                sut.log(Result.FAIL, 'DELETE', fail_response.status_code, fail_uri,
-                        Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
-            else:
-                msg = ('DELETE request for resource %s failed with status %s; '
-                       'extended error: %s' %
-                       (warn_uri, warn_response.status_code,
-                        utils.get_extended_error(warn_response)))
-                sut.log(Result.WARN, 'DELETE', warn_response.status_code, warn_uri,
-                        Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
-        else:
-            msg = ('No failed DELETE responses found; unable to test this '
-                   'assertion')
-            sut.log(Result.NOT_TESTED, 'DELETE', '', '',
-                    Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE, msg)
-
-
 def test_request_headers(sut: SystemUnderTest):
     """Perform tests from the 'Request headers' sub-section of the spec."""
     test_accept_header(sut)
@@ -1350,6 +1226,7 @@ def test_head(sut: SystemUnderTest):
 def test_data_modification(sut: SystemUnderTest):
     """Perform tests from the 'Data modification requests' sub-section of the
     spec."""
+    test_data_mod_not_supported(sut)
     test_data_mod_errors(sut)
 
 
@@ -1357,8 +1234,6 @@ def test_patch_update(sut: SystemUnderTest):
     """Perform tests from the 'PATCH (update)' sub-section of the spec."""
     test_patch_mixed_props(sut)
     test_patch_bad_prop(sut)
-    test_patch_ro_resource(sut)
-    test_patch_collection(sut)
     test_patch_odata_props(sut)
 
 
@@ -1376,7 +1251,6 @@ def test_patch_array_props(sut: SystemUnderTest):
 
 def test_put(sut: SystemUnderTest):
     """Perform tests from the 'PUT (replace)' sub-section of the spec."""
-    test_put_not_implemented(sut)
 
 
 def test_post_create(sut: SystemUnderTest):
@@ -1384,14 +1258,12 @@ def test_post_create(sut: SystemUnderTest):
     test_post_create_via_collection(sut)
     test_post_create_uri_in_location_hdr(sut)
     test_post_create_to_members_prop(sut)
-    test_post_create_not_supported(sut)
     test_post_create_not_idempotent(sut)
 
 
 def test_delete(sut: SystemUnderTest):
     """Perform tests from the 'DELETE (delete)' sub-section of the spec."""
     test_delete_method_required(sut)
-    test_delete_non_deletable_resource(sut)
 
 
 def test_post_action(sut: SystemUnderTest):

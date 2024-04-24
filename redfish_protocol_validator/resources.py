@@ -267,24 +267,6 @@ def patch_other_account(sut: SystemUnderTest, session, user, password):
     return new_user, new_password, new_acct_uri
 
 
-def patch_session(sut: SystemUnderTest, session_uri):
-    """PATCH a session; should fail, sessions are not updatable"""
-    payload = {'UserName': 'pRoToVAl'}
-    headers = utils.get_etag_header(sut, sut.session, session_uri)
-    response = sut.patch(session_uri, json=payload, headers=headers)
-    sut.add_response(session_uri, response,
-                     request_type=RequestType.PATCH_RO_RESOURCE)
-
-
-def patch_collection(sut: SystemUnderTest, collection_uri):
-    """PATCH a collection; should fail, collections are not updatable"""
-    payload = {'Name': 'My Collection'}
-    headers = utils.get_etag_header(sut, sut.session, collection_uri)
-    response = sut.patch(collection_uri, json=payload, headers=headers)
-    sut.add_response(collection_uri, response,
-                     request_type=RequestType.PATCH_COLLECTION)
-
-
 def delete_account(sut: SystemUnderTest, session, user, acct_uri,
                    request_type=RequestType.NORMAL):
     # DELETE account
@@ -296,10 +278,8 @@ def delete_account(sut: SystemUnderTest, session, user, acct_uri,
 def data_modification_requests(sut: SystemUnderTest):
     new_session_uri, _ = sessions.create_session(sut)
     if new_session_uri:
-        patch_session(sut, new_session_uri)
         sessions.delete_session(sut, sut.session, new_session_uri,
                                 request_type=RequestType.NORMAL)
-    patch_collection(sut, sut.sessions_uri)
     new_user, new_pwd, new_uri = None, None, None
     other_user, other_pwd, other_uri = None, None, None
     try:
@@ -355,9 +335,16 @@ def data_modification_requests_no_auth(sut: SystemUnderTest, no_auth_session):
 
 
 def unsupported_requests(sut: SystemUnderTest):
-    # DELETE on service root is never allowed
+    # Data modification requests on the service root are never allowed
     uri = '/redfish/v1/'
-    response = sut.session.request('DELETE', sut.rhost + uri)
+    response = sut.delete(uri)
+    sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
+    response = sut.patch(uri, json={})
+    sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
+    response = sut.post(uri, json={})
+    sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
+    # Unsupported HTTP methods return HTTP 501
+    response = sut.session.request('FAKEMETHODFORTEST', sut.rhost + uri)
     sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
 
 

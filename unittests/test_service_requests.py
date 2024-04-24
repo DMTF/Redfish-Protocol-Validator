@@ -934,6 +934,31 @@ class ServiceRequests(TestCase):
                       (uri, requests.codes.BAD_REQUEST),
                       result['msg'])
 
+    def test_test_data_mod_not_supported_fail(self):
+        uri = '/redfish/v1/'
+        add_response(self.sut, '/redfish/v1/', 'DELETE',
+                     requests.codes.BAD_REQUEST,
+                     request_type=RequestType.UNSUPPORTED_REQ)
+        req.test_data_mod_not_supported(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_NOT_SUPPORTED, 'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.FAIL, result['result'])
+        self.assertIn('The service response returned status code %s; expected %s'
+                      % (response.status_code, requests.codes.METHOD_NOT_ALLOWED),
+                      result['msg'])
+
+    def test_test_data_mod_not_supported_pass(self):
+        uri = '/redfish/v1/'
+        add_response(self.sut, '/redfish/v1/', 'DELETE',
+                     requests.codes.METHOD_NOT_ALLOWED,
+                     request_type=RequestType.UNSUPPORTED_REQ)
+        req.test_data_mod_not_supported(self.sut)
+        result = get_result(
+            self.sut, Assertion.REQ_DATA_MOD_NOT_SUPPORTED, 'DELETE', uri)
+        self.assertIsNotNone(result)
+        self.assertEqual(Result.PASS, result['result'])
+
     def test_test_data_mod_errors_not_tested(self):
         uri = self.sut.sessions_uri
         r = add_response(self.sut, uri, method='POST',
@@ -1083,74 +1108,6 @@ class ServiceRequests(TestCase):
                            [{'Message': 'unknown property BogusProp'}]}})
         req.test_patch_bad_prop(self.sut)
         result = get_result(self.sut, Assertion.REQ_PATCH_BAD_PROP,
-                            'PATCH', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-
-    def test_test_patch_ro_resource_not_tested(self):
-        req.test_patch_ro_resource(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE, '', '')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No PATCH responses found for this condition; unable to '
-                      'test this assertion', result['msg'])
-
-    def test_test_patch_ro_resource_fail(self):
-        uri = '/redfish/v1/SessionService/Sessions/123'
-        add_response(self.sut, uri, method='PATCH',
-                     status_code=requests.codes.BAD_REQUEST,
-                     request_type=RequestType.PATCH_RO_RESOURCE)
-        req.test_patch_ro_resource(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
-                            'PATCH', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('The service response returned status code %s; expected '
-                      '%s' % (requests.codes.BAD_REQUEST,
-                              requests.codes.METHOD_NOT_ALLOWED),
-                      result['msg'])
-
-    def test_test_patch_ro_resource_pass(self):
-        uri = '/redfish/v1/SessionService/Sessions/123'
-        add_response(self.sut, uri, method='PATCH',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED,
-                     request_type=RequestType.PATCH_RO_RESOURCE)
-        req.test_patch_ro_resource(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_RO_RESOURCE,
-                            'PATCH', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-
-    def test_test_patch_patch_collection_not_tested(self):
-        req.test_patch_collection(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION, '', '')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No PATCH responses found for this condition; unable to '
-                      'test this assertion', result['msg'])
-
-    def test_test_patch_patch_collection_fail(self):
-        uri = '/redfish/v1/SessionService/Sessions'
-        add_response(self.sut, uri, method='PATCH',
-                     status_code=requests.codes.BAD_REQUEST,
-                     request_type=RequestType.PATCH_COLLECTION)
-        req.test_patch_collection(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
-                            'PATCH', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('The service response returned status code %s; expected '
-                      '%s' % (requests.codes.BAD_REQUEST,
-                              requests.codes.METHOD_NOT_ALLOWED),
-                      result['msg'])
-
-    def test_test_patch_patch_collection_pass(self):
-        uri = '/redfish/v1/SessionService/Sessions'
-        add_response(self.sut, uri, method='PATCH',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED,
-                     request_type=RequestType.PATCH_COLLECTION)
-        req.test_patch_collection(self.sut)
-        result = get_result(self.sut, Assertion.REQ_PATCH_COLLECTION,
                             'PATCH', uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
@@ -1632,52 +1589,6 @@ class ServiceRequests(TestCase):
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri, headers=None)
 
-    def test_test_post_create_not_supported_not_tested(self):
-        uri = self.sut.accounts_uri
-        req.test_post_create_not_supported(self.sut)
-        result = get_result(
-            self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-            'POST', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No response found for POST to Accounts URI',
-                      result['msg'])
-
-    def test_test_post_create_not_supported_fail(self):
-        uri = self.sut.accounts_uri
-        add_response(self.sut, uri, json={}, headers={'Allow': 'GET'})
-        add_response(self.sut, uri, 'POST',
-                     status_code=requests.codes.BAD_REQUEST)
-        req.test_post_create_not_supported(self.sut)
-        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                            'POST', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('POST request to URI %s failed with %s; expected %s' %
-                      (uri, requests.codes.BAD_REQUEST,
-                       requests.codes.METHOD_NOT_ALLOWED), result['msg'])
-
-    def test_test_post_create_not_supported_pass1(self):
-        uri = self.sut.accounts_uri
-        add_response(self.sut, uri, 'POST', status_code=requests.codes.CREATED)
-        req.test_post_create_not_supported(self.sut)
-        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                            'POST', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-        self.assertIn('Service supports creation of resources', result['msg'])
-
-    def test_test_post_create_not_supported_pass2(self):
-        uri = self.sut.accounts_uri
-        add_response(self.sut, uri, 'POST',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED)
-        req.test_post_create_not_supported(self.sut)
-        result = get_result(self.sut, Assertion.REQ_POST_CREATE_NOT_SUPPORTED,
-                            'POST', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-        self.assertIn('Test passed', result['msg'])
-
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_not_tested1(self, mock_post):
         uri = self.sut.sessions_uri
@@ -1818,49 +1729,6 @@ class ServiceRequests(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.assertEqual(uri2, result['uri'])
         self.assertEqual(requests.codes.OK, result['status'])
-
-    def test_test_delete_non_deletable_resource_not_tested(self):
-        req.test_delete_non_deletable_resource(self.sut)
-        result = get_result(
-            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
-            'DELETE', '')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No failed DELETE responses found', result['msg'])
-
-    def test_test_delete_non_deletable_resource_warn(self):
-        uri = '/redfish/v1/SessionService/Sessions/123'
-        add_response(self.sut, uri, 'DELETE',
-                     status_code=requests.codes.BAD_REQUEST,
-                     request_type=RequestType.UNSUPPORTED_REQ)
-        req.test_delete_non_deletable_resource(self.sut)
-        result = get_result(
-            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
-            'DELETE', uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.WARN, result['result'])
-        self.assertIn('DELETE request for resource %s failed with status %s'
-                      % (uri, requests.codes.BAD_REQUEST), result['msg'])
-        self.assertEqual(uri, result['uri'])
-        self.assertEqual(requests.codes.BAD_REQUEST, result['status'])
-
-    def test_test_delete_non_deletable_resource_pass(self):
-        uri1 = '/redfish/v1/SessionService/Sessions/123'
-        uri2 = '/redfish/v1/SessionService/Sessions/456'
-        add_response(self.sut, uri1, 'DELETE',
-                     status_code=requests.codes.BAD_REQUEST,
-                     request_type=RequestType.UNSUPPORTED_REQ)
-        add_response(self.sut, uri2, 'DELETE',
-                     status_code=requests.codes.METHOD_NOT_ALLOWED,
-                     request_type=RequestType.UNSUPPORTED_REQ)
-        req.test_delete_non_deletable_resource(self.sut)
-        result = get_result(
-            self.sut, Assertion.REQ_DELETE_NON_DELETABLE_RESOURCE,
-            'DELETE', uri2)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-        self.assertEqual(uri2, result['uri'])
-        self.assertEqual(requests.codes.METHOD_NOT_ALLOWED, result['status'])
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_service_requests_cover(self, mock_post):

@@ -360,7 +360,11 @@ class ProtocolDetails(TestCase):
                             'DELETE', '/redfish/v1/')
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('DELETE method returned status', result['msg'])
+        self.assertIn('The service response returned status code %s; expected '
+                      '%s or %s' % (response.status_code,
+                                    requests.codes.METHOD_NOT_ALLOWED,
+                                    requests.codes.NOT_IMPLEMENTED),
+                      result['msg'])
 
     def test_test_protocol_details_cover(self):
         proto.test_protocol_details(self.sut)
