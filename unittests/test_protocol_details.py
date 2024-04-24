@@ -361,7 +361,7 @@ class ProtocolDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
         self.assertIn('The service response returned status code %s; expected '
-                      '%s or %s' % (response.status_code,
+                      '%s or %s' % (requests.codes.BAD_REQUEST,
                                     requests.codes.METHOD_NOT_ALLOWED,
                                     requests.codes.NOT_IMPLEMENTED),
                       result['msg'])
