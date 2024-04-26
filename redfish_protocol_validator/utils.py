@@ -81,6 +81,7 @@ def get_response_json(response: requests.Response):
     try:
         data = response.json()
         if not isinstance(data, dict):
+            data = {}
             logging.error('%s on %s did not return a JSON object; assuming '
                           'an empty object' % (response.request.method,
                                                response.request.path_url))
