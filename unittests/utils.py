@@ -20,6 +20,7 @@ def add_response(sut: SystemUnderTest, uri, method='GET',
     response.status_code = status_code
     response.ok = True if status_code < 400 else False
     response.url = sut.rhost + uri
+    response.path_url = uri
     response.encoding = encoding
     request = mock.Mock(spec=requests.Request)
     request.method = method
