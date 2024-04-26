@@ -199,7 +199,7 @@ def test_link_header_schema_ver_match(sut: SystemUnderTest, uri_ref, uri,
 
     # get the version from the @odata.type
     ot_ver = None
-    data = response.json()
+    data = utils.get_response_json(response)
     odata_type = data.get('@odata.type')
     if odata_type:
         t = odata_type.lstrip('#').split('.')
@@ -299,7 +299,7 @@ def test_www_authenticate_requirement(sut: SystemUnderTest):
     response = sut.get_response('GET', sut.account_service_uri)
 
     if (response is not None and response.ok):
-        data = response.json()
+        data = utils.get_response_json(response)
         key = 'HTTPBasicAuth'
         if key in data:
             if data[key] != "Enabled":
@@ -396,7 +396,7 @@ def test_extended_error(sut: SystemUnderTest, status_code,
                     sut.log(Result.FAIL, response.request.method,
                             response.status_code, uri, assertion, msg)
                     continue
-                data = response.json()
+                data = utils.get_response_json(response)
                 if 'error' in data:
                     if 'code' in data['error'] and 'message' in data['error']:
                         sut.log(Result.PASS, response.request.method,
@@ -548,7 +548,7 @@ def test_odata_service_context(sut: SystemUnderTest):
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.RESP_ODATA_SERVICE_CONTEXT, msg)
     else:
-        data = response.json()
+        data = utils.get_response_json(response)
         context = data.get('@odata.context')
         if context == '/redfish/v1/$metadata':
             sut.log(Result.PASS, 'GET', response.status_code, uri,
@@ -576,7 +576,7 @@ def test_odata_service_value_prop(sut: SystemUnderTest):
         sut.log(Result.FAIL, 'GET', response.status_code, uri,
                 Assertion.RESP_ODATA_SERVICE_VALUE_PROP, msg)
     else:
-        data = response.json()
+        data = utils.get_response_json(response)
         value = data.get('value')
         if value is not None:
             if isinstance(value, list):

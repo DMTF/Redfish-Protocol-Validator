@@ -178,7 +178,7 @@ def pre_ssdp(sut: SystemUnderTest):
         r = sut.session.get(sut.rhost + sut.mgr_net_proto_uri)
         if r.ok:
             sut.add_response(sut.mgr_net_proto_uri, r)
-            d = r.json()
+            d = utils.get_response_json(r)
             if 'SSDP' in d and 'ProtocolEnabled' in d['SSDP']:
                 enabled = d['SSDP']['ProtocolEnabled']
                 sut.set_ssdp_enabled(enabled)
@@ -591,7 +591,7 @@ def test_sse_unsuccessful_response(sut: SystemUnderTest):
                 failed = True
             else:
                 errors = ''
-                data = response.json()
+                data = utils.get_response_json(response)
                 if 'error' in data and isinstance(data['error'], dict):
                     if 'code' not in data['error']:
                         errors += (' Property "code" missing from "error" '
@@ -796,7 +796,7 @@ def test_sse_event_dest_context_opaque_str(sut: SystemUnderTest, event_dest):
 
     r = sut.session.get(sut.rhost + event_dest)
     if r.status_code == requests.codes.OK:
-        data = r.json()
+        data = utils.get_response_json(r)
         if 'Context' in data:
             context = data.get('Context')
             if isinstance(context, str):

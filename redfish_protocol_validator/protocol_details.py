@@ -266,7 +266,7 @@ def test_valid_etag(sut: SystemUnderTest, uri, response):
         source = 'header'
         if (etag is None and utils.get_response_media_type(response)
                 == 'application/json'):
-            data = response.json()
+            data = utils.get_response_json(response)
             if '@odata.etag' in data:
                 source = 'property'
                 etag = data.get('@odata.etag')

@@ -20,7 +20,7 @@ def get_user_names(sut: SystemUnderTest, session,
     users = set()
     response = sut.get_response('GET', sut.accounts_uri)
     if response.status_code == requests.codes.OK:
-        data = response.json()
+        data = utils.get_response_json(response)
         uris = [m.get('@odata.id') for m in data.get('Members', []) if
                 m.get('@odata.id')]
         responses = sut.get_responses_by_method(
@@ -34,7 +34,7 @@ def get_user_names(sut: SystemUnderTest, session,
                                  resource_type=ResourceType.MANAGER_ACCOUNT,
                                  request_type=request_type)
             if response.status_code == requests.codes.OK:
-                data = response.json()
+                data = utils.get_response_json(response)
                 user = data.get('UserName')
                 if user:
                     users.add(user)
@@ -47,7 +47,7 @@ def get_available_roles(sut: SystemUnderTest, session,
     roles = set()
     response = sut.get_response('GET', sut.roles_uri)
     if response.status_code == requests.codes.OK:
-        data = response.json()
+        data = utils.get_response_json(response)
         uris = [m.get('@odata.id') for m in data.get('Members', []) if
                 m.get('@odata.id')]
         responses = sut.get_responses_by_method(
@@ -61,7 +61,7 @@ def get_available_roles(sut: SystemUnderTest, session,
                                  resource_type=ResourceType.ROLE,
                                  request_type=request_type)
             if response.status_code == requests.codes.OK:
-                data = response.json()
+                data = utils.get_response_json(response)
                 role = data.get('Id')
                 if role:
                     roles.add(role)
@@ -96,7 +96,7 @@ def new_password(sut: SystemUnderTest, length=16, upper=1, lower=1,
     response = sut.get_response('GET', sut.account_service_uri)
     try:
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             if 'MinPasswordLength' in data and length < data['MinPasswordLength']:
                 length = data['MinPasswordLength']
             elif 'MaxPasswordLength' in data and length > data['MaxPasswordLength']:
@@ -120,7 +120,7 @@ def new_password(sut: SystemUnderTest, length=16, upper=1, lower=1,
 def find_empty_account_slot(sut: SystemUnderTest, session,
                             request_type=RequestType.NORMAL):
     response = sut.get_response('GET', sut.accounts_uri)
-    data = response.json()
+    data = utils.get_response_json(response)
     uris = [m.get('@odata.id') for m in data.get('Members', []) if
             m.get('@odata.id')]
     responses = sut.get_responses_by_method(
@@ -137,7 +137,7 @@ def find_empty_account_slot(sut: SystemUnderTest, session,
                              resource_type=ResourceType.MANAGER_ACCOUNT,
                              request_type=request_type)
         if response.status_code == requests.codes.OK:
-            data = response.json()
+            data = utils.get_response_json(response)
             if data.get('UserName') == '' and not data.get('Enabled', True):
                 return uri
     return None
@@ -162,7 +162,7 @@ def add_account_via_patch(sut: SystemUnderTest, session, user, role, password,
         response = session.get(sut.rhost + uri)
         if response.ok:
             # Enable the account if it not already enabled
-            data = response.json()
+            data = utils.get_response_json(response)
             if 'Enabled' in data and data['Enabled'] is False:
                 headers = utils.get_etag_header(sut, session, uri)
                 payload = {'Enabled': True}
@@ -208,7 +208,7 @@ def add_account(sut: SystemUnderTest, session,
         if location:
             new_acct_uri = urlparse(location).path
         else:
-            new_acct_uri = response.json().get('@odata.id')
+            new_acct_uri = utils.get_response_json(response).get('@odata.id')
         response = session.get(sut.rhost + new_acct_uri)
         sut.add_response(new_acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
@@ -286,7 +286,7 @@ def delete_account_via_patch(sut: SystemUnderTest, session, user, acct_uri,
                              request_type=RequestType.NORMAL):
     response = sut.get_response('GET', acct_uri)
     if response.status_code == requests.codes.OK:
-        data = response.json()
+        data = utils.get_response_json(response)
         if data and data.get('UserName') == user:
             payload = {'UserName': ''}
             if data.get('Enabled', False):

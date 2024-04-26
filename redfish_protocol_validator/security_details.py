@@ -76,7 +76,7 @@ def test_default_cert_replacement(sut: SystemUnderTest):
     if sut.certificate_service_uri is not None:
         response = sut.get_response('GET', sut.certificate_service_uri)
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             if ('Actions' in data and '#CertificateService.ReplaceCertificate'
                     in data['Actions']):
                 sut.log(Result.PASS, 'GET', response.status_code,
@@ -480,14 +480,14 @@ def test_sessions_uri_location(sut: SystemUnderTest):
     sessions_uri1, sessions_uri2 = None, None
     response1 = sut.get_response('GET', '/redfish/v1/')
     if response1.ok:
-        data = response1.json()
+        data = utils.get_response_json(response1)
         if 'Links' in data and 'Sessions' in data['Links']:
             sessions_uri1 = data['Links']['Sessions']['@odata.id']
         if 'SessionService' in data:
             uri = data['SessionService']['@odata.id']
             response2 = sut.get_response('GET', uri)
             if response2.ok:
-                data = response2.json()
+                data = utils.get_response_json(response2)
                 if 'Sessions' in data:
                     sessions_uri2 = data['Sessions']['@odata.id']
         if sessions_uri1 and sessions_uri2:
@@ -526,7 +526,7 @@ def test_session_post_response(sut: SystemUnderTest):
                         sut.sessions_uri, Assertion.SEC_SESSION_POST_RESPONSE,
                         msg)
         if response.status_code == requests.codes.CREATED:
-            data = response.json()
+            data = utils.get_response_json(response)
             missing_props = []
             for prop in ['@odata.id', '@odata.type', 'Id', 'Name', 'UserName']:
                 if prop not in data:
@@ -747,7 +747,7 @@ def test_password_change_required(sut: SystemUnderTest):
                 Assertion.SEC_PWD_CHANGE_REQ_ALLOW_SESSION_LOGIN, msg)
     else:
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             keys = utils.get_extended_info_message_keys(data)
             if 'PasswordChangeRequired' in keys:
                 sut.log(Result.PASS, 'POST', response.status_code,
@@ -805,7 +805,7 @@ def test_password_change_required(sut: SystemUnderTest):
                 Assertion.SEC_PWD_CHANGE_REQ_DISALLOW_ALL_OTHERS, msg)
     else:
         if response.status_code == requests.codes.FORBIDDEN:
-            data = response.json()
+            data = utils.get_response_json(response)
             keys = utils.get_extended_info_message_keys(data)
             if 'PasswordChangeRequired' in keys:
                 sut.log(Result.PASS, 'GET', response.status_code,
@@ -838,8 +838,8 @@ def test_password_change_required(sut: SystemUnderTest):
             sut.log(Result.NOT_TESTED, 'PATCH', '', account_uri,
                     Assertion.SEC_PWD_CHANGE_REQ_ALLOW_PATCH_PASSWORD, msg)
         else:
-            if response.ok:
-                data = response.json()
+            if response.status_code == requests.codes.OK:
+                data = utils.get_response_json(response)
                 if ('PasswordChangeRequired' in data and
                         data['PasswordChangeRequired'] is False):
                     sut.log(Result.PASS, 'PATCH', response.status_code,
@@ -855,6 +855,13 @@ def test_password_change_required(sut: SystemUnderTest):
                             account_uri,
                             Assertion.SEC_PWD_CHANGE_REQ_ALLOW_PATCH_PASSWORD,
                             msg)
+            elif response.ok:
+                # No response body; treat as a pass; may want to consider
+                # adding a follow-up GET to perform an additional check
+                sut.log(Result.PASS, 'PATCH', response.status_code,
+                        account_uri,
+                        Assertion.SEC_PWD_CHANGE_REQ_ALLOW_PATCH_PASSWORD,
+                        'Test passed')
             else:
                 msg = ('Password change to %s failed with status %s; '
                        'expected it to succeed' %
@@ -875,7 +882,7 @@ def test_priv_one_role_per_user(sut: SystemUnderTest):
     for uri, response in sut.get_responses_by_method(
             'GET', resource_type=ResourceType.MANAGER_ACCOUNT).items():
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             role = data.get('RoleId')
             if role is not None:
                 sut.log(Result.PASS, 'GET', response.status_code, uri,
@@ -907,7 +914,7 @@ def test_priv_support_predefined_roles(sut: SystemUnderTest):
     for uri, response in sut.get_responses_by_method(
             'GET', resource_type=ResourceType.ROLE).items():
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             role = data.get('Id')
             if role in role_map:
                 role_map[role]['found'] = True
@@ -941,7 +948,7 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
     for uri, response in sut.get_responses_by_method(
             'GET', resource_type=ResourceType.ROLE).items():
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             if data.get('Id') == role:
                 read_only_found = True
                 break
@@ -989,7 +996,7 @@ def test_priv_roles_assigned_at_account_create(sut: SystemUnderTest):
     for uri, response in sut.get_responses_by_method(
             'GET', resource_type=ResourceType.MANAGER_ACCOUNT).items():
         if response.ok:
-            data = response.json()
+            data = utils.get_response_json(response)
             username = data.get('UserName', '')
             if username.startswith('rfpv'):
                 role = data.get('RoleId')
