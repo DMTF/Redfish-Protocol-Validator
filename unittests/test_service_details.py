@@ -124,56 +124,6 @@ class ServiceDetails(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
 
-    def test_test_event_error_on_mutually_excl_props_not_tested(self):
-        service.test_event_error_on_mutually_excl_props(self.sut)
-        result = get_result(
-            self.sut, Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, '', '')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No event subscriptions URI found', result['msg'])
-
-    def test_test_event_error_on_mutually_excl_props_fail(self):
-        self.sut.set_nav_prop_uri('Subscriptions', self.subscriptions_uri)
-        uri = self.subscriptions_uri + '/1'
-        post_resp = add_response(
-            self.sut, self.subscriptions_uri, 'POST',
-            status_code=requests.codes.CREATED, headers={'Location': uri})
-        self.mock_session.post.return_value = post_resp
-        service.test_event_error_on_mutually_excl_props(self.sut)
-        result = get_result(
-            self.sut, Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, 'POST',
-            self.subscriptions_uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('returned status code 201; expected 400', result['msg'])
-
-    def test_test_event_error_on_mutually_excl_props_warn(self):
-        self.sut.set_nav_prop_uri('Subscriptions', self.subscriptions_uri)
-        post_resp = add_response(
-            self.sut, self.subscriptions_uri, 'POST',
-            status_code=requests.codes.UNAUTHORIZED, headers={})
-        self.mock_session.post.return_value = post_resp
-        service.test_event_error_on_mutually_excl_props(self.sut)
-        result = get_result(
-            self.sut, Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, 'POST',
-            self.subscriptions_uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.WARN, result['result'])
-        self.assertIn('returned status code 401; expected 400', result['msg'])
-
-    def test_test_event_error_on_mutually_excl_props_pass(self):
-        self.sut.set_nav_prop_uri('Subscriptions', self.subscriptions_uri)
-        post_resp = add_response(
-            self.sut, self.subscriptions_uri, 'POST',
-            status_code=requests.codes.BAD_REQUEST, headers={})
-        self.mock_session.post.return_value = post_resp
-        service.test_event_error_on_mutually_excl_props(self.sut)
-        result = get_result(
-            self.sut, Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, 'POST',
-            self.subscriptions_uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-
     @mock.patch('redfish_protocol_validator.service_details.utils.discover_ssdp')
     def test_pre_ssdp(self, mock_discover_ssdp):
         self.sut.set_mgr_net_proto_uri(

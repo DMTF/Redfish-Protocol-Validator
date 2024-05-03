@@ -242,7 +242,7 @@ def test_read_requires_auth(sut: SystemUnderTest):
 
 
 def test_redirect_enforces_target_privs(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS."""
+    """Perform test for Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS."""
     uri = sut.sessions_uri
     redirect_found = False
     response = sut.get_response('GET', uri,
@@ -255,7 +255,7 @@ def test_redirect_enforces_target_privs(sut: SystemUnderTest):
             if response.status_code == requests.codes.UNAUTHORIZED:
                 sut.log(Result.PASS, response.request.method,
                         response.status_code, uri,
-                        Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS,
+                        Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS,
                         'Test passed')
             else:
                 msg = ('After HTTP redirect from %s to %s, response status '
@@ -264,41 +264,11 @@ def test_redirect_enforces_target_privs(sut: SystemUnderTest):
                         response.status_code))
                 sut.log(Result.FAIL, response.request.method,
                         response.status_code, uri,
-                        Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS, msg)
+                        Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS, msg)
     if not redirect_found:
         msg = 'No response found with an HTTP redirect'
         sut.log(Result.NOT_TESTED, 'GET', '', uri,
-                Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS, msg)
-
-
-def test_redirect_to_https(sut: SystemUnderTest):
-    """Perform test for Assertion.SEC_REDIRECT_TO_HTTPS."""
-    uri = '/redfish/v1/'
-    redirect_found = False
-    response = sut.get_response('GET', uri,
-                                request_type=RequestType.HTTP_NO_AUTH)
-    if response is not None:
-        if len(response.history):
-            # HTTP redirect occurred if there is a response.history
-            # check the final status and expect a 200
-            redirect_found = True
-            if response.status_code == requests.codes.OK:
-                sut.log(Result.PASS, response.request.method,
-                        response.status_code, uri,
-                        Assertion.SEC_REDIRECT_TO_HTTPS,
-                        'Test passed')
-            else:
-                msg = ('After HTTP redirect from %s to %s, response status '
-                       'was %s, expected 200' % (
-                           response.history[0].url, response.url,
-                           response.status_code))
-                sut.log(Result.FAIL, response.request.method,
-                        response.status_code, uri,
-                        Assertion.SEC_REDIRECT_TO_HTTPS, msg)
-    if not redirect_found:
-        msg = 'No response found with an HTTP redirect'
-        sut.log(Result.NOT_TESTED, 'GET', '', uri,
-                Assertion.SEC_REDIRECT_TO_HTTPS, msg)
+                Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS, msg)
 
 
 def test_no_priv_info_in_msgs(sut: SystemUnderTest):
@@ -1056,7 +1026,6 @@ def test_authentication(sut: SystemUnderTest):
     test_write_requires_auth(sut)
     test_read_requires_auth(sut)
     test_redirect_enforces_target_privs(sut)
-    test_redirect_to_https(sut)
     test_no_priv_info_in_msgs(sut)
     test_headers_auth_before_etag(sut)
     test_no_auth_cookies(sut)

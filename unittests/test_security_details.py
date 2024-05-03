@@ -400,7 +400,7 @@ class SecurityDetails(TestCase):
         response.history = [redirect]
         sec.test_redirect_enforces_target_privs(self.sut)
         result = get_result(self.sut,
-                            Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS,
+                            Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS,
                             'GET', self.sut.sessions_uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.PASS, result['result'])
@@ -414,7 +414,7 @@ class SecurityDetails(TestCase):
         response.history = [redirect]
         sec.test_redirect_enforces_target_privs(self.sut)
         result = get_result(self.sut,
-                            Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS,
+                            Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS,
                             'GET', self.sut.sessions_uri)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
@@ -423,42 +423,8 @@ class SecurityDetails(TestCase):
     def test_test_redirect_enforces_target_privs_not_tested(self):
         sec.test_redirect_enforces_target_privs(self.sut)
         result = get_result(self.sut,
-                            Assertion.SEC_REDIRECT_ENFORCES_TARGET_PRIVS,
+                            Assertion.PROTO_REDIRECT_ENFORCES_TARGET_PRIVS,
                             'GET', self.sut.sessions_uri)
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.NOT_TESTED, result['result'])
-        self.assertIn('No response found with an HTTP redirect', result['msg'])
-
-    def test_test_redirect_to_https_pass(self):
-        response = add_response(self.sut, '/redfish/v1/', 'GET',
-                                requests.codes.OK,
-                                request_type=RequestType.HTTP_NO_AUTH)
-        redirect = mock.MagicMock(spec=requests.Response)
-        response.history = [redirect]
-        sec.test_redirect_to_https(self.sut)
-        result = get_result(self.sut, Assertion.SEC_REDIRECT_TO_HTTPS,
-                            'GET', '/redfish/v1/')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.PASS, result['result'])
-
-    def test_test_redirect_to_https_fail(self):
-        response = add_response(self.sut, '/redfish/v1/', 'GET',
-                                requests.codes.NOT_FOUND,
-                                request_type=RequestType.HTTP_NO_AUTH)
-        redirect = mock.MagicMock(spec=requests.Response)
-        redirect.url = 'http://127.0.0.1/redfish/v1/'
-        response.history = [redirect]
-        sec.test_redirect_to_https(self.sut)
-        result = get_result(self.sut, Assertion.SEC_REDIRECT_TO_HTTPS,
-                            'GET', '/redfish/v1/')
-        self.assertIsNotNone(result)
-        self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('was 404, expected 200', result['msg'])
-
-    def test_test_redirect_to_https_not_tested(self):
-        sec.test_redirect_to_https(self.sut)
-        result = get_result(self.sut, Assertion.SEC_REDIRECT_TO_HTTPS,
-                            'GET', '/redfish/v1/')
         self.assertIsNotNone(result)
         self.assertEqual(Result.NOT_TESTED, result['result'])
         self.assertIn('No response found with an HTTP redirect', result['msg'])

@@ -60,11 +60,6 @@ def test_event_service_subscription(sut: SystemUnderTest):
                 Assertion.SERV_EVENT_POST_RESP, msg)
 
 
-def test_push_style_eventing(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_PUSH_STYLE."""
-    pass
-
-
 def test_event_error_on_bad_request(sut: SystemUnderTest):
     """Perform tests for Assertion.SERV_EVENT_ERROR_ON_BAD_REQUEST."""
     if sut.subscriptions_uri:
@@ -107,60 +102,6 @@ def test_event_error_on_bad_request(sut: SystemUnderTest):
                'test this assertion')
         sut.log(Result.NOT_TESTED, '', '', '',
                 Assertion.SERV_EVENT_ERROR_ON_BAD_REQUEST, msg)
-
-
-def test_event_error_on_mutually_excl_props(sut: SystemUnderTest):
-    """Perform tests for Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS."""
-    if sut.subscriptions_uri:
-        payload = {
-            'Context': 'RPV test subscription',
-            'Protocol': 'Redfish',
-            'Destination': 'https://192.168.1.50/Destination1',
-            'RegistryPrefixes': [
-                'Base'
-            ],
-            'MessageIds': [
-                'Base.1.0.Success',
-                'Base.1.0.GeneralError'
-            ]
-        }
-        response = sut.post(sut.subscriptions_uri, json=payload)
-        sut.add_response(sut.subscriptions_uri, response,
-                         request_type=RequestType.SUBSCRIPTION)
-        if response.ok:
-            msg = ('Event subscription request with mutually exclusive '
-                   'properties (RegistryPrefixes and MessageIds) to %s '
-                   'returned status code %s; expected %s' % (
-                       sut.subscriptions_uri, response.status_code,
-                       requests.codes.BAD_REQUEST))
-            sut.log(Result.FAIL, response.request.method,
-                    response.status_code, sut.subscriptions_uri,
-                    Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, msg)
-            location = response.headers.get('Location')
-            if location:
-                # cleanup
-                uri = urlparse(location).path
-                r = sut.delete(uri)
-                sut.add_response(uri, r, request_type=RequestType.SUBSCRIPTION)
-        elif response.status_code == requests.codes.BAD_REQUEST:
-            sut.log(Result.PASS, response.request.method,
-                    response.status_code, sut.subscriptions_uri,
-                    Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS,
-                    'Test passed')
-        else:
-            msg = ('Event subscription request with mutually exclusive '
-                   'properties (RegistryPrefixes and MessageIds) to %s '
-                   'returned status code %s; expected %s' % (
-                       sut.subscriptions_uri, response.status_code,
-                       requests.codes.BAD_REQUEST))
-            sut.log(Result.WARN, response.request.method,
-                    response.status_code, sut.subscriptions_uri,
-                    Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, msg)
-    else:
-        msg = ('No event subscriptions URI found on the service; unable to '
-               'test this assertion')
-        sut.log(Result.NOT_TESTED, '', '', '',
-                Assertion.SERV_EVENT_ERROR_MUTUALLY_EXCL_PROPS, msg)
 
 
 def pre_ssdp(sut: SystemUnderTest):
@@ -1003,9 +944,7 @@ def test_sse_json_metric_report_format(sut: SystemUnderTest, events):
 def test_eventing(sut: SystemUnderTest):
     """Perform eventing tests"""
     test_event_service_subscription(sut)
-    test_push_style_eventing(sut)
     test_event_error_on_bad_request(sut)
-    test_event_error_on_mutually_excl_props(sut)
 
 
 def test_discovery(sut: SystemUnderTest):
