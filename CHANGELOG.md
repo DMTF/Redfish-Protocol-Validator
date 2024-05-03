@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.5] - 2024-05-03
+- Updated existing tests to align with version 1.20.0 of the Redfish Specification
+- Added methods to gracefully handle invalid JSON responses
+
 ## [1.2.4] - 2024-04-19
 - Added conditional checking of the 'WWW-Authenticate' header based on the value of the 'HTTPBasicAuth' property
 
