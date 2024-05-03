@@ -326,7 +326,7 @@ def test_get_collection_count_prop_required(sut: SystemUnderTest):
                 uri, Assertion.REQ_GET_COLLECTION_COUNT_PROP_REQUIRED, msg)
         return
 
-    data = response.json()
+    data = utils.get_response_json(response)
     if 'Members@odata.count' in data:
         count = data.get('Members@odata.count')
         if not isinstance(count, int):
@@ -358,7 +358,7 @@ def test_get_collection_count_prop_total(sut: SystemUnderTest):
                 uri, Assertion.REQ_GET_COLLECTION_COUNT_PROP_TOTAL, msg)
         return
 
-    data = response.json()
+    data = utils.get_response_json(response)
     if 'Members@odata.count' not in data:
         msg = ('The collection resource at URI %s did not include the '
                'required count property' % uri)
@@ -532,7 +532,7 @@ def test_query_unsupported_dollar_params_ext_error(
     """
     if ('application/json' in response.headers.get('Content-Type', '') and
             '@Message.ExtendedInfo' in response.text):
-        data = response.json()
+        data = utils.get_response_json(response)
         if utils.is_text_in_extended_error('rpvunknown', data):
             sut.log(Result.PASS, 'GET', response.status_code, uri,
                     Assertion.REQ_QUERY_UNSUPPORTED_PARAMS_EXT_ERROR,
@@ -681,7 +681,7 @@ def test_patch_mixed_props(sut: SystemUnderTest):
             'PATCH', request_type=RequestType.PATCH_MIXED_PROPS).items():
         found_response = True
         if response.status_code == requests.codes.OK:
-            data = response.json()
+            data = utils.get_response_json(response)
             if '@odata.id' in data:
                 if '@Message.ExtendedInfo' in data:
                     sut.log(Result.PASS, 'PATCH', response.status_code, uri,
@@ -722,7 +722,7 @@ def test_patch_bad_prop(sut: SystemUnderTest):
             'PATCH', request_type=RequestType.PATCH_BAD_PROP).items():
         found_response = True
         if response.status_code == requests.codes.BAD_REQUEST:
-            data = response.json()
+            data = utils.get_response_json(response)
             if ('error' in data and
                     utils.is_text_in_extended_error('BogusProp', data)):
                 sut.log(Result.PASS, 'PATCH', response.status_code, uri,
@@ -755,7 +755,7 @@ def test_patch_odata_props(sut: SystemUnderTest):
             'PATCH', request_type=RequestType.PATCH_ODATA_PROPS).items():
         found_response = True
         if response.status_code == requests.codes.BAD_REQUEST:
-            data = response.json()
+            data = utils.get_response_json(response)
             if ('error' in data and 'NoOperation' in
                     utils.get_extended_info_message_keys(data)):
                 sut.log(Result.PASS, 'PATCH', response.status_code, uri,
@@ -794,7 +794,12 @@ def patch_array_save(sut: SystemUnderTest):
     if sut.mgr_net_proto_uri:
         response = sut.get_response('GET', sut.mgr_net_proto_uri)
         if response is not None and response.ok:
-            a = response.json().get('NTP', {}).get('NTPServers', None)
+            try:
+                a = utils.get_response_json(response).get('NTP', {}).get('NTPServers', None)
+            except:
+                logging.error('%s response does not match schema definition'
+                              % (sut.mgr_net_proto_uri))
+                return None
             if isinstance(a, list):
                 array = a
     return array
@@ -826,10 +831,14 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
-            if get_resp.ok:
-                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
-            else:
-                array = response.json().get('NTP', {}).get('NTPServers', None)
+            try:
+                if get_resp.ok:
+                    array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
+                else:
+                    array = utils.get_response_json(response).get('NTP', {}).get('NTPServers', None)
+            except:
+                logging.error('%s response does not match schema definition' % (uri))
+                array = None
             if isinstance(array, list):
                 if 'time-a-b.nist.gov' in array:
                     msg = ('Array element %s was not removed; resource: %s; '
@@ -889,10 +898,14 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
-            if get_resp.ok:
-                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
-            else:
-                array = response.json().get('NTP', {}).get('NTPServers', None)
+            try:
+                if get_resp.ok:
+                    array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
+                else:
+                    array = utils.get_response_json(response).get('NTP', {}).get('NTPServers', None)
+            except:
+                logging.error('%s response does not match schema definition' % (uri))
+                array = None
             if isinstance(array, list):
                 if 'time-a-b.nist.gov' in array:
                     sut.log(Result.PASS, 'PATCH', response.status_code, uri,
@@ -960,10 +973,14 @@ def test_patch_array_truncate(sut: SystemUnderTest):
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
             get_resp = sut.session.get(sut.rhost + uri)
-            if get_resp.ok:
-                array = get_resp.json().get('NTP', {}).get('NTPServers', None)
-            else:
-                array = response.json().get('NTP', {}).get('NTPServers', None)
+            try:
+                if get_resp.ok:
+                    array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
+                else:
+                    array = utils.get_response_json(response).get('NTP', {}).get('NTPServers', None)
+            except:
+                logging.error('%s response does not match schema definition' % (uri))
+                array = None
             if isinstance(array, list):
                 # Remove trailing "null" instance; services might implement
                 # this as a fixed array and show the array size by padding with

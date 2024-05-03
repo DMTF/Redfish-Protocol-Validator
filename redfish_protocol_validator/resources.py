@@ -38,13 +38,13 @@ def find_certificates(sut: SystemUnderTest, data):
         r = sut.session.get(sut.rhost + uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
-            d = r.json()
+            d = utils.get_response_json(r)
             if 'HTTPS' in d and 'Certificates' in d['HTTPS']:
                 coll_uri = d['HTTPS']['Certificates']['@odata.id']
                 r = sut.session.get(sut.rhost + coll_uri)
                 yield {'uri': coll_uri, 'response': r}
                 if r.ok:
-                    d = r.json()
+                    d = utils.get_response_json(r)
                     if 'Members' in d and len(d['Members']):
                         for m in d['Members']:
                             uri = m['@odata.id']
@@ -85,7 +85,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     # do GET on the service root
     r = sut.session.get(sut.rhost + uri)
     yield {'uri': uri, 'response': r}
-    root = r.json() if r.status_code == requests.codes.OK else {}
+    root = utils.get_response_json(r) if r.status_code == requests.codes.OK else {}
 
     sut.set_version(root.get('RedfishVersion', '1.0.0'))
     sut.set_product(root.get('Product', 'N/A'))
@@ -99,7 +99,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
             r = sut.session.get(sut.rhost + uri)
             yield {'uri': uri, 'response': r}
             if r.ok:
-                data = r.json()
+                data = utils.get_response_json(r)
                 if 'Members' in data and len(data['Members']):
                     uri = data['Members'][0]['@odata.id']
                     r = sut.session.get(sut.rhost + uri)
@@ -111,14 +111,14 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
         r = sut.session.get(sut.rhost + uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
-            data = r.json()
+            data = utils.get_response_json(r)
             if 'Members' in data and len(data['Members']):
                 for m in data['Members']:
                     uri = m['@odata.id']
                     r = sut.session.get(sut.rhost + uri)
                     yield {'uri': uri, 'response': r}
                     if r.ok:
-                        d = r.json()
+                        d = utils.get_response_json(r)
                         set_mfr_model_fw(sut, d)
                         set_mgr_net_proto_uri(sut, d)
                         for c in find_certificates(sut, d):
@@ -130,7 +130,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
         r = sut.session.get(sut.rhost + uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
-            data = r.json()
+            data = utils.get_response_json(r)
             if 'PrivilegeMap' in data:
                 uri = data['PrivilegeMap']['@odata.id']
                 sut.set_nav_prop_uri('PrivilegeMap', uri)
@@ -141,7 +141,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                     yield {'uri': uri, 'response': r}
                     sut.set_nav_prop_uri(prop, uri)
                     if r.ok:
-                        d = r.json()
+                        d = utils.get_response_json(r)
                         if 'Members' in d and len(d['Members']):
                             if prop == 'Accounts':
                                 resource_type = ResourceType.MANAGER_ACCOUNT
@@ -152,8 +152,8 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                                     yield {'uri': uri, 'response': r,
                                            'resource_type': resource_type}
                                     if r.ok:
-                                        sut.add_user(r.json())
-                                        if (r.json().get('UserName')
+                                        sut.add_user(utils.get_response_json(r))
+                                        if (utils.get_response_json(r).get('UserName')
                                                 == sut.username):
                                             break
 
@@ -166,20 +166,20 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                                     yield {'uri': uri, 'response': r,
                                            'resource_type': resource_type}
                                     if r.ok:
-                                        sut.add_role(r.json())
+                                        sut.add_role(utils.get_response_json(r))
 
     if 'SessionService' in root:
         uri = root['SessionService']['@odata.id']
         r = sut.session.get(sut.rhost + uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
-            data = r.json()
+            data = utils.get_response_json(r)
             if 'Sessions' in data:
                 uri = data['Sessions']['@odata.id']
                 r = sut.session.get(sut.rhost + uri)
                 yield {'uri': uri, 'response': r}
                 if r.ok:
-                    data = r.json()
+                    data = utils.get_response_json(r)
                     if 'Members' in data and len(data['Members']):
                         uri = data['Members'][0]['@odata.id']
                         r = sut.session.get(sut.rhost + uri)
@@ -191,7 +191,7 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
         r = sut.session.get(sut.rhost + uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
-            data = r.json()
+            data = utils.get_response_json(r)
             if 'Subscriptions' in data:
                 sut.set_nav_prop_uri(
                     'Subscriptions', data['Subscriptions']['@odata.id'])
@@ -290,7 +290,7 @@ def data_modification_requests(sut: SystemUnderTest):
             sut.add_response(new_uri, response)
             if response.ok:
                 etag = utils.get_response_etag(response)
-                data = response.json()
+                data = utils.get_response_json(response)
                 if 'PasswordChangeRequired' in data:
                     acct.password_change_required(sut, sut.session, new_user,
                                                   new_pwd, new_uri, data, etag)

@@ -51,7 +51,7 @@ def get_response_etag(response: requests.Response):
         etag = response.headers.get('ETag')
         if not etag:
             if get_response_media_type(response) == 'application/json':
-                data = response.json()
+                data = get_response_json(response)
                 etag = data.get('@odata.etag')
     return etag
 
@@ -59,7 +59,7 @@ def get_response_etag(response: requests.Response):
 def get_extended_error(response: requests.Response):
     message = ''
     try:
-        data = response.json()
+        data = get_response_json(response)
         if 'error' in data:
             error = data['error']
             if 'message' in error:
@@ -75,6 +75,22 @@ def get_extended_error(response: requests.Response):
     except Exception:
         pass
     return message
+
+
+def get_response_json(response: requests.Response):
+    try:
+        data = response.json()
+        if not isinstance(data, dict):
+            data = {}
+            logging.error('%s on %s did not return a JSON object; assuming '
+                          'an empty object' % (response.request.method,
+                                               response.request.path_url))
+    except:
+        data = {}
+        logging.error('%s on %s did not return valid JSON; assuming '
+                      'an empty object' % (response.request.method,
+                                           response.request.path_url))
+    return data
 
 
 def get_extended_info_message_keys(body: dict):
@@ -142,7 +158,7 @@ def get_sse_stream(sut):
         if sut.subscriptions_uri:
             r = sut.session.get(sut.rhost + sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
-                data = r.json()
+                data = get_response_json(r)
                 subs = set([m.get('@odata.id') for m in data.get('Members', [])
                             if '@odata.id' in m])
 
@@ -153,7 +169,7 @@ def get_sse_stream(sut):
             # get the "after" set of EventDestination URIs
             r = sut.session.get(sut.rhost + sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
-                data = r.json()
+                data = get_response_json(r)
                 new_subs = set([m.get('@odata.id') for m in
                                 data.get('Members', []) if '@odata.id' in m])
                 diff = new_subs.difference(subs)

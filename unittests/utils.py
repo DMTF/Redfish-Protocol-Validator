@@ -23,6 +23,7 @@ def add_response(sut: SystemUnderTest, uri, method='GET',
     response.encoding = encoding
     request = mock.Mock(spec=requests.Request)
     request.method = method
+    request.path_url = uri
     if json is not None:
         response.json.return_value = json
         response.headers = {

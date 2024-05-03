@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task
+from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task, get_response_json
 from redfish_protocol_validator.constants import RequestType, Result
 
 
@@ -428,7 +428,7 @@ class SystemUnderTest(object):
         r = requests.get(self.rhost + '/redfish/v1/', headers=headers,
                          verify=self.verify)
         if r.status_code == requests.codes.OK:
-            data = r.json()
+            data = get_response_json(r)
             if 'Links' in data and 'Sessions' in data['Links']:
                 return data['Links']['Sessions']['@odata.id']
             elif 'SessionService' in data:
@@ -437,7 +437,7 @@ class SystemUnderTest(object):
                                  auth=(self.username, self.password),
                                  verify=self.verify)
                 if r.status_code == requests.codes.OK:
-                    data = r.json()
+                    data = get_response_json(r)
                     if 'Sessions' in data:
                         return data['Sessions']['@odata.id']
         return '/redfish/v1/SessionService/Sessions'
