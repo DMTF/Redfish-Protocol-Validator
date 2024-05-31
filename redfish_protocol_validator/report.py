@@ -49,7 +49,7 @@ html_template = """
         <h2>##### Redfish Protocol Validator Test Report #####</h2>
         <h4><img align=\"center\" alt=\"DMTF Redfish Logo\" height=\"203\"
             width=\"288\" src=\"data:image/gif;base64,{}\"></h4>
-        <h4><a href=\"https://github.com/DMTF/Redfish-Prptocol-Validator\">
+        <h4><a href=\"https://github.com/DMTF/Redfish-Protocol-Validator\">
             https://github.com/DMTF/Redfish-Protocol-Validator</a></h4>
         Tool Version: {}<br/>
         {}<br/><br/>
