@@ -458,7 +458,7 @@ class SystemUnderTest(object):
             session = self._session
         if no_session or session is None:
             response = requests.post(self.rhost + uri, json=json, headers=headers, verify=sut.verify)
-        else session:
+        else:
             response = session.post(self.rhost + uri, json=json, headers=headers)
         return poll_task(self, response, session)
 
