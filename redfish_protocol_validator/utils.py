@@ -161,17 +161,18 @@ def get_sse_stream(sut):
     try:
         # get the "before" set of EventDestination URIs
         if sut.subscriptions_uri:
-            r = sut.get(sut.subscriptions_uri)
+            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 subs = set([m.get('@odata.id') for m in data.get('Members', [])
                             if '@odata.id' in m])
 
         if sut.server_sent_event_uri:
-            response = sut.get(sut.server_sent_event_uri, stream=True)
+            response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
+                                       stream=True)
         if response is not None and response.ok and sut.subscriptions_uri:
             # get the "after" set of EventDestination URIs
-            r = sut.get(sut.subscriptions_uri)
+            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 new_subs = set([m.get('@odata.id') for m in
