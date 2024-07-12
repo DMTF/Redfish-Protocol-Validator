@@ -555,12 +555,19 @@ class SystemUnderTest(object):
 
         :return: A response object for the DELETE operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.delete(self.rhost + uri, headers=headers, verify=self.verify)
-        else:
-            response = session.delete(self.rhost + uri, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.delete(self.rhost + uri, headers=headers, verify=self.verify)
+            else:
+                response = session.delete(self.rhost + uri, headers=headers)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.ok = False
+            response.url = uri
         return poll_task(self, response, session)
 
     def login(self):
