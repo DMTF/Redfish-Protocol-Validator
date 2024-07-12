@@ -452,12 +452,20 @@ class SystemUnderTest(object):
 
         :return: A response object for the HEAD operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.request(method, self.rhost + uri, verify=self.verify)
-        else:
-            response = session.request(method, self.rhost + uri)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.request(method, self.rhost + uri, verify=self.verify)
+            else:
+                response = session.request(method, self.rhost + uri)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.url = uri
+            response.request = requests.Request()
+            response.request.method = method
         return response
 
     def head(self, uri, session=None, no_session=False):
@@ -470,12 +478,20 @@ class SystemUnderTest(object):
 
         :return: A response object for the HEAD operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.head(self.rhost + uri, verify=self.verify)
-        else:
-            response = session.head(self.rhost + uri)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.head(self.rhost + uri, verify=self.verify)
+            else:
+                response = session.head(self.rhost + uri)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.url = uri
+            response.request = requests.Request()
+            response.request.method = "HEAD"
         return response
 
     def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False):
@@ -492,14 +508,22 @@ class SystemUnderTest(object):
 
         :return: A response object for the GET operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.get(self.rhost + uri, json=json, headers=headers,
-                                    auth=auth, stream=stream, verify=self.verify)
-        else:
-            response = session.get(self.rhost + uri, json=json, headers=headers,
-                                   auth=auth, stream=stream)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.get(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, stream=stream, verify=self.verify)
+            else:
+                response = session.get(self.rhost + uri, json=json, headers=headers,
+                                       auth=auth, stream=stream)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.url = uri
+            response.request = requests.Request()
+            response.request.method = "GET"
         return response
 
     def post(self, uri, json=None, headers=None, session=None, no_session=False):
@@ -514,12 +538,20 @@ class SystemUnderTest(object):
 
         :return: A response object for the POST operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.post(self.rhost + uri, json=json, headers=headers, verify=self.verify)
-        else:
-            response = session.post(self.rhost + uri, json=json, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.post(self.rhost + uri, json=json, headers=headers, verify=self.verify)
+            else:
+                response = session.post(self.rhost + uri, json=json, headers=headers)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.url = uri
+            response.request = requests.Request()
+            response.request.method = "POST"
         return poll_task(self, response, session)
 
     def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None):
@@ -535,13 +567,21 @@ class SystemUnderTest(object):
 
         :return: A response object for the PATCH operation
         """
-        if session is None:
-            session = self._session
-        if no_session or session is None:
-            response = requests.patch(self.rhost + uri, json=json, headers=headers,
-                                      verify=self.verify, auth=auth)
-        else:
-            response = session.patch(self.rhost + uri, json=json, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.patch(self.rhost + uri, json=json, headers=headers,
+                                          verify=self.verify, auth=auth)
+            else:
+                response = session.patch(self.rhost + uri, json=json, headers=headers)
+        except Exception as e:
+            response = requests.Response()
+            response.status_code = 600
+            response.reason = "Exception"
+            response.url = uri
+            response.request = requests.Request()
+            response.request.method = "PATCH"
         return poll_task(self, response, session)
 
     def delete(self, uri, headers=None, session=None, no_session=False):
