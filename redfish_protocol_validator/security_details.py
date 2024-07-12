@@ -603,7 +603,8 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
         response = None
         exc_name = ''
         try:
-            response = sut.get(sut.server_sent_event_uri, session=session, stream=True)
+            response = session.get(sut.rhost + sut.server_sent_event_uri,
+                                   stream=True)
         except Exception as e:
             exc_name = e.__class__.__name__
         if response is None:
