@@ -371,6 +371,7 @@ class Resources(TestCase):
         headers = {'OData-Version': '4.0'}
         mock_get.return_value.status_code = requests.codes.OK
         resources.basic_auth_requests(self.sut)
+        print(mock_get.mock_calls)
         mock_get.assert_any_call(self.sut.sessions_uri,
                                  headers=headers, auth=(self.sut.username,
                                                         self.sut.password),
