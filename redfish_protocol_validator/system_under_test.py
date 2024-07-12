@@ -567,7 +567,7 @@ class SystemUnderTest(object):
             response.status_code = 600
             response.reason = "Exception"
             response.url = uri
-            response.request = request.Request()
+            response.request = requests.Request()
             response.request.method = "DELETE"
         return poll_task(self, response, session)
 
