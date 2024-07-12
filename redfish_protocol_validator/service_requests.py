@@ -17,7 +17,12 @@ def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
                 stream=False):
     """Perform test for a particular header value"""
     for val in header_values:
-        response = sut.get(uri, headers={header: val}, stream=stream)
+        # TODO: Need to remove this check
+        if stream:
+            response = sut.session.get(sut.rhost + uri, headers={header: val},
+                                       stream=stream)
+        else:
+            response = sut.get(uri, headers={header: val})
         if response.ok:
             msg = 'Test passed for header %s: %s' % (header, val)
             sut.log(Result.PASS, 'GET', response.status_code, uri,
