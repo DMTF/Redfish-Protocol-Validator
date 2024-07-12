@@ -372,7 +372,7 @@ class Resources(TestCase):
         mock_get.return_value.status_code = requests.codes.OK
         resources.basic_auth_requests(self.sut)
         print(mock_get.mock_calls)
-        mock_get.assert_any_call(self.sut.rhost + self.sut.sessions_uri,
+        mock_get.assert_any_call(self.sut.rhost + self.sut.sessions_uri, json=None,
                                  headers=headers, auth=(self.sut.username,
                                                         self.sut.password),
                                  stream=False, verify=self.sut.verify)
