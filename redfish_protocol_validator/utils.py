@@ -38,7 +38,7 @@ def get_response_media_type_charset(response):
 
 
 def get_etag_header(sut, session, uri):
-    response = session.get(sut.rhost + uri)
+    response = sut.get(uri, session=session)
     etag = None
     if response.ok:
         etag = response.headers.get('ETag')
@@ -147,7 +147,7 @@ def poll_task(sut, response, session=None):
         # Try for up to 1 minute at 5 second intervals
         for _ in range(12):
             time.sleep(5)
-            response = session.get(sut.rhost + task_monitor)
+            response = sut.get(task_monitor, session=session)
             # Once the task is done, break out
             if response.status_code != requests.codes.ACCEPTED:
                 break
@@ -161,18 +161,17 @@ def get_sse_stream(sut):
     try:
         # get the "before" set of EventDestination URIs
         if sut.subscriptions_uri:
-            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            r = sut.get(sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 subs = set([m.get('@odata.id') for m in data.get('Members', [])
                             if '@odata.id' in m])
 
         if sut.server_sent_event_uri:
-            response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                                       stream=True)
+            response = sut.get(sut.server_sent_event_uri, stream=True)
         if response is not None and response.ok and sut.subscriptions_uri:
             # get the "after" set of EventDestination URIs
-            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            r = sut.get(sut.subscriptions_uri)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 new_subs = set([m.get('@odata.id') for m in

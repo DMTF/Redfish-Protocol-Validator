@@ -425,22 +425,82 @@ class SystemUnderTest(object):
         :param headers: HTTP headers to pass to the GET requests
         :return: the Sessions URI
         """
-        r = requests.get(self.rhost + '/redfish/v1/', headers=headers,
-                         verify=self.verify)
+        r = self.get('/redfish/v1/', headers=headers, no_session=True)
         if r.status_code == requests.codes.OK:
             data = get_response_json(r)
             if 'Links' in data and 'Sessions' in data['Links']:
                 return data['Links']['Sessions']['@odata.id']
             elif 'SessionService' in data:
                 uri = data['SessionService']['@odata.id']
-                r = requests.get(self.rhost + uri, headers=headers,
-                                 auth=(self.username, self.password),
-                                 verify=self.verify)
+                r = self.get(uri, headers=headers,
+                             auth=(self.username, self.password),
+                             no_session=True)
                 if r.status_code == requests.codes.OK:
                     data = get_response_json(r)
                     if 'Sessions' in data:
                         return data['Sessions']['@odata.id']
         return '/redfish/v1/SessionService/Sessions'
+
+    def request(self, method, uri, session=None, no_session=False):
+        """
+        Performs an arbitrary HTTP request
+
+        :param method: The HTTP method to invoke
+        :param uri: The URI of the request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+
+        :return: A response object for the HEAD operation
+        """
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.request(method, self.rhost + uri, verify=self.verify)
+        else:
+            response = session.request(method, self.rhost + uri)
+        return response
+
+    def head(self, uri, session=None, no_session=False):
+        """
+        Performs a HEAD request
+
+        :param uri: The URI of the HEAD request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+
+        :return: A response object for the HEAD operation
+        """
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.head(self.rhost + uri, verify=self.verify)
+        else:
+            response = session.head(self.rhost + uri)
+        return response
+
+    def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False):
+        """
+        Performs a GET request
+
+        :param uri: The URI of the GET request
+        :param json: The JSON payload to send with the GET request
+        :param headers: HTTP headers to include in the GET request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+
+        :return: A response object for the GET operation
+        """
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.get(self.rhost + uri, json=json, headers=headers,
+                                    auth=auth, stream=stream, verify=self.verify)
+        else:
+            response = session.get(self.rhost + uri, json=json, headers=headers,
+                                   auth=auth, stream=stream)
+        return response
 
     def post(self, uri, json=None, headers=None, session=None, no_session=False):
         """

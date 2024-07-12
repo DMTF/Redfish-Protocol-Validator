@@ -116,7 +116,7 @@ def pre_ssdp(sut: SystemUnderTest):
 
     # determine SSDP enabled/disabled state
     if sut.mgr_net_proto_uri:
-        r = sut.session.get(sut.rhost + sut.mgr_net_proto_uri)
+        r = sut.get(sut.mgr_net_proto_uri)
         if r.ok:
             sut.add_response(sut.mgr_net_proto_uri, r)
             d = utils.get_response_json(r)
@@ -495,9 +495,9 @@ def test_sse_unsuccessful_response(sut: SystemUnderTest):
     response = None
     exc_name = ''
     try:
-        response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                                   headers={'Accept': 'application/json'},
-                                   stream=True)
+        response = sut.get(sut.server_sent_event_uri,
+                           headers={'Accept': 'application/json'},
+                           stream=True)
     except Exception as e:
         exc_name = e.__class__.__name__
     if response is None:
@@ -653,7 +653,7 @@ def test_sse_event_dest_deleted_on_close(sut: SystemUnderTest, response):
     # wait for up to 60 seconds for EventDestination resource to be deleted
     status = requests.codes.OK
     for i in range(60):
-        r = sut.session.get(sut.rhost + sut.event_dest_uri)
+        r = sut.get(sut.event_dest_uri)
         if r.ok:
             # resource still present
             status = r.status_code
@@ -735,7 +735,7 @@ def test_sse_event_dest_context_opaque_str(sut: SystemUnderTest, event_dest):
                 Assertion.SERV_SSE_EVENT_DEST_CONTEXT_OPAQUE_STR, msg)
         return
 
-    r = sut.session.get(sut.rhost + event_dest)
+    r = sut.get(event_dest)
     if r.status_code == requests.codes.OK:
         data = utils.get_response_json(r)
         if 'Context' in data:

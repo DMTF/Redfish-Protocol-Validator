@@ -29,7 +29,7 @@ def get_user_names(sut: SystemUnderTest, session,
             if uri in responses:
                 response = responses[uri]
             else:
-                response = session.get(sut.rhost + uri)
+                response = sut.get(uri, session=session)
                 sut.add_response(uri, response,
                                  resource_type=ResourceType.MANAGER_ACCOUNT,
                                  request_type=request_type)
@@ -56,7 +56,7 @@ def get_available_roles(sut: SystemUnderTest, session,
             if uri in responses:
                 response = responses[uri]
             else:
-                response = session.get(sut.rhost + uri)
+                response = sut.get(uri, session=session)
                 sut.add_response(uri, response,
                                  resource_type=ResourceType.ROLE,
                                  request_type=request_type)
@@ -132,7 +132,7 @@ def find_empty_account_slot(sut: SystemUnderTest, session,
         if uri in responses:
             response = responses[uri]
         else:
-            response = session.get(sut.rhost + uri)
+            response = sut.get(uri, session=session)
             sut.add_response(uri, response,
                              resource_type=ResourceType.MANAGER_ACCOUNT,
                              request_type=request_type)
@@ -159,7 +159,7 @@ def add_account_via_patch(sut: SystemUnderTest, session, user, role, password,
                      request_type=request_type)
     success = response.status_code == requests.codes.OK
     if success:
-        response = session.get(sut.rhost + uri)
+        response = sut.get(uri, session=session)
         if response.ok:
             # Enable the account if it not already enabled
             data = utils.get_response_json(response)
@@ -209,7 +209,7 @@ def add_account(sut: SystemUnderTest, session,
             new_acct_uri = urlparse(location).path
         else:
             new_acct_uri = utils.get_response_json(response).get('@odata.id')
-        response = session.get(sut.rhost + new_acct_uri)
+        response = sut.get(new_acct_uri, session=session)
         sut.add_response(new_acct_uri, response,
                          resource_type=ResourceType.MANAGER_ACCOUNT,
                          request_type=request_type)
@@ -358,15 +358,13 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
     sut.add_response(sut.sessions_uri, response,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # GET the account
-    response = requests.get(sut.rhost + uri, auth=(user, password),
-                            headers=headers, verify=sut.verify)
+    response = sut.get(uri, auth=(user, password), headers=headers, no_session=True)
     etag = utils.get_response_etag(response)
     sut.add_response(uri, response, resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # try to get protected resource
-    response = requests.get(sut.rhost + sut.sessions_uri,
-                            auth=(user, password), headers=headers, 
-                            verify=sut.verify)
+    response = sut.get(sut.sessions_uri, auth=(user, password), headers=headers, 
+                       no_session=True)
     sut.add_response(sut.sessions_uri, response,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # change password
