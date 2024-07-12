@@ -371,10 +371,10 @@ class Resources(TestCase):
         headers = {'OData-Version': '4.0'}
         mock_get.return_value.status_code = requests.codes.OK
         resources.basic_auth_requests(self.sut)
-        mock_get.assert_any_call(self.sut.rhost + self.sut.sessions_uri,
+        mock_get.assert_any_call(self.sut.sessions_uri,
                                  headers=headers, auth=(self.sut.username,
                                                         self.sut.password),
-                                 verify=self.sut.verify)
+                                 no_session=True)
         responses = self.sut.get_responses_by_method(
             'GET', request_type=RequestType.BASIC_AUTH)
         self.assertEqual(len(responses), 2)

@@ -54,7 +54,7 @@ def test_tls_1_1(sut: SystemUnderTest):
     uri = '/redfish/v1/'
     status = ''
     try:
-        response = sut.get(uri, session=session)
+        response = session.get(sut.rhost + uri)
         status = response.status_code
         result = Result.PASS
         msg = 'Test passed'
