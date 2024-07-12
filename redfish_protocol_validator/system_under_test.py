@@ -566,7 +566,6 @@ class SystemUnderTest(object):
             response = requests.Response()
             response.status_code = 600
             response.reason = "Exception"
-            response.ok = False
             response.url = uri
         return poll_task(self, response, session)
 
