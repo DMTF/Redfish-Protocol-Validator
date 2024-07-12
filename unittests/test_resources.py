@@ -366,15 +366,15 @@ class Resources(TestCase):
         self.session.request.called_once_with(
             'DELETE', self.sut.rhost + '/redfish/v1/')
 
-    @mock.patch('redfish_protocol_validator.sessions.requests.get')
+    @mock.patch('redfish_protocol_validator.system_under_test.get')
     def test_basic_auth_requests(self, mock_get):
         headers = {'OData-Version': '4.0'}
         mock_get.return_value.status_code = requests.codes.OK
         resources.basic_auth_requests(self.sut)
-        mock_get.assert_any_call(self.sut.rhost + self.sut.sessions_uri,
+        mock_get.assert_any_call(self.sut.sessions_uri,
                                  headers=headers, auth=(self.sut.username,
                                                         self.sut.password),
-                                 verify=self.sut.verify)
+                                 no_session=True)
         responses = self.sut.get_responses_by_method(
             'GET', request_type=RequestType.BASIC_AUTH)
         self.assertEqual(len(responses), 2)
