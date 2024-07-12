@@ -26,8 +26,8 @@ def bad_login(sut: SystemUnderTest):
     headers = {
         'OData-Version': '4.0'
     }
-    response = requests.post(sut.rhost + sut.sessions_uri, json=payload,
-                             headers=headers, verify=sut.verify)
+    response = sut.post(sut.sessions_uri, json=payload,
+                        headers=headers, no_session=True)
     sut.add_response(sut.sessions_uri, response,
                      request_type=RequestType.BAD_AUTH)
 
@@ -41,8 +41,8 @@ def create_session(sut: SystemUnderTest):
         'OData-Version': '4.0',
         'Content-Type': 'application/json;charset=utf-8'
     }
-    response = requests.post(sut.rhost + sut.sessions_uri, json=payload,
-                             headers=headers, verify=sut.verify)
+    response = sut.post(sut.sessions_uri, json=payload,
+                        headers=headers, no_session=True)
     if not response.ok:
         logging.warning('session POST status: %s, response: %s' % (
             response.status_code, response.text))

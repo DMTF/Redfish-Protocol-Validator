@@ -1090,8 +1090,7 @@ def test_post_create_to_members_prop(sut: SystemUnderTest):
         'OData-Version': '4.0',
         'Content-Type': 'application/json;charset=utf-8'
     }
-    response = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                             verify=sut.verify)
+    response = sut.post(uri, json=payload, headers=headers, no_session=True)
     if response.ok:
         sut.log(Result.PASS, 'POST', response.status_code, uri,
                 Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
@@ -1122,15 +1121,13 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
         'OData-Version': '4.0',
         'Content-Type': 'application/json;charset=utf-8'
     }
-    r1 = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                       verify=sut.verify)
+    r1 = sut.post(uri, json=payload, headers=headers, no_session=True)
     if r1.ok:
         loc1 = r1.headers.get('Location')
         session_uri1 = ''
         if loc1 and isinstance(loc1, str):
             session_uri1 = urlparse(loc1).path
-        r2 = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                           verify=sut.verify)
+        r2 = sut.post(uri, json=payload, headers=headers, no_session=True)
         if r2.ok:
             loc2 = r2.headers.get('Location')
             session_uri2 = ''

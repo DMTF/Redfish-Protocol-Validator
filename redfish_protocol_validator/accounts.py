@@ -353,8 +353,8 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
     headers = {
         'OData-Version': '4.0'
     }
-    response = requests.post(sut.rhost + sut.sessions_uri, json=payload,
-                             headers=headers, verify=sut.verify)
+    response = sut.post(sut.sessions_uri, json=payload,
+                        headers=headers, no_session=True)
     sut.add_response(sut.sessions_uri, response,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)
     # GET the account
@@ -373,8 +373,8 @@ def password_change_required(sut: SystemUnderTest, session, user, password,
     payload = {'Password': new_password(sut)}
     if etag:
         headers['If-Match'] = etag
-    response = requests.patch(sut.rhost + uri, auth=(user, password), json=payload,
-                              headers=headers, verify=sut.verify)
+    response = sut.patch(uri, json=payload, headers=headers,
+                         no_session=True, auth=(user, password))
     sut.add_response(uri, response,
                      resource_type=ResourceType.MANAGER_ACCOUNT,
                      request_type=RequestType.PWD_CHANGE_REQUIRED)

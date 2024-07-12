@@ -132,6 +132,14 @@ def poll_task(sut, response, session=None):
     # If the response doesn't show 202 Accepted, there's nothing to poll
     if response.status_code != requests.codes.ACCEPTED:
         return response
+    if session is None:
+        session = sut.session
+    if session is None:
+        # If no session is set up, don't poll
+        # May want to revisit this later; there are only a few tests that do
+        # not use the requests sessions, and they are not expected to produce
+        # tasks
+        return response
 
     # Get the task monitor URI and poll it
     task_monitor = response.headers.get('Location')
@@ -139,10 +147,7 @@ def poll_task(sut, response, session=None):
         # Try for up to 1 minute at 5 second intervals
         for _ in range(12):
             time.sleep(5)
-            if session:
-                response = session.get(sut.rhost + task_monitor)
-            else:
-                response = sut.session.get(sut.rhost + task_monitor)
+            response = session.get(sut.rhost + task_monitor)
             # Once the task is done, break out
             if response.status_code != requests.codes.ACCEPTED:
                 break

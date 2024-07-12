@@ -442,7 +442,7 @@ class SystemUnderTest(object):
                         return data['Sessions']['@odata.id']
         return '/redfish/v1/SessionService/Sessions'
 
-    def post(self, uri, json=None, headers=None, session=None):
+    def post(self, uri, json=None, headers=None, session=None, no_session=False):
         """
         Performs a POST request with task polling
 
@@ -450,16 +450,19 @@ class SystemUnderTest(object):
         :param json: The JSON payload to send with the POST request
         :param headers: HTTP headers to include in the POST request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
 
         :return: A response object for the POST operation
         """
-        if session:
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.post(self.rhost + uri, json=json, headers=headers, verify=sut.verify)
+        else session:
             response = session.post(self.rhost + uri, json=json, headers=headers)
-        else:
-            response = self._session.post(self.rhost + uri, json=json, headers=headers)
         return poll_task(self, response, session)
 
-    def patch(self, uri, json=None, headers=None, session=None):
+    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None):
         """
         Performs a PATCH request with task polling
 
@@ -467,29 +470,37 @@ class SystemUnderTest(object):
         :param json: The JSON payload to send with the PATCH request
         :param headers: HTTP headers to include in the PATCH request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
 
         :return: A response object for the PATCH operation
         """
-        if session:
-            response = session.patch(self.rhost + uri, json=json, headers=headers)
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.patch(self.rhost + uri, json=json, headers=headers,
+                                      verify=self.verify, auth=auth)
         else:
-            response = self._session.patch(self.rhost + uri, json=json, headers=headers)
+            response = session.patch(self.rhost + uri, json=json, headers=headers)
         return poll_task(self, response, session)
 
-    def delete(self, uri, headers=None, session=None):
+    def delete(self, uri, headers=None, session=None, no_session=False):
         """
         Performs a DELETE request with task polling
 
         :param uri: The URI of the POST request
         :param headers: HTTP headers to include in the DELETE request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
 
         :return: A response object for the DELETE operation
         """
-        if session:
-            response = session.delete(self.rhost + uri, headers=headers)
+        if session is None:
+            session = self._session
+        if no_session or session is None:
+            response = requests.delete(self.rhost + uri, headers=headers, verify=sut.verify)
         else:
-            response = self._session.delete(self.rhost + uri, headers=headers)
+            response = session.delete(self.rhost + uri, headers=headers)
         return poll_task(self, response, session)
 
     def login(self):
@@ -508,8 +519,8 @@ class SystemUnderTest(object):
         sessions_uri = self._get_sessions_uri(headers)
         self.set_sessions_uri(sessions_uri)
         session = requests.Session()
-        response = requests.post(self.rhost + sessions_uri, json=payload,
-                                 headers=headers, verify=self.verify)
+        response = self.post(sessions_uri, json=payload,
+                             headers=headers, no_session=True)
         if response.ok:
             # Redfish Session created; use it
             location = response.headers.get('Location')
