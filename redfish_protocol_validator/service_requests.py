@@ -14,15 +14,11 @@ from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
-                stream=False):
+                stream=False, allow_exception=False):
     """Perform test for a particular header value"""
     for val in header_values:
-        # TODO: Need to remove this check
-        if stream:
-            response = sut.session.get(sut.rhost + uri, headers={header: val},
-                                       stream=stream)
-        else:
-            response = sut.get(uri, headers={header: val})
+        response = sut.get(uri, headers={header: val}, stream=stream,
+                           allow_exception=allow_exception)
         if response.ok:
             msg = 'Test passed for header %s: %s' % (header, val)
             sut.log(Result.PASS, 'GET', response.status_code, uri,
@@ -76,7 +72,7 @@ def test_accept_header(sut: SystemUnderTest):
     if uri:
         try:
             test_header(sut, header, header_values, uri, assertion,
-                        stream=True)
+                        stream=True, allow_exception=True)
         except Exception as e:
             msg = ('Caught %s while opening SSE stream with valid '
                    '"text/event-stream" Accept headers' % e.__class__.__name__)

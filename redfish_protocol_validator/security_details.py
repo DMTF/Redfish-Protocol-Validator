@@ -54,7 +54,7 @@ def test_tls_1_1(sut: SystemUnderTest):
     uri = '/redfish/v1/'
     status = ''
     try:
-        response = session.get(sut.rhost + uri)
+        response = sut.get(uri, session=session, allow_exception=True)
         status = response.status_code
         result = Result.PASS
         msg = 'Test passed'
@@ -603,8 +603,8 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
         response = None
         exc_name = ''
         try:
-            response = session.get(sut.rhost + sut.server_sent_event_uri,
-                                   stream=True)
+            response = sut.get(sut.server_sent_event_uri, session=session,
+                               stream=True, allow_exception=True)
         except Exception as e:
             exc_name = e.__class__.__name__
         if response is None:

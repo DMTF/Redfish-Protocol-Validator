@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task, get_response_json
+from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task, get_response_json, build_exception_response
 from redfish_protocol_validator.constants import RequestType, Result
 
 
@@ -460,12 +460,7 @@ class SystemUnderTest(object):
             else:
                 response = session.request(method, self.rhost + uri)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = method
+            response = build_exception_response(e, uri, method)
         return response
 
     def head(self, uri, session=None, no_session=False):
@@ -486,15 +481,10 @@ class SystemUnderTest(object):
             else:
                 response = session.head(self.rhost + uri)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = "HEAD"
+            response = build_exception_response(e, uri, "HEAD")
         return response
 
-    def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False):
+    def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs a GET request
 
@@ -505,6 +495,7 @@ class SystemUnderTest(object):
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
         :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the GET operation
         """
@@ -518,12 +509,10 @@ class SystemUnderTest(object):
                 response = session.get(self.rhost + uri, json=json, headers=headers,
                                        auth=auth, stream=stream)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = "GET"
+            if allow_exception:
+                # Caller is expecting to handle exceptions
+                raise
+            response = build_exception_response(e, uri, "GET")
         return response
 
     def post(self, uri, json=None, headers=None, session=None, no_session=False):
@@ -546,12 +535,7 @@ class SystemUnderTest(object):
             else:
                 response = session.post(self.rhost + uri, json=json, headers=headers)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = "POST"
+            response = build_exception_response(e, uri, "POST")
         return poll_task(self, response, session)
 
     def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None):
@@ -576,12 +560,7 @@ class SystemUnderTest(object):
             else:
                 response = session.patch(self.rhost + uri, json=json, headers=headers)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = "PATCH"
+            response = build_exception_response(e, uri, "PATCH")
         return poll_task(self, response, session)
 
     def delete(self, uri, headers=None, session=None, no_session=False):
@@ -603,12 +582,7 @@ class SystemUnderTest(object):
             else:
                 response = session.delete(self.rhost + uri, headers=headers)
         except Exception as e:
-            response = requests.Response()
-            response.status_code = 600
-            response.reason = "Exception"
-            response.url = uri
-            response.request = requests.Request()
-            response.request.method = "DELETE"
+            response = build_exception_response(e, uri, "DELETE")
         return poll_task(self, response, session)
 
     def login(self):
