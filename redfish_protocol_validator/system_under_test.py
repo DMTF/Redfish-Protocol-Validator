@@ -632,8 +632,7 @@ class SystemUnderTest(object):
 
     def logout(self):
         if self.active_session_uri:
-            response = self.session.delete(
-                self.rhost + self.active_session_uri)
+            response = self.delete(self.active_session_uri)
             if response.ok:
                 self._set_session(None)
                 self._set_active_session_uri(None)
