@@ -101,6 +101,7 @@ def build_exception_response(exception, uri, method):
     response.request = requests.Request()
     response.request.method = method
     response.request.body = None
+    response.request.path_url = uri
     logging.error('%s on %s caused %s exception; building HTTP 600 '
                   'response' % (method, uri, type(exception).__name__))
     return response
