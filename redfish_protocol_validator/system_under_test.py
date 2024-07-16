@@ -443,25 +443,34 @@ class SystemUnderTest(object):
                         return uri
         return '/redfish/v1/SessionService/Sessions'
 
-    def request(self, method, uri, session=None, no_session=False):
+    def request(self, method, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs an arbitrary HTTP request
 
         :param method: The HTTP method to invoke
         :param uri: The URI of the request
+        :param json: The JSON payload to send with the request
+        :param headers: HTTP headers to include in the request
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
-        :return: A response object for the HEAD operation
+        :return: A response object for the operation
         """
         try:
             if session is None:
                 session = self._session
             if no_session or session is None:
-                response = requests.request(method, self.rhost + uri, verify=self.verify, timeout=30)
+                response = requests.request(method, self.rhost + uri, json=json, headers=headers,
+                                            auth=auth, stream=stream, verify=self.verify, timeout=30)
             else:
-                response = session.request(method, self.rhost + uri, timeout=30)
+                response = session.request(method, self.rhost + uri, json=json, headers=headers,
+                                           auth=auth, stream=stream, timeout=30)
         except Exception as e:
+            if allow_exception:
+                raise
             response = build_exception_response(e, uri, method)
         return response
 
@@ -475,16 +484,7 @@ class SystemUnderTest(object):
 
         :return: A response object for the HEAD operation
         """
-        try:
-            if session is None:
-                session = self._session
-            if no_session or session is None:
-                response = requests.head(self.rhost + uri, verify=self.verify, timeout=30)
-            else:
-                response = session.head(self.rhost + uri, timeout=30)
-        except Exception as e:
-            response = build_exception_response(e, uri, "HEAD")
-        return response
+        return self.request("HEAD", uri, session=session, no_session=no_session)
 
     def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
@@ -501,21 +501,8 @@ class SystemUnderTest(object):
 
         :return: A response object for the GET operation
         """
-        try:
-            if session is None:
-                session = self._session
-            if no_session or session is None:
-                response = requests.get(self.rhost + uri, json=json, headers=headers,
-                                        auth=auth, stream=stream, verify=self.verify, timeout=30)
-            else:
-                response = session.get(self.rhost + uri, json=json, headers=headers,
-                                       auth=auth, stream=stream, timeout=30)
-        except Exception as e:
-            if allow_exception:
-                # Caller is expecting to handle exceptions
-                raise
-            response = build_exception_response(e, uri, "GET")
-        return response
+        return self.request("GET", uri, json=json, headers=headers, session=session,
+                            no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
 
     def post(self, uri, json=None, headers=None, session=None, no_session=False):
         """
@@ -529,15 +516,7 @@ class SystemUnderTest(object):
 
         :return: A response object for the POST operation
         """
-        try:
-            if session is None:
-                session = self._session
-            if no_session or session is None:
-                response = requests.post(self.rhost + uri, json=json, headers=headers, verify=self.verify, timeout=30)
-            else:
-                response = session.post(self.rhost + uri, json=json, headers=headers, timeout=30)
-        except Exception as e:
-            response = build_exception_response(e, uri, "POST")
+        response = self.request("POST", uri, json=json, headers=headers, session=session, no_session=no_session)
         return poll_task(self, response, session)
 
     def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None):
@@ -553,16 +532,8 @@ class SystemUnderTest(object):
 
         :return: A response object for the PATCH operation
         """
-        try:
-            if session is None:
-                session = self._session
-            if no_session or session is None:
-                response = requests.patch(self.rhost + uri, json=json, headers=headers,
-                                          verify=self.verify, auth=auth, timeout=30)
-            else:
-                response = session.patch(self.rhost + uri, json=json, headers=headers, timeout=30)
-        except Exception as e:
-            response = build_exception_response(e, uri, "PATCH")
+        response = self.request("PATCH", uri, json=json, headers=headers, session=session,
+                                no_session=no_session, auth=auth)
         return poll_task(self, response, session)
 
     def delete(self, uri, headers=None, session=None, no_session=False):
@@ -576,15 +547,7 @@ class SystemUnderTest(object):
 
         :return: A response object for the DELETE operation
         """
-        try:
-            if session is None:
-                session = self._session
-            if no_session or session is None:
-                response = requests.delete(self.rhost + uri, headers=headers, verify=self.verify, timeout=30)
-            else:
-                response = session.delete(self.rhost + uri, headers=headers, timeout=30)
-        except Exception as e:
-            response = build_exception_response(e, uri, "DELETE")
+        response = self.request("DELETE", uri, headers=headers, session=session, no_session=no_session)
         return poll_task(self, response, session)
 
     def login(self):
