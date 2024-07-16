@@ -474,17 +474,23 @@ class SystemUnderTest(object):
             response = build_exception_response(e, uri, method)
         return response
 
-    def head(self, uri, session=None, no_session=False):
+    def head(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs a HEAD request
 
         :param uri: The URI of the HEAD request
+        :param json: The JSON payload to send with the HEAD request
+        :param headers: HTTP headers to include in the HEAD request
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the HEAD operation
         """
-        return self.request("HEAD", uri, session=session, no_session=no_session)
+        return self.request("HEAD", uri, json=json, headers=headers, session=session,
+                            no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
 
     def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
@@ -504,7 +510,7 @@ class SystemUnderTest(object):
         return self.request("GET", uri, json=json, headers=headers, session=session,
                             no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
 
-    def post(self, uri, json=None, headers=None, session=None, no_session=False):
+    def post(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs a POST request with task polling
 
@@ -513,13 +519,17 @@ class SystemUnderTest(object):
         :param headers: HTTP headers to include in the POST request
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the POST operation
         """
-        response = self.request("POST", uri, json=json, headers=headers, session=session, no_session=no_session)
+        response = self.request("POST", uri, json=json, headers=headers, session=session,
+                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
         return poll_task(self, response, session)
 
-    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None):
+    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs a PATCH request with task polling
 
@@ -529,25 +539,32 @@ class SystemUnderTest(object):
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the PATCH operation
         """
         response = self.request("PATCH", uri, json=json, headers=headers, session=session,
-                                no_session=no_session, auth=auth)
+                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
         return poll_task(self, response, session)
 
-    def delete(self, uri, headers=None, session=None, no_session=False):
+    def delete(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
         Performs a DELETE request with task polling
 
-        :param uri: The URI of the POST request
+        :param uri: The URI of the DELETE request
+        :param json: The JSON payload to send with the DELETE request
         :param headers: HTTP headers to include in the DELETE request
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the DELETE operation
         """
-        response = self.request("DELETE", uri, headers=headers, session=session, no_session=no_session)
+        response = self.request("DELETE", uri, json=json, headers=headers, session=session,
+                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
         return poll_task(self, response, session)
 
     def login(self):
