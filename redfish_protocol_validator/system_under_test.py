@@ -458,9 +458,9 @@ class SystemUnderTest(object):
             if session is None:
                 session = self._session
             if no_session or session is None:
-                response = requests.request(method, self.rhost + uri, verify=self.verify)
+                response = requests.request(method, self.rhost + uri, verify=self.verify, timeout=30)
             else:
-                response = session.request(method, self.rhost + uri)
+                response = session.request(method, self.rhost + uri, timeout=30)
         except Exception as e:
             response = build_exception_response(e, uri, method)
         return response
@@ -479,9 +479,9 @@ class SystemUnderTest(object):
             if session is None:
                 session = self._session
             if no_session or session is None:
-                response = requests.head(self.rhost + uri, verify=self.verify)
+                response = requests.head(self.rhost + uri, verify=self.verify, timeout=30)
             else:
-                response = session.head(self.rhost + uri)
+                response = session.head(self.rhost + uri, timeout=30)
         except Exception as e:
             response = build_exception_response(e, uri, "HEAD")
         return response
@@ -506,10 +506,10 @@ class SystemUnderTest(object):
                 session = self._session
             if no_session or session is None:
                 response = requests.get(self.rhost + uri, json=json, headers=headers,
-                                        auth=auth, stream=stream, verify=self.verify)
+                                        auth=auth, stream=stream, verify=self.verify, timeout=30)
             else:
                 response = session.get(self.rhost + uri, json=json, headers=headers,
-                                       auth=auth, stream=stream)
+                                       auth=auth, stream=stream, timeout=30)
         except Exception as e:
             if allow_exception:
                 # Caller is expecting to handle exceptions
@@ -533,9 +533,9 @@ class SystemUnderTest(object):
             if session is None:
                 session = self._session
             if no_session or session is None:
-                response = requests.post(self.rhost + uri, json=json, headers=headers, verify=self.verify)
+                response = requests.post(self.rhost + uri, json=json, headers=headers, verify=self.verify, timeout=30)
             else:
-                response = session.post(self.rhost + uri, json=json, headers=headers)
+                response = session.post(self.rhost + uri, json=json, headers=headers, timeout=30)
         except Exception as e:
             response = build_exception_response(e, uri, "POST")
         return poll_task(self, response, session)
@@ -558,9 +558,9 @@ class SystemUnderTest(object):
                 session = self._session
             if no_session or session is None:
                 response = requests.patch(self.rhost + uri, json=json, headers=headers,
-                                          verify=self.verify, auth=auth)
+                                          verify=self.verify, auth=auth, timeout=30)
             else:
-                response = session.patch(self.rhost + uri, json=json, headers=headers)
+                response = session.patch(self.rhost + uri, json=json, headers=headers, timeout=30)
         except Exception as e:
             response = build_exception_response(e, uri, "PATCH")
         return poll_task(self, response, session)
@@ -580,9 +580,9 @@ class SystemUnderTest(object):
             if session is None:
                 session = self._session
             if no_session or session is None:
-                response = requests.delete(self.rhost + uri, headers=headers, verify=self.verify)
+                response = requests.delete(self.rhost + uri, headers=headers, verify=self.verify, timeout=30)
             else:
-                response = session.delete(self.rhost + uri, headers=headers)
+                response = session.delete(self.rhost + uri, headers=headers, timeout=30)
         except Exception as e:
             response = build_exception_response(e, uri, "DELETE")
         return poll_task(self, response, session)
