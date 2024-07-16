@@ -428,17 +428,19 @@ class SystemUnderTest(object):
         r = self.get('/redfish/v1/', headers=headers, no_session=True)
         if r.status_code == requests.codes.OK:
             data = get_response_json(r)
-            if 'Links' in data and 'Sessions' in data['Links']:
-                return data['Links']['Sessions']['@odata.id']
-            elif 'SessionService' in data:
-                uri = data['SessionService']['@odata.id']
+            uri = data.get('Links', {}).get('Sessions', {}).get('@odata.id')
+            if uri:
+                return uri
+            uri = data.get('SessionService', {}).get('@odata.id')
+            if uri:
                 r = self.get(uri, headers=headers,
                              auth=(self.username, self.password),
                              no_session=True)
                 if r.status_code == requests.codes.OK:
                     data = get_response_json(r)
-                    if 'Sessions' in data:
-                        return data['Sessions']['@odata.id']
+                    uri = data.get('Sessions', {}).get('@odata.id')
+                    if uri:
+                        return uri
         return '/redfish/v1/SessionService/Sessions'
 
     def request(self, method, uri, session=None, no_session=False):

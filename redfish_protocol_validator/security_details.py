@@ -450,15 +450,13 @@ def test_sessions_uri_location(sut: SystemUnderTest):
     response1 = sut.get_response('GET', '/redfish/v1/')
     if response1.ok:
         data = utils.get_response_json(response1)
-        if 'Links' in data and 'Sessions' in data['Links']:
-            sessions_uri1 = data['Links']['Sessions']['@odata.id']
-        if 'SessionService' in data:
-            uri = data['SessionService']['@odata.id']
+        sessions_uri1 = data.get('Links', {}).get('Sessions', {}).get('@odata.id')
+        uri = data.get('SessionService', {}).get('@odata.id')
+        if uri:
             response2 = sut.get_response('GET', uri)
             if response2.ok:
                 data = utils.get_response_json(response2)
-                if 'Sessions' in data:
-                    sessions_uri2 = data['Sessions']['@odata.id']
+                sessions_uri2 = data.get('Sessions', {}).get('@odata.id')
         if sessions_uri1 and sessions_uri2:
             if sessions_uri1 == sessions_uri2:
                 sut.log(Result.PASS, 'GET', response1.status_code,
