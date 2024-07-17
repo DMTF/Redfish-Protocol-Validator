@@ -1588,7 +1588,7 @@ class ServiceRequests(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri, json=None, headers=None, auth=None,
-            stream=False, timeout=30)
+            timeout=30)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
     def test_test_post_create_not_idempotent_not_tested1(self, mock_post):
@@ -1625,7 +1625,7 @@ class ServiceRequests(TestCase):
                       (uri, requests.codes.BAD_REQUEST), result['msg'])
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri, json=None, headers=None, auth=None,
-            stream=False, timeout=30)
+            timeout=30)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1649,7 +1649,7 @@ class ServiceRequests(TestCase):
                       uri, result['msg'])
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri, json=None, headers=None, auth=None,
-            stream=False, timeout=30)
+            timeout=30)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1673,7 +1673,7 @@ class ServiceRequests(TestCase):
                       session_uri, result['msg'])
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri, json=None, headers=None, auth=None,
-            stream=False, timeout=30)
+            timeout=30)
         self.assertEqual(self.mock_session.delete.call_count, 1)
 
     @mock.patch('redfish_protocol_validator.service_requests.requests.post')
@@ -1696,7 +1696,7 @@ class ServiceRequests(TestCase):
         self.assertEqual(Result.PASS, result['result'])
         self.mock_session.delete.assert_called_with(
             self.sut.rhost + session_uri1, json=None, headers=None, auth=None,
-            stream=False, timeout=30)
+            timeout=30)
         self.assertEqual(self.mock_session.delete.call_count, 2)
 
     def test_test_delete_method_required_not_tested(self):
