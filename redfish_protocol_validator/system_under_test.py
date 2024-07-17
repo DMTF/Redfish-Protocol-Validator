@@ -500,7 +500,7 @@ class SystemUnderTest(object):
         except Exception as e:
             if allow_exception:
                 raise
-            response = build_exception_response(e, uri, method)
+            response = build_exception_response(e, uri, "HEAD")
         return response
 
     def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
@@ -530,7 +530,7 @@ class SystemUnderTest(object):
         except Exception as e:
             if allow_exception:
                 raise
-            response = build_exception_response(e, uri, method)
+            response = build_exception_response(e, uri, "GET")
         return response
 
     def post(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
@@ -559,7 +559,7 @@ class SystemUnderTest(object):
         except Exception as e:
             if allow_exception:
                 raise
-            response = build_exception_response(e, uri, method)
+            response = build_exception_response(e, uri, "POST")
         return poll_task(self, response, session)
 
     def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
@@ -588,7 +588,7 @@ class SystemUnderTest(object):
         except Exception as e:
             if allow_exception:
                 raise
-            response = build_exception_response(e, uri, method)
+            response = build_exception_response(e, uri, "PATCH")
         return poll_task(self, response, session)
 
     def delete(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
@@ -617,7 +617,7 @@ class SystemUnderTest(object):
         except Exception as e:
             if allow_exception:
                 raise
-            response = build_exception_response(e, uri, method)
+            response = build_exception_response(e, uri, "DELETE")
         return poll_task(self, response, session)
 
     def login(self):
