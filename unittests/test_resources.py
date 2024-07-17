@@ -374,7 +374,7 @@ class Resources(TestCase):
         mock_get.assert_any_call(self.sut.rhost + self.sut.sessions_uri, json=None,
                                  headers=headers, auth=(self.sut.username,
                                                         self.sut.password),
-                                 stream=False, verify=self.sut.verify)
+                                 stream=False, verify=self.sut.verify, timeout=30)
         responses = self.sut.get_responses_by_method(
             'GET', request_type=RequestType.BASIC_AUTH)
         self.assertEqual(len(responses), 2)
