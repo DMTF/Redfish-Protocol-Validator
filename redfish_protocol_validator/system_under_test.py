@@ -474,7 +474,7 @@ class SystemUnderTest(object):
             response = build_exception_response(e, uri, method)
         return response
 
-    def head(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+    def head(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a HEAD request
 
@@ -484,13 +484,24 @@ class SystemUnderTest(object):
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
-        :param stream: Indicates if the request will open a stream
         :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the HEAD operation
         """
-        return self.request("HEAD", uri, json=json, headers=headers, session=session,
-                            no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.head(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.head(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
+        return response
 
     def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
         """
@@ -507,10 +518,22 @@ class SystemUnderTest(object):
 
         :return: A response object for the GET operation
         """
-        return self.request("GET", uri, json=json, headers=headers, session=session,
-                            no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.get(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, stream=stream, verify=self.verify, timeout=30)
+            else:
+                response = session.get(self.rhost + uri, json=json, headers=headers,
+                                       auth=auth, stream=stream, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
+        return response
 
-    def post(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+    def post(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a POST request with task polling
 
@@ -520,16 +543,26 @@ class SystemUnderTest(object):
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
-        :param stream: Indicates if the request will open a stream
         :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the POST operation
         """
-        response = self.request("POST", uri, json=json, headers=headers, session=session,
-                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.post(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.post(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
         return poll_task(self, response, session)
 
-    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a PATCH request with task polling
 
@@ -539,16 +572,26 @@ class SystemUnderTest(object):
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
-        :param stream: Indicates if the request will open a stream
         :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the PATCH operation
         """
-        response = self.request("PATCH", uri, json=json, headers=headers, session=session,
-                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.patch(self.rhost + uri, json=json, headers=headers,
+                                          auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.patch(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
         return poll_task(self, response, session)
 
-    def delete(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+    def delete(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a DELETE request with task polling
 
@@ -558,13 +601,23 @@ class SystemUnderTest(object):
         :param session: Session object if using a session other than the sut's
         :param no_session: Indicates if session usage should be skipped
         :param auth: Authentication header info; only supported when not using an existing session
-        :param stream: Indicates if the request will open a stream
         :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the DELETE operation
         """
-        response = self.request("DELETE", uri, json=json, headers=headers, session=session,
-                                no_session=no_session, auth=auth, stream=stream, allow_exception=allow_exception)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.delete(self.rhost + uri, json=json, headers=headers,
+                                           auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.delete(self.rhost + uri, json=json, headers=headers,
+                                          auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
         return poll_task(self, response, session)
 
     def login(self):
