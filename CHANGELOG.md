@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.2.6] - 2024-07-19
+- Added common entry points to invoking HTTP operations to gracefully handle exception cases
+- Updated logic when walking the data model to better handle cases where services do not correctly follow schema definitions
+
 ## [1.2.5] - 2024-05-03
 - Updated existing tests to align with version 1.20.0 of the Redfish Specification
 - Added methods to gracefully handle invalid JSON responses
