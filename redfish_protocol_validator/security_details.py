@@ -54,7 +54,7 @@ def test_tls_1_1(sut: SystemUnderTest):
     uri = '/redfish/v1/'
     status = ''
     try:
-        response = session.get(sut.rhost + uri)
+        response = sut.get(uri, session=session, allow_exception=True)
         status = response.status_code
         result = Result.PASS
         msg = 'Test passed'
@@ -316,8 +316,7 @@ def test_headers_auth_before_etag(sut: SystemUnderTest):
                 # make request w/ no auth and If-None-Match header
                 h = headers.copy()
                 h.update({'If-None-Match': etag})
-                r = requests.get(sut.rhost + uri, headers=h,
-                                 verify=sut.verify)
+                r = sut.get(uri, headers=h, no_session=True)
                 if r.status_code == requests.codes.UNAUTHORIZED:
                     sut.log(Result.PASS, 'GET', r.status_code, uri,
                             Assertion.SEC_HEADERS_FIRST, 'Test passed')
@@ -451,15 +450,13 @@ def test_sessions_uri_location(sut: SystemUnderTest):
     response1 = sut.get_response('GET', '/redfish/v1/')
     if response1.ok:
         data = utils.get_response_json(response1)
-        if 'Links' in data and 'Sessions' in data['Links']:
-            sessions_uri1 = data['Links']['Sessions']['@odata.id']
-        if 'SessionService' in data:
-            uri = data['SessionService']['@odata.id']
+        sessions_uri1 = data.get('Links', {}).get('Sessions', {}).get('@odata.id')
+        uri = data.get('SessionService', {}).get('@odata.id')
+        if uri:
             response2 = sut.get_response('GET', uri)
             if response2.ok:
                 data = utils.get_response_json(response2)
-                if 'Sessions' in data:
-                    sessions_uri2 = data['Sessions']['@odata.id']
+                sessions_uri2 = data.get('Sessions', {}).get('@odata.id')
         if sessions_uri1 and sessions_uri2:
             if sessions_uri1 == sessions_uri2:
                 sut.log(Result.PASS, 'GET', response1.status_code,
@@ -604,8 +601,8 @@ def test_session_termination_side_effects(sut: SystemUnderTest):
         response = None
         exc_name = ''
         try:
-            response = session.get(sut.rhost + sut.server_sent_event_uri,
-                                   stream=True)
+            response = sut.get(sut.server_sent_event_uri, session=session,
+                               stream=True, allow_exception=True)
         except Exception as e:
             exc_name = e.__class__.__name__
         if response is None:
@@ -939,7 +936,7 @@ def test_priv_predefined_roles_not_modifiable(sut: SystemUnderTest):
                         Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
                         msg)
                 # PATCH succeeded unexpectedly; try to PATCH it back
-                r = sut.session.get(sut.rhost + uri)
+                r = sut.get(uri)
                 if r.ok:
                     payload = {'AssignedPrivileges': privs}
                     etag = r.headers.get('ETag')

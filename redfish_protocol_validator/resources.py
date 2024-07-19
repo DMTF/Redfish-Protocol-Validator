@@ -33,23 +33,23 @@ def set_mgr_net_proto_uri(sut: SystemUnderTest, data):
 
 
 def find_certificates(sut: SystemUnderTest, data):
-    if 'NetworkProtocol' in data:
-        uri = data['NetworkProtocol']['@odata.id']
-        r = sut.session.get(sut.rhost + uri)
+    uri = data.get('NetworkProtocol', {}).get('@odata.id')
+    if uri:
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
             d = utils.get_response_json(r)
-            if 'HTTPS' in d and 'Certificates' in d['HTTPS']:
-                coll_uri = d['HTTPS']['Certificates']['@odata.id']
-                r = sut.session.get(sut.rhost + coll_uri)
+            coll_uri = d.get('HTTPS', {}).get('Certificates', {}).get('@odata.id')
+            if coll_uri:
+                r = sut.get(coll_uri)
                 yield {'uri': coll_uri, 'response': r}
                 if r.ok:
                     d = utils.get_response_json(r)
-                    if 'Members' in d and len(d['Members']):
-                        for m in d['Members']:
-                            uri = m['@odata.id']
+                    for m in d.get('Members', []):
+                        uri = m.get('@odata.id')
+                        if uri:
                             # uncomment next 2 lines if we need to read certs
-                            # r = session.get(sut.rhost + uri)
+                            # r = sut.get(uri)
                             # yield {'uri': uri, 'response': r}
                             sut.add_cert(coll_uri, uri)
 
@@ -65,25 +65,24 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     :return: dict elements containing the URI and `requests` response
     """
     # do GETs on spec-defined URIs
-    yield {'uri': '/redfish', 'response': sut.session.get(
-        sut.rhost + '/redfish')}
+    yield {'uri': '/redfish', 'response': sut.get('/redfish')}
     yield {'uri': '/redfish/v1/odata', 'response':
-           sut.session.get(sut.rhost + '/redfish/v1/odata')}
+           sut.get('/redfish/v1/odata')}
     yield {'uri': '/redfish/v1', 'response':
-           sut.session.get(sut.rhost + '/redfish/v1')}
+           sut.get('/redfish/v1')}
     yield {'uri': '/redfish/v1/$metadata', 'response':
-           sut.session.get(sut.rhost + '/redfish/v1/$metadata',
-                           headers={'accept': 'application/xml'})}
+           sut.get('/redfish/v1/$metadata',
+                   headers={'accept': 'application/xml'})}
     yield {'uri': '/redfish/v1/openapi.yaml',
            'request_type': RequestType.YAML,
-           'response': sut.session.get(sut.rhost + '/redfish/v1/openapi.yaml',
-                                       headers={'accept': 'application/yaml'})}
+           'response': sut.get('/redfish/v1/openapi.yaml',
+                               headers={'accept': 'application/yaml'})}
 
     # do HEAD on the service root
-    r = sut.session.head(sut.rhost + uri)
+    r = sut.head(uri)
     yield {'uri': uri, 'response': r}
     # do GET on the service root
-    r = sut.session.get(sut.rhost + uri)
+    r = sut.get(uri)
     yield {'uri': uri, 'response': r}
     root = utils.get_response_json(r) if r.status_code == requests.codes.OK else {}
 
@@ -93,29 +92,30 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
     sut.set_supported_query_params(root.get('ProtocolFeaturesSupported', {}))
 
     for prop in ['Systems', 'Chassis']:
-        if prop in root:
-            uri = root[prop]['@odata.id']
+        uri = root.get(prop, {}).get('@odata.id')
+        if uri:
             sut.set_nav_prop_uri(prop, uri)
-            r = sut.session.get(sut.rhost + uri)
+            r = sut.get(uri)
             yield {'uri': uri, 'response': r}
             if r.ok:
                 data = utils.get_response_json(r)
                 if 'Members' in data and len(data['Members']):
-                    uri = data['Members'][0]['@odata.id']
-                    r = sut.session.get(sut.rhost + uri)
-                    yield {'uri': uri, 'response': r}
+                    uri = data['Members'][0].get('@odata.id')
+                    if uri:
+                        r = sut.get(uri)
+                        yield {'uri': uri, 'response': r}
 
-    if 'Managers' in root:
-        uri = root['Managers']['@odata.id']
+    uri = root.get('Managers', {}).get('@odata.id')
+    if uri:
         sut.set_nav_prop_uri('Managers', uri)
-        r = sut.session.get(sut.rhost + uri)
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
             data = utils.get_response_json(r)
-            if 'Members' in data and len(data['Members']):
-                for m in data['Members']:
-                    uri = m['@odata.id']
-                    r = sut.session.get(sut.rhost + uri)
+            for m in data.get('Members', []):
+                uri = m.get('@odata.id')
+                if uri:
+                    r = sut.get(uri)
                     yield {'uri': uri, 'response': r}
                     if r.ok:
                         d = utils.get_response_json(r)
@@ -124,31 +124,31 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                         for c in find_certificates(sut, d):
                             yield c
 
-    if 'AccountService' in root:
-        uri = root['AccountService']['@odata.id']
+    uri = root.get('AccountService', {}).get('@odata.id')
+    if uri:
         sut.set_nav_prop_uri('AccountService', uri)
-        r = sut.session.get(sut.rhost + uri)
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
             data = utils.get_response_json(r)
-            if 'PrivilegeMap' in data:
-                uri = data['PrivilegeMap']['@odata.id']
+            uri = data.get('PrivilegeMap', {}).get('@odata.id')
+            if uri:
                 sut.set_nav_prop_uri('PrivilegeMap', uri)
             for prop in ['Accounts', 'Roles']:
-                if prop in data:
-                    uri = data[prop]['@odata.id']
-                    r = sut.session.get(sut.rhost + uri)
+                uri = data.get(prop, {}).get('@odata.id')
+                if uri:
+                    r = sut.get(uri)
                     yield {'uri': uri, 'response': r}
                     sut.set_nav_prop_uri(prop, uri)
                     if r.ok:
                         d = utils.get_response_json(r)
-                        if 'Members' in d and len(d['Members']):
-                            if prop == 'Accounts':
-                                resource_type = ResourceType.MANAGER_ACCOUNT
-                                # get accounts up to sut.username
-                                for m in d['Members']:
-                                    uri = m['@odata.id']
-                                    r = sut.session.get(sut.rhost + uri)
+                        if prop == 'Accounts':
+                            resource_type = ResourceType.MANAGER_ACCOUNT
+                            # get accounts up to sut.username
+                            for m in d.get('Members', []):
+                                uri = m.get('@odata.id')
+                                if uri:
+                                    r = sut.get(uri)
                                     yield {'uri': uri, 'response': r,
                                            'resource_type': resource_type}
                                     if r.ok:
@@ -157,46 +157,48 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                                                 == sut.username):
                                             break
 
-                            else:
-                                resource_type = ResourceType.ROLE
-                                # get all the roles
-                                for m in d['Members']:
-                                    uri = m['@odata.id']
-                                    r = sut.session.get(sut.rhost + uri)
+                        else:
+                            resource_type = ResourceType.ROLE
+                            # get all the roles
+                            for m in d.get('Members', []):
+                                uri = m.get('@odata.id')
+                                if uri:
+                                    r = sut.get(uri)
                                     yield {'uri': uri, 'response': r,
                                            'resource_type': resource_type}
                                     if r.ok:
                                         sut.add_role(utils.get_response_json(r))
 
-    if 'SessionService' in root:
-        uri = root['SessionService']['@odata.id']
-        r = sut.session.get(sut.rhost + uri)
+    uri = root.get('SessionService', {}).get('@odata.id')
+    if uri:
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
             data = utils.get_response_json(r)
-            if 'Sessions' in data:
-                uri = data['Sessions']['@odata.id']
-                r = sut.session.get(sut.rhost + uri)
+            uri = data.get('Sessions', {}).get('@odata.id')
+            if uri:
+                r = sut.get(uri)
                 yield {'uri': uri, 'response': r}
                 if r.ok:
                     data = utils.get_response_json(r)
                     if 'Members' in data and len(data['Members']):
-                        uri = data['Members'][0]['@odata.id']
-                        r = sut.session.get(sut.rhost + uri)
-                        yield {'uri': uri, 'response': r}
+                        uri = data['Members'][0].get('@odata.id')
+                        if uri:
+                            r = sut.get(uri)
+                            yield {'uri': uri, 'response': r}
 
-    if 'EventService' in root:
-        uri = root['EventService']['@odata.id']
+    uri = root.get('EventService', {}).get('@odata.id')
+    if uri:
         sut.set_nav_prop_uri('EventService', uri)
-        r = sut.session.get(sut.rhost + uri)
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
         if r.ok:
             data = utils.get_response_json(r)
-            if 'Subscriptions' in data:
-                sut.set_nav_prop_uri(
-                    'Subscriptions', data['Subscriptions']['@odata.id'])
-            if 'ServerSentEventUri' in data:
-                uri = data['ServerSentEventUri']
+            uri = data.get('Subscriptions', {}).get('@odata.id')
+            if uri:
+                sut.set_nav_prop_uri('Subscriptions', uri)
+            uri = data.get('ServerSentEventUri')
+            if uri:
                 sut.set_server_sent_event_uri(uri)
                 r, event_dest_uri = utils.get_sse_stream(sut)
                 if event_dest_uri:
@@ -205,10 +207,10 @@ def get_default_resources(sut: SystemUnderTest, uri='/redfish/v1/',
                     yield {'uri': uri, 'response': r,
                            'request_type': RequestType.STREAMING}
 
-    if 'CertificateService' in root:
-        uri = root['CertificateService']['@odata.id']
+    uri = root.get('CertificateService', {}).get('@odata.id')
+    if uri:
         sut.set_nav_prop_uri('CertificateService', uri)
-        r = sut.session.get(sut.rhost + uri)
+        r = sut.get(uri)
         yield {'uri': uri, 'response': r}
 
 
@@ -286,7 +288,7 @@ def data_modification_requests(sut: SystemUnderTest):
         new_user, new_pwd, new_uri = create_account(
             sut, sut.session, request_type=RequestType.NORMAL)
         if new_uri:
-            response = sut.session.get(sut.rhost + new_uri)
+            response = sut.get(new_uri)
             sut.add_response(new_uri, response)
             if response.ok:
                 etag = utils.get_response_etag(response)
@@ -344,7 +346,7 @@ def unsupported_requests(sut: SystemUnderTest):
     response = sut.post(uri, json={})
     sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
     # Unsupported HTTP methods return HTTP 501
-    response = sut.session.request('FAKEMETHODFORTEST', sut.rhost + uri)
+    response = sut.request('FAKEMETHODFORTEST', uri)
     sut.add_response(uri, response, request_type=RequestType.UNSUPPORTED_REQ)
 
 
@@ -354,9 +356,8 @@ def basic_auth_requests(sut: SystemUnderTest):
     }
     uri = sut.sessions_uri
     # good request
-    r = requests.get(sut.rhost + uri, headers=headers,
-                     auth=(sut.username, sut.password),
-                     verify=sut.verify)
+    r = sut.get(uri, headers=headers, auth=(sut.username, sut.password),
+                no_session=True)
     sut.add_response(uri, r, request_type=RequestType.BASIC_AUTH)
 
 
@@ -435,9 +436,8 @@ def bad_auth_requests(sut: SystemUnderTest):
     #       IP will be blocked for 600 seconds."
     uri = sut.sessions_uri
     h = headers.copy()
-    r = requests.get(sut.rhost + uri, headers=h,
-                     auth=(acct.new_username(set()), acct.new_password(sut)),
-                     verify=sut.verify)
+    r = sut.get(uri, headers=h, auth=(acct.new_username(set()), acct.new_password(sut)),
+                     no_session=True)
     sut.add_response(uri, r, request_type=RequestType.BAD_AUTH)
     # request with bad auth token
     token = 'rfpv%012x' % random.randrange(2 ** 48)  # ex: 'rfpv9e40b1f54c8a'
@@ -445,11 +445,11 @@ def bad_auth_requests(sut: SystemUnderTest):
     uri = '/redfish/v1/RPVfoobar'
     h = headers.copy()
     h.update({'X-Auth-Token': token})
-    r = requests.get(sut.rhost + uri, headers=h, verify=sut.verify)
+    r = sut.get(uri, headers=h, no_session=True)
     sut.add_response(uri, r, request_type=RequestType.BAD_AUTH)
 
 
 def read_uris_no_auth(sut: SystemUnderTest, session):
     for uri in sut.get_all_uris():
-        response = session.get(sut.rhost + uri)
+        response = sut.get(uri, session=session)
         sut.add_response(uri, response, request_type=RequestType.NO_AUTH)

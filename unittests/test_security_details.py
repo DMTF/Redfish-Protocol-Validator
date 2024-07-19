@@ -1190,7 +1190,7 @@ class SecurityDetails(TestCase):
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
             json={'AssignedPrivileges': test_priv},
-            headers={'If-Match': etag})
+            headers={'If-Match': etag}, auth=None, timeout=30)
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
             'PATCH', ro_uri)
@@ -1216,7 +1216,7 @@ class SecurityDetails(TestCase):
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
             json={'AssignedPrivileges': privs},
-            headers={'If-Match': etag})
+            headers={'If-Match': etag}, auth=None, timeout=30)
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
             'PATCH', ro_uri)
@@ -1260,7 +1260,7 @@ class SecurityDetails(TestCase):
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + ro_uri,
             json={'AssignedPrivileges': ['Login', 'ConfigureSelf', None]},
-            headers={'If-Match': etag})
+            headers={'If-Match': etag}, auth=None, timeout=30)
         result = get_result(
             self.sut, Assertion.SEC_PRIV_PREDEFINED_ROLE_NOT_MODIFIABLE,
             'PATCH', ro_uri)

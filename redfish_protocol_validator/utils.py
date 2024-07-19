@@ -38,7 +38,7 @@ def get_response_media_type_charset(response):
 
 
 def get_etag_header(sut, session, uri):
-    response = session.get(sut.rhost + uri)
+    response = sut.get(uri, session=session)
     etag = None
     if response.ok:
         etag = response.headers.get('ETag')
@@ -93,6 +93,20 @@ def get_response_json(response: requests.Response):
     return data
 
 
+def build_exception_response(exception, uri, method):
+    response = requests.Response()
+    response.status_code = 600
+    response.reason = "Exception"
+    response.url = uri
+    response.request = requests.Request()
+    response.request.method = method
+    response.request.body = None
+    response.request.path_url = uri
+    logging.error('%s on %s caused %s exception; building HTTP 600 '
+                  'response' % (method, uri, type(exception).__name__))
+    return response
+
+
 def get_extended_info_message_keys(body: dict):
     data = []
     if 'error' in body and '@Message.ExtendedInfo' in body['error']:
@@ -132,6 +146,14 @@ def poll_task(sut, response, session=None):
     # If the response doesn't show 202 Accepted, there's nothing to poll
     if response.status_code != requests.codes.ACCEPTED:
         return response
+    if session is None:
+        session = sut.session
+    if session is None:
+        # If no session is set up, don't poll
+        # May want to revisit this later; there are only a few tests that do
+        # not use the requests sessions, and they are not expected to produce
+        # tasks
+        return response
 
     # Get the task monitor URI and poll it
     task_monitor = response.headers.get('Location')
@@ -139,10 +161,7 @@ def poll_task(sut, response, session=None):
         # Try for up to 1 minute at 5 second intervals
         for _ in range(12):
             time.sleep(5)
-            if session:
-                response = session.get(sut.rhost + task_monitor)
-            else:
-                response = sut.session.get(sut.rhost + task_monitor)
+            response = sut.get(task_monitor, session=session)
             # Once the task is done, break out
             if response.status_code != requests.codes.ACCEPTED:
                 break
@@ -156,18 +175,18 @@ def get_sse_stream(sut):
     try:
         # get the "before" set of EventDestination URIs
         if sut.subscriptions_uri:
-            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            r = sut.get(sut.subscriptions_uri, allow_exception=True)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 subs = set([m.get('@odata.id') for m in data.get('Members', [])
                             if '@odata.id' in m])
 
         if sut.server_sent_event_uri:
-            response = sut.session.get(sut.rhost + sut.server_sent_event_uri,
-                                       stream=True)
+            response = sut.get(sut.server_sent_event_uri,
+                               stream=True, allow_exception=True)
         if response is not None and response.ok and sut.subscriptions_uri:
             # get the "after" set of EventDestination URIs
-            r = sut.session.get(sut.rhost + sut.subscriptions_uri)
+            r = sut.get(sut.subscriptions_uri, allow_exception=True)
             if r.status_code == requests.codes.OK:
                 data = get_response_json(r)
                 new_subs = set([m.get('@odata.id') for m in

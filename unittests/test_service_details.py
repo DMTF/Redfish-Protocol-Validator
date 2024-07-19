@@ -263,12 +263,12 @@ class ServiceDetails(TestCase):
         self.mock_session.patch.assert_any_call(
             self.sut.rhost + self.sut.mgr_net_proto_uri,
             json={'SSDP': {'ProtocolEnabled': False}},
-            headers={'If-Match': 'abc'})
+            headers={'If-Match': 'abc'}, auth=None, timeout=30)
         # expected call to re-enable SSDP
         self.mock_session.patch.assert_called_with(
             self.sut.rhost + self.sut.mgr_net_proto_uri,
             json={'SSDP': {'ProtocolEnabled': True}},
-            headers={'If-Match': 'def'})
+            headers={'If-Match': 'def'}, auth=None, timeout=30)
 
     def test_test_ssdp_usn_matches_service_root_uuid_not_tested1(self):
         service.test_ssdp_usn_matches_service_root_uuid(self.sut)

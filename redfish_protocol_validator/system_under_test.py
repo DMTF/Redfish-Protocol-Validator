@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task, get_response_json
+from redfish_protocol_validator.utils import redfish_version_to_tuple, poll_task, get_response_json, build_exception_response
 from redfish_protocol_validator.constants import RequestType, Result
 
 
@@ -425,24 +425,115 @@ class SystemUnderTest(object):
         :param headers: HTTP headers to pass to the GET requests
         :return: the Sessions URI
         """
-        r = requests.get(self.rhost + '/redfish/v1/', headers=headers,
-                         verify=self.verify)
+        r = self.get('/redfish/v1/', headers=headers, no_session=True)
         if r.status_code == requests.codes.OK:
             data = get_response_json(r)
-            if 'Links' in data and 'Sessions' in data['Links']:
-                return data['Links']['Sessions']['@odata.id']
-            elif 'SessionService' in data:
-                uri = data['SessionService']['@odata.id']
-                r = requests.get(self.rhost + uri, headers=headers,
-                                 auth=(self.username, self.password),
-                                 verify=self.verify)
+            uri = data.get('Links', {}).get('Sessions', {}).get('@odata.id')
+            if uri:
+                return uri
+            uri = data.get('SessionService', {}).get('@odata.id')
+            if uri:
+                r = self.get(uri, headers=headers,
+                             auth=(self.username, self.password),
+                             no_session=True)
                 if r.status_code == requests.codes.OK:
                     data = get_response_json(r)
-                    if 'Sessions' in data:
-                        return data['Sessions']['@odata.id']
+                    uri = data.get('Sessions', {}).get('@odata.id')
+                    if uri:
+                        return uri
         return '/redfish/v1/SessionService/Sessions'
 
-    def post(self, uri, json=None, headers=None, session=None):
+    def request(self, method, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+        """
+        Performs an arbitrary HTTP request
+
+        :param method: The HTTP method to invoke
+        :param uri: The URI of the request
+        :param json: The JSON payload to send with the request
+        :param headers: HTTP headers to include in the request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
+
+        :return: A response object for the operation
+        """
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.request(method, self.rhost + uri, json=json, headers=headers,
+                                            auth=auth, stream=stream, verify=self.verify, timeout=30)
+            else:
+                response = session.request(method, self.rhost + uri, json=json, headers=headers,
+                                           auth=auth, stream=stream, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, method)
+        return response
+
+    def head(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
+        """
+        Performs a HEAD request
+
+        :param uri: The URI of the HEAD request
+        :param json: The JSON payload to send with the HEAD request
+        :param headers: HTTP headers to include in the HEAD request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param allow_exception: Indicates if exceptions are allowed
+
+        :return: A response object for the HEAD operation
+        """
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.head(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.head(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, "HEAD")
+        return response
+
+    def get(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, stream=False, allow_exception=False):
+        """
+        Performs a GET request
+
+        :param uri: The URI of the GET request
+        :param json: The JSON payload to send with the GET request
+        :param headers: HTTP headers to include in the GET request
+        :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param stream: Indicates if the request will open a stream
+        :param allow_exception: Indicates if exceptions are allowed
+
+        :return: A response object for the GET operation
+        """
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.get(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, stream=stream, verify=self.verify, timeout=30)
+            else:
+                response = session.get(self.rhost + uri, json=json, headers=headers,
+                                       auth=auth, stream=stream, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, "GET")
+        return response
+
+    def post(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a POST request with task polling
 
@@ -450,16 +541,28 @@ class SystemUnderTest(object):
         :param json: The JSON payload to send with the POST request
         :param headers: HTTP headers to include in the POST request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the POST operation
         """
-        if session:
-            response = session.post(self.rhost + uri, json=json, headers=headers)
-        else:
-            response = self._session.post(self.rhost + uri, json=json, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.post(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.post(self.rhost + uri, json=json, headers=headers,
+                                        auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, "POST")
         return poll_task(self, response, session)
 
-    def patch(self, uri, json=None, headers=None, session=None):
+    def patch(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a PATCH request with task polling
 
@@ -467,29 +570,54 @@ class SystemUnderTest(object):
         :param json: The JSON payload to send with the PATCH request
         :param headers: HTTP headers to include in the PATCH request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the PATCH operation
         """
-        if session:
-            response = session.patch(self.rhost + uri, json=json, headers=headers)
-        else:
-            response = self._session.patch(self.rhost + uri, json=json, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.patch(self.rhost + uri, json=json, headers=headers,
+                                          auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.patch(self.rhost + uri, json=json, headers=headers,
+                                         auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, "PATCH")
         return poll_task(self, response, session)
 
-    def delete(self, uri, headers=None, session=None):
+    def delete(self, uri, json=None, headers=None, session=None, no_session=False, auth=None, allow_exception=False):
         """
         Performs a DELETE request with task polling
 
-        :param uri: The URI of the POST request
+        :param uri: The URI of the DELETE request
+        :param json: The JSON payload to send with the DELETE request
         :param headers: HTTP headers to include in the DELETE request
         :param session: Session object if using a session other than the sut's
+        :param no_session: Indicates if session usage should be skipped
+        :param auth: Authentication header info; only supported when not using an existing session
+        :param allow_exception: Indicates if exceptions are allowed
 
         :return: A response object for the DELETE operation
         """
-        if session:
-            response = session.delete(self.rhost + uri, headers=headers)
-        else:
-            response = self._session.delete(self.rhost + uri, headers=headers)
+        try:
+            if session is None:
+                session = self._session
+            if no_session or session is None:
+                response = requests.delete(self.rhost + uri, json=json, headers=headers,
+                                           auth=auth, verify=self.verify, timeout=30)
+            else:
+                response = session.delete(self.rhost + uri, json=json, headers=headers,
+                                          auth=auth, timeout=30)
+        except Exception as e:
+            if allow_exception:
+                raise
+            response = build_exception_response(e, uri, "DELETE")
         return poll_task(self, response, session)
 
     def login(self):
@@ -508,8 +636,8 @@ class SystemUnderTest(object):
         sessions_uri = self._get_sessions_uri(headers)
         self.set_sessions_uri(sessions_uri)
         session = requests.Session()
-        response = requests.post(self.rhost + sessions_uri, json=payload,
-                                 headers=headers, verify=self.verify)
+        response = self.post(sessions_uri, json=payload,
+                             headers=headers, no_session=True)
         if response.ok:
             # Redfish Session created; use it
             location = response.headers.get('Location')
@@ -539,8 +667,7 @@ class SystemUnderTest(object):
 
     def logout(self):
         if self.active_session_uri:
-            response = self.session.delete(
-                self.rhost + self.active_session_uri)
+            response = self.delete(self.active_session_uri)
             if response.ok:
                 self._set_session(None)
                 self._set_active_session_uri(None)

@@ -14,11 +14,11 @@ from redfish_protocol_validator.system_under_test import SystemUnderTest
 
 
 def test_header(sut: SystemUnderTest, header, header_values, uri, assertion,
-                stream=False):
+                stream=False, allow_exception=False):
     """Perform test for a particular header value"""
     for val in header_values:
-        response = sut.session.get(sut.rhost + uri, headers={header: val},
-                                   stream=stream)
+        response = sut.get(uri, headers={header: val}, stream=stream,
+                           allow_exception=allow_exception)
         if response.ok:
             msg = 'Test passed for header %s: %s' % (header, val)
             sut.log(Result.PASS, 'GET', response.status_code, uri,
@@ -72,7 +72,7 @@ def test_accept_header(sut: SystemUnderTest):
     if uri:
         try:
             test_header(sut, header, header_values, uri, assertion,
-                        stream=True)
+                        stream=True, allow_exception=True)
         except Exception as e:
             msg = ('Caught %s while opening SSE stream with valid '
                    '"text/event-stream" Accept headers' % e.__class__.__name__)
@@ -197,8 +197,7 @@ def test_odata_version_header(sut: SystemUnderTest):
     uri = '/redfish/v1/'
 
     # supported OData-Version
-    response = sut.session.get(sut.rhost + uri,
-                               headers={'OData-Version': '4.0'})
+    response = sut.get(uri, headers={'OData-Version': '4.0'})
     if response.ok:
         msg = ('Test passed for supported header OData-Version: %s'
                % response.request.headers.get('OData-Version'))
@@ -211,8 +210,7 @@ def test_odata_version_header(sut: SystemUnderTest):
                 Assertion.REQ_HEADERS_ODATA_VERSION, msg)
 
     # unsupported OData-Version
-    response = sut.session.get(sut.rhost + uri,
-                               headers={'OData-Version': '4.1'})
+    response = sut.get(uri, headers={'OData-Version': '4.1'})
     if response.status_code == requests.codes.PRECONDITION_FAILED:
         msg = ('Test passed for unsupported header OData-Version: %s'
                % response.request.headers.get('OData-Version'))
@@ -281,7 +279,7 @@ def test_get_no_accept_header(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_GET_NO_ACCEPT_HEADER."""
     uri = '/redfish/v1/'
     headers = {'Accept': None}
-    response = sut.session.get(sut.rhost + uri, headers=headers)
+    response = sut.get(uri, headers=headers)
     if response.ok:
         if utils.get_response_media_type(response) == 'application/json':
             sut.log(Result.PASS, 'GET', response.status_code, uri,
@@ -304,7 +302,7 @@ def test_get_ignore_body(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_GET_IGNORE_BODY."""
     uri = '/redfish/v1/'
     payload = {}
-    response = sut.session.get(sut.rhost + uri, json=payload)
+    response = sut.get(uri, json=payload)
     if response.ok:
         sut.log(Result.PASS, 'GET', response.status_code, uri,
                 Assertion.REQ_GET_IGNORE_BODY, 'Test passed')
@@ -510,7 +508,7 @@ def test_get_metadata_odata_no_auth(sut: SystemUnderTest):
 def test_query_ignore_unsupported(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_QUERY_IGNORE_UNSUPPORTED."""
     uri = '/redfish/v1/?rpvunknown'
-    response = sut.session.get(sut.rhost + uri)
+    response = sut.get(uri)
     if response.ok:
         sut.log(Result.PASS, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_IGNORE_UNSUPPORTED, 'Test passed')
@@ -555,7 +553,7 @@ def test_query_unsupported_dollar_params_ext_error(
 def test_query_unsupported_dollar_params(sut: SystemUnderTest):
     """Perform tests for Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS."""
     uri = '/redfish/v1/?$rpvunknown'
-    response = sut.session.get(sut.rhost + uri)
+    response = sut.get(uri)
     if response.status_code == requests.codes.NOT_IMPLEMENTED:
         sut.log(Result.PASS, 'GET', response.status_code, uri,
                 Assertion.REQ_QUERY_UNSUPPORTED_DOLLAR_PARAMS, 'Test passed')
@@ -588,7 +586,7 @@ def test_query_invalid_values(sut: SystemUnderTest):
         return
 
     for uri in uris:
-        response = sut.session.get(sut.rhost + uri)
+        response = sut.get(uri)
         if response.status_code == requests.codes.BAD_REQUEST:
             sut.log(Result.PASS, 'GET', response.status_code, uri,
                     Assertion.REQ_QUERY_INVALID_VALUES,
@@ -830,7 +828,7 @@ def test_patch_array_element_remove(sut: SystemUnderTest):
         headers = utils.get_etag_header(sut, sut.session, uri)
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
-            get_resp = sut.session.get(sut.rhost + uri)
+            get_resp = sut.get(uri)
             try:
                 if get_resp.ok:
                     array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
@@ -897,7 +895,7 @@ def test_patch_array_element_unchanged(sut: SystemUnderTest):
         headers = utils.get_etag_header(sut, sut.session, uri)
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
-            get_resp = sut.session.get(sut.rhost + uri)
+            get_resp = sut.get(uri)
             try:
                 if get_resp.ok:
                     array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
@@ -972,7 +970,7 @@ def test_patch_array_truncate(sut: SystemUnderTest):
         headers = utils.get_etag_header(sut, sut.session, uri)
         response = sut.patch(uri, json=payload2, headers=headers)
         if response.ok:
-            get_resp = sut.session.get(sut.rhost + uri)
+            get_resp = sut.get(uri)
             try:
                 if get_resp.ok:
                     array = utils.get_response_json(get_resp).get('NTP', {}).get('NTPServers', None)
@@ -1090,8 +1088,7 @@ def test_post_create_to_members_prop(sut: SystemUnderTest):
         'OData-Version': '4.0',
         'Content-Type': 'application/json;charset=utf-8'
     }
-    response = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                             verify=sut.verify)
+    response = sut.post(uri, json=payload, headers=headers, no_session=True)
     if response.ok:
         sut.log(Result.PASS, 'POST', response.status_code, uri,
                 Assertion.REQ_POST_CREATE_TO_MEMBERS_PROP,
@@ -1122,15 +1119,13 @@ def test_post_create_not_idempotent(sut: SystemUnderTest):
         'OData-Version': '4.0',
         'Content-Type': 'application/json;charset=utf-8'
     }
-    r1 = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                       verify=sut.verify)
+    r1 = sut.post(uri, json=payload, headers=headers, no_session=True)
     if r1.ok:
         loc1 = r1.headers.get('Location')
         session_uri1 = ''
         if loc1 and isinstance(loc1, str):
             session_uri1 = urlparse(loc1).path
-        r2 = requests.post(sut.rhost + uri, json=payload, headers=headers,
-                           verify=sut.verify)
+        r2 = sut.post(uri, json=payload, headers=headers, no_session=True)
         if r2.ok:
             loc2 = r2.headers.get('Location')
             session_uri2 = ''

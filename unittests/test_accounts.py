@@ -128,7 +128,7 @@ class Accounts(TestCase):
         user, pwd, uri = accounts.add_account(self.sut, self.session)
         self.session.patch.assert_called_with(
             self.sut.rhost + self.account_uri3, json={'Enabled': True},
-            headers={'If-Match': etag})
+            headers={'If-Match': etag}, auth=None, timeout=30)
 
     @mock.patch('redfish_protocol_validator.accounts.logging.error')
     def test_add_account_via_patch_fail1(self, mock_logging_error):
