@@ -106,13 +106,15 @@ def test_event_error_on_bad_request(sut: SystemUnderTest):
 
 def pre_ssdp(sut: SystemUnderTest):
     """Perform prerequisite SSDP steps"""
-    # discover using the redfish search target
-    services = utils.discover_ssdp(search_target=SSDP_REDFISH)
-    sut.add_ssdp_services(SSDP_REDFISH, services)
+    # try to discover with both IPv4 and IPv6
+    for protocol in ['ipv4', 'ipv6']:
+        # discover using the redfish search target
+        services = utils.discover_ssdp(search_target=SSDP_REDFISH, protocol=protocol)
+        sut.add_ssdp_services(SSDP_REDFISH, services)
 
-    # discover using the ssdp:all search target
-    services = utils.discover_ssdp(search_target=SSDP_ALL)
-    sut.add_ssdp_services(SSDP_ALL, services)
+        # discover using the ssdp:all search target
+        services = utils.discover_ssdp(search_target=SSDP_ALL, protocol=protocol)
+        sut.add_ssdp_services(SSDP_ALL, services)
 
     # determine SSDP enabled/disabled state
     if sut.mgr_net_proto_uri:
@@ -317,20 +319,26 @@ def test_ssdp_st_header_format(sut: SystemUnderTest):
                 Assertion.SERV_SSDP_ST_HEADER_FORMAT, msg)
         return
 
-    st_minor = 0
-    msg_minor = 'missing'
     if m.group(1):
         st_minor = int(m.group(1).lstrip(':'))
         msg_minor = str(st_minor)
-    # if the service minor ver is non-zero, must be included in the ST header
-    if sut.version_tuple.minor != 0 and sut.version_tuple.minor != st_minor:
-        # FAIL minor version incorrectly specified in ST header
-        msg = ('The Redfish protocol minor version from the Service Root is '
-               '%s, but the minor version in the ST header is %s'
-               % (sut.version_tuple.minor, msg_minor))
-        sut.log(Result.FAIL, '', '', st_header,
-                Assertion.SERV_SSDP_ST_HEADER_FORMAT, msg)
-        return
+        # only test the minor version if provided in the header
+        # returning the minor version is not required
+        if sut.version_tuple.minor != st_minor:
+            # FAIL minor version incorrectly specified in ST header
+            msg = ('The Redfish protocol minor version from the service root is '
+                   '%s, but the minor version in the ST header is %s'
+                   % (sut.version_tuple.minor, msg_minor))
+            sut.log(Result.FAIL, '', '', st_header,
+                    Assertion.SERV_SSDP_ST_HEADER_FORMAT, msg)
+            return
+        if sut.version_tuple.minor == 0:
+            # FAIL minor version is not allowed if its 0
+            msg = ('The Redfish protocol minor version from the service root is '
+                   '0, but the ST header contained a minor version')
+            sut.log(Result.FAIL, '', '', st_header,
+                    Assertion.SERV_SSDP_ST_HEADER_FORMAT, msg)
+            return
 
     # PASS if we have not already logged a result and returned
     sut.log(Result.PASS, '', '', st_header,

@@ -363,13 +363,18 @@ def discover_ssdp(port=1900, ttl=2, response_time=3, iface=None,
     socket.setdefaulttimeout(response_time + 2)
 
     # Set up the socket and send the request
-    sock = socket.socket(af_type, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
-    if iface:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
-                        str(iface+'\0').encode('utf-8'))
-    sock.sendto(bytearray(msearch_str, 'utf-8'), mcast_connection)
+    try:
+        sock = socket.socket(af_type, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+        if iface:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
+                            str(iface+'\0').encode('utf-8'))
+        sock.sendto(bytearray(msearch_str, 'utf-8'), mcast_connection)
+    except:
+        # Covers cases where the system may not support IPv6
+        sock.close()
+        return {}
 
     # On the same socket, wait for responses
     discovered_services = {}
