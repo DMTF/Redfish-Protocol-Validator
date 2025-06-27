@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.2.7] - 2025-06-27
+- Updated SSDP testing to attempt both IPv4 and IPv6
+- Updated ST header test to align with the UPnP specification where the minor version is optional
+- Temporarily disabling SSE tests until fixes can be made
+
 ## [1.2.6] - 2024-07-19
 - Added common entry points to invoking HTTP operations to gracefully handle exception cases
 - Updated logic when walking the data model to better handle cases where services do not correctly follow schema definitions
