@@ -190,7 +190,9 @@ class SystemUnderTest(object):
         return self._mgr_net_proto_uri
 
     def add_ssdp_services(self, search_target, services):
-        self._ssdp_services[search_target] = services
+        if search_target not in self._ssdp_services:
+            self._ssdp_services[search_target] = {}
+        self._ssdp_services[search_target].update(services)
 
     def get_ssdp_services(self, search_target):
         return self._ssdp_services.get(search_target, {})

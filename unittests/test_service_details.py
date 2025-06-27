@@ -505,8 +505,8 @@ class ServiceDetails(TestCase):
 
     def test_test_ssdp_st_header_format_fail3(self):
         self.sut.set_service_uuid(self.uuid)
-        self.sut.set_version('1.6.0')
-        st = 'urn:dmtf-org:service:redfish-rest:1'  # missing minor version
+        self.sut.set_version('1.0.0')
+        st = 'urn:dmtf-org:service:redfish-rest:1:0'  # minor version is 0
         services = {
             self.uuid: {
                 'USN': 'abc',
@@ -520,7 +520,7 @@ class ServiceDetails(TestCase):
             '', st)
         self.assertIsNotNone(result)
         self.assertEqual(Result.FAIL, result['result'])
-        self.assertIn('6, but the minor version in the ST header is missing',
+        self.assertIn('0, but the ST header contained a minor version',
                       result['msg'])
 
     def test_test_ssdp_st_header_format_fail4(self):
