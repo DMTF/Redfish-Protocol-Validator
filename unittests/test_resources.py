@@ -152,7 +152,7 @@ class Resources(TestCase):
         event_service = mock.Mock(spec=requests.Response)
         event_service.status_code = requests.codes.OK
         event_service.json.return_value = {
-            'ServerSentEventUri': '/redfish/v1/EventService/SSE',
+            #'ServerSentEventUri': '/redfish/v1/EventService/SSE',
             'Subscriptions': {
                 "@odata.id": '/redfish/v1/EventService/Subscriptions'
             }
@@ -170,7 +170,7 @@ class Resources(TestCase):
         ]
         resources.read_target_resources(
             self.sut, func=resources.get_default_resources)
-        self.assertEqual(self.session.get.call_count, 27)
+        self.assertEqual(self.session.get.call_count, 24)
 
     def test_set_mfr_model_fw(self):
         uuid1 = "92384634-2938-2342-8820-489239905423"
