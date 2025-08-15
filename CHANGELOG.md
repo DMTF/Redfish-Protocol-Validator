@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.8] - 2025-08-15
+- Corrected the clause text for the SSDP ST header check
+
 ## [1.2.7] - 2025-06-27
 - Updated SSDP testing to attempt both IPv4 and IPv6
 - Updated ST header test to align with the UPnP specification where the minor version is optional
