@@ -281,8 +281,8 @@ class Assertion(NoValue):
     SERV_SSDP_ST_HEADER_FORMAT = (
         'M-SEARCH response: The URN provided in the ST header in the reply shall use the redfish-rest: service name '
         'followed by the major version of the Redfish Specification. If the minor version of the Redfish Specification '
-        'to which the service conforms is a non-zero value, that minor version shall be appended with and preceded by '
-        'a colon (:).')
+        'to which the service conforms is a non-zero value, the service may append the minor version with a preceding '
+        'colon (:).')
     SERV_SSDP_AL_HEADER_POINTS_TO_SERVICE_ROOT = (
         'M-SEARCH response: Services shall provide clients with the AL header that points to the Redfish service root '
         'URL.')
