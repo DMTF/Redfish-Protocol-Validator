@@ -14,6 +14,9 @@ from redfish_protocol_validator.constants import RequestType, Result
 
 class SystemUnderTest(object):
     def __init__(self, rhost, username, password, verify=True):
+        if "://" not in rhost:
+            logging.warning("Scheme not specified for '{}'; adding 'https://'".format(rhost))
+            rhost = "https://" + rhost
         self._rhost = rhost
         self._username = username
         self._password = password
