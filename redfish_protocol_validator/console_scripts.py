@@ -25,7 +25,7 @@ from redfish_protocol_validator import utils
 from redfish_protocol_validator.constants import Result
 from redfish_protocol_validator.system_under_test import SystemUnderTest
 
-tool_version = '1.2.8'
+tool_version = '1.2.9'
 
 
 def perform_tests(sut: SystemUnderTest):

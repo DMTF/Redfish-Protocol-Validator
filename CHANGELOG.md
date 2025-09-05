@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.2.9] - 2025-09-05
+- Add scheme to URI if not specified by the user
+
 ## [1.2.8] - 2025-08-15
 - Corrected the clause text for the SSDP ST header check
 
