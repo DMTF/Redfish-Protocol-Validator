@@ -965,7 +965,13 @@ def test_priv_roles_assigned_at_account_create(sut: SystemUnderTest):
         if response.ok:
             data = utils.get_response_json(response)
             username = data.get('UserName', '')
-            if username.startswith('rfpv'):
+            if username is None:
+                msg = ('Account at URI %s contains a null value for UserName'
+                       % uri)
+                sut.log(Result.FAIL, 'GET', response.status_code, uri,
+                        Assertion.SEC_PRIV_ROLE_ASSIGNED_AT_ACCOUNT_CREATE,
+                        msg)
+            elif username.startswith('rfpv'):
                 role = data.get('RoleId')
                 if role is not None:
                     sut.log(Result.PASS, 'GET', response.status_code, uri,
