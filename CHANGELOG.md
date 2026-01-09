@@ -1,5 +1,8 @@
 # Change Log
 
+## [1.3.0] - 2026-01-09
+- Fixed crash condition where a service returns null for the UserName property of an account
+
 ## [1.2.9] - 2025-09-05
 - Add scheme to URI if not specified by the user
 
