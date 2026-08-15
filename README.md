@@ -41,26 +41,63 @@ If installing from GitHub, you may install the external packages by running:
 
 ## Usage
 
+The Redfish Protocol Validator can be configured using either command-line arguments or a configuration file (config.ini).
+
+### Configuration File
+
+You can use a `config.ini` file in the current working directory with your settings. This is useful for repeated operations with the same configuration.
+
+Example `config.ini`:
+
+```ini
+[Authentication]
+user = username
+password = password
+
+[Connection]
+rhost = https://RedfishIP
+no-cert-check = true
+avoid-http-redirect = true
+
+[Logging]
+log-level = WARNING
+
+[Reporting]
+report-dir = reports
+report-type = both
 ```
-usage: rf_protocol_validator.py [-h] [--version] --user USER --password
-                                PASSWORD --rhost RHOST [--log-level LOG_LEVEL]
-                                [--report-dir REPORT_DIR]
+
+To use a configuration file in a different location, use the `--config` option:
+
+```bash
+python rf_protocol_validator.py --config /path/to/myconfig.ini
+```
+
+**Note:** Command-line arguments always override configuration file settings, ensuring backward compatibility.
+
+### Command-Line Arguments
+
+```
+usage: rf_protocol_validator.py [-h] [--version] [--config CONFIG] [--user USER]
+                                [--password PASSWORD] [--rhost RHOST]
+                                [--log-level LOG_LEVEL] [--report-dir REPORT_DIR]
                                 [--report-type {html,tsv,both}]
                                 [--avoid-http-redirect]
                                 [--no-cert-check | --ca-bundle CA_BUNDLE]
 
 Validate the protocol conformance of a Redfish service
 
-required arguments:
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --config CONFIG, -c CONFIG
+                        path to configuration file; defaults to "config.ini"
+                        in current directory
   --user USER, -u USER  the username for authentication
   --password PASSWORD, -p PASSWORD
                         the password for authentication
   --rhost RHOST, -r RHOST
                         address of the Redfish service (with scheme)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
   --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         the logging level (default: WARNING)
   --report-dir REPORT_DIR
@@ -77,9 +114,35 @@ optional arguments:
                         the file or directory containing trusted CAs
 ```
 
-Example:
+**Note:** The `--user`, `--password`, and `--rhost` arguments are required if not provided in the configuration file.
 
-    rf_protocol_validator -r https://192.168.1.100 -u USERNAME -p PASSWORD
+### Examples
+
+Using command-line arguments only (backward compatible):
+
+```
+python rf_protocol_validator.py -u username -p password -r https://RedfishIP
+```
+
+Using a configuration file:
+
+```
+# Uses config.ini from current directory
+python rf_protocol_validator.py
+```
+
+Using a custom configuration file:
+
+```
+python rf_protocol_validator.py --config /path/to/custom.ini
+```
+
+Mixing configuration file and command-line arguments (command-line overrides config):
+
+```
+# Uses settings from config.ini but overrides the report directory
+python rf_protocol_validator.py --report-dir /different/output
+```
 
 ## Unit Tests
 
