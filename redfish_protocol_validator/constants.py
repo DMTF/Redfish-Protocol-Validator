@@ -79,6 +79,33 @@ class Assertion(NoValue):
         'ETags: Implementations shall support the return of ETag headers for GET requests of ManagerAccount resources.')
     PROTO_ETAG_RFC7232 = (
         'ETags: If a resource supports an ETag, it shall use the RFC7232-defined ETag.')
+    PROTO_ETAG_HEADER_AND_PROPERTY = (
+        'ETags: The service generates and provides the ETag as part of the resource payload in addition to the ETag '
+        'header; a client can include an ETag from a previous GET in the HTTP If-Match header, so the @odata.etag '
+        'property and the ETag header of a resource convey the same ETag.')
+    PROTO_ETAG_STABLE_WITHOUT_MODIFICATION = (
+        'ETags: Services should omit properties named DateTime from ETag calculations and should implement methods '
+        'to reduce the frequency of ETag updates for other types of fast changing properties.')
+    PROTO_ETAG_CONDITIONAL_GET = (
+        'ETags: If the ETag in the If-None-Match header matches the resource\'s current ETag, the GET operation '
+        'returns the HTTP 304 Not Modified status code. Support for If-None-Match is optional for services.')
+    PROTO_ETAG_IF_MATCH_ENFORCED = (
+        'ETags: To ensure that clients update the resource from a known state, PUT and PATCH requests for resources '
+        'for which a service returns ETags shall support If-Match: a request whose If-Match value matches the '
+        'resource\'s current ETag succeeds, and a request whose If-Match value does not match the resource\'s '
+        'current ETag fails with the HTTP 412 Precondition Failed status code.')
+    PROTO_ETAG_412_WRITE_NOT_APPLIED = (
+        'Modification error responses: If the service returns the HTTP 412 Precondition Failed status code for a PUT '
+        'or PATCH request, the service encountered a failed precondition and the resource shall not have been '
+        'modified as a result of the operation.')
+    PROTO_ETAG_LOST_UPDATE = (
+        'ETags: An ETag changes when the underlying object changes; an If-Match value read before an intervening '
+        'modification of the resource no longer matches the resource\'s current ETag, and a PUT or PATCH request '
+        'that provides it fails with the HTTP 412 Precondition Failed status code rather than overwriting the '
+        'intervening update.')
+    PROTO_ETAG_ROTATES_ON_WRITE = (
+        'ETags: An ETag is a hash, a generation ID, a time stamp, or some other value that changes when the '
+        'underlying object changes.')
     PROTO_STD_URI_SERVICE_ROOT = (
         'Protocol version: The root URI for this version of the Redfish protocol shall be /redfish/v1/.')
     PROTO_STD_URI_VERSION = (

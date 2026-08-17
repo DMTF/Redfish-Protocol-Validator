@@ -13,6 +13,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 from http.client import HTTPConnection
 
+from redfish_protocol_validator import etags
 from redfish_protocol_validator import protocol_details
 from redfish_protocol_validator import report
 from redfish_protocol_validator import resources
@@ -35,6 +36,7 @@ def perform_tests(sut: SystemUnderTest):
     service_responses.test_service_responses(sut)
     service_details.test_service_details(sut)
     security_details.test_security_details(sut)
+    etags.test_etags(sut)
 
 
 def main():
