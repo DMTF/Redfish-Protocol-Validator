@@ -16,6 +16,10 @@ ACCT_URI = '/redfish/v1/AccountService/Accounts/9'
 USER = 'rfpvtest'
 PASSWORD = 'OrigPass1_'
 
+# A Date header and a numeric ETag equal to it, as epoch seconds
+DATE_HEADER = 'Thu, 06 Aug 2026 22:00:00 GMT'
+DATE_EPOCH_ETAG = '"1786053600"'
+
 # The GETs test_etags() performs in order, for building mock sequences
 # by name rather than by index
 GET_SLOTS = (
@@ -32,7 +36,8 @@ GET_SLOTS = (
 )
 
 
-def _response(status_code=200, etag=None, body_etag=None, role=None):
+def _response(status_code=200, etag=None, body_etag=None, role=None,
+              date=None):
     resp = mock.MagicMock(spec=requests.Response)
     resp.status_code = status_code
     # Mirror requests: raise_for_status raises only for 4xx and 5xx, so
@@ -42,6 +47,8 @@ def _response(status_code=200, etag=None, body_etag=None, role=None):
     headers = {'Content-Type': 'application/json'}
     if etag is not None:
         headers['ETag'] = etag
+    if date is not None:
+        headers['Date'] = date
     resp.headers = headers
     body = {}
     if body_etag is not None:
@@ -65,6 +72,21 @@ class EtagsNoSut(TestCase):
         self.assertFalse(etags._succeeded(_response(600)))
         self.assertFalse(etags._succeeded(_response(304)))
 
+    def test_tag_tracks_the_clock(self):
+        served = _response(date=DATE_HEADER)
+        # a tag equal to the service clock is a wall-clock value
+        self.assertTrue(
+            etags._tag_tracks_the_clock(served, DATE_EPOCH_ETAG))
+        # a counter or a hash is not
+        self.assertFalse(etags._tag_tracks_the_clock(served, '"42"'))
+        self.assertFalse(
+            etags._tag_tracks_the_clock(served, '"a1b2c3d4"'))
+        self.assertFalse(
+            etags._tag_tracks_the_clock(served, 'W/"a1b2c3d4"'))
+        # unreadable inputs answer neither way
+        self.assertIsNone(etags._tag_tracks_the_clock(_response(), '"1"'))
+        self.assertIsNone(etags._tag_tracks_the_clock(served, None))
+
     def test_evaluated(self):
         self.assertTrue(etags._evaluated(412))
         self.assertTrue(etags._evaluated(500))
@@ -78,17 +100,34 @@ class EtagsNoSut(TestCase):
         self.assertEqual(etags._other_role('Administrator'), 'ReadOnly')
         self.assertEqual(etags._other_role(None), 'ReadOnly')
 
-    def verdict(self, statuses, race_etag='"E1"'):
+    def verdict(self, statuses, race_etag='"E1"', probe=None):
         return etags._race_verdict(statuses, etags._classify_race(statuses),
-                                   race_etag)
+                                   race_etag, probe)
 
     def test_race_verdict_clean_winner_defers(self):
         self.assertIsNone(self.verdict([412, 200, 412, 412]))
 
-    def test_race_verdict_multi_winner_fails(self):
-        result, msg = self.verdict([200, 200, 412, 412])
+    def test_race_verdict_multi_winner_names_cause(self):
+        result, msg = self.verdict([200, 200, 412, 412],
+                                   probe=('not-a-clock', None))
         self.assertEqual(result, Result.FAIL)
-        self.assertIn('at most one conditional write may succeed', msg)
+        self.assertIn('are not atomic', msg)
+        result, msg = self.verdict([200, 200, 412, 412],
+                                   probe=('clock', None))
+        self.assertEqual(result, Result.FAIL)
+        self.assertIn('tracks the service clock', msg)
+        result, msg = self.verdict([200, 200, 412, 412],
+                                   probe=('rotates', 740))
+        self.assertEqual(result, Result.FAIL)
+        self.assertIn('closest it could space two writes was 740 ms', msg)
+        result, msg = self.verdict([200, 200, 412, 412],
+                                   probe=('coarse', 310))
+        self.assertEqual(result, Result.FAIL)
+        self.assertIn('two writes 310 ms apart', msg)
+        result, msg = self.verdict([200, 200, 412, 412],
+                                   probe=('inconclusive', None))
+        self.assertEqual(result, Result.FAIL)
+        self.assertIn('could not determine', msg)
 
     def test_race_verdict_incomplete_and_throttled(self):
         self.assertEqual(self.verdict([200, 412, 412, None])[0],
@@ -366,14 +405,16 @@ class Etags(TestCase):
             [Result.WARN])
 
     @mock.patch('redfish_protocol_validator.etags.time.sleep')
+    @mock.patch('redfish_protocol_validator.etags._probe_tag_resolution')
     @mock.patch('redfish_protocol_validator.etags._race_conditional_writes')
     def test_race_two_winners_one_incomplete_fails(self, mock_race,
-                                                   mock_sleep):
+                                                   mock_probe, mock_sleep):
         # Two accepted preconditions fail even when another writer
         # never completed
         mock_race.return_value = [
             _response(), _response(status_code=202),
             _response(status_code=412), None]
+        mock_probe.return_value = ('rotates', 900)
         with mock.patch.object(
                 self.sut, 'get', side_effect=self.happy_path_gets()), \
                 mock.patch.object(
@@ -384,7 +425,82 @@ class Etags(TestCase):
             self.result(Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS),
             [Result.FAIL])
         msg = self.sut.results[Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS][0]['msg']
-        self.assertIn('at most one conditional write may succeed', msg)
+        self.assertIn('closest it could space two writes was 900 ms', msg)
+
+    @mock.patch('redfish_protocol_validator.etags.time.sleep')
+    @mock.patch('redfish_protocol_validator.etags._probe_tag_resolution')
+    @mock.patch('redfish_protocol_validator.etags._race_conditional_writes')
+    def test_race_two_winners_coarse_tag_names_resolution(self, mock_race,
+                                                          mock_probe,
+                                                          mock_sleep):
+        mock_race.return_value = [
+            _response(), _response(),
+            _response(status_code=412), _response(status_code=412)]
+        mock_probe.return_value = ('coarse', 120)
+        with mock.patch.object(
+                self.sut, 'get', side_effect=self.happy_path_gets()), \
+                mock.patch.object(
+                    self.sut, 'patch',
+                    side_effect=self.happy_path_patches()):
+            etags.test_etags(self.sut)
+        self.assertEqual(
+            self.result(Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS),
+            [Result.FAIL])
+        msg = self.sut.results[Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS][0]['msg']
+        self.assertIn('two writes 120 ms apart', msg)
+        self.assertNotIn('not atomic', msg)
+
+    @mock.patch('redfish_protocol_validator.etags.time.sleep')
+    @mock.patch('redfish_protocol_validator.etags._probe_tag_resolution')
+    @mock.patch('redfish_protocol_validator.etags._race_conditional_writes')
+    def test_race_two_winners_opaque_tag_is_not_atomic(self, mock_race,
+                                                       mock_probe,
+                                                       mock_sleep):
+        # The race tag is opaque and the diagnose read carries the
+        # service clock: not a clock value, so the service let two
+        # writers through and the probe is not needed
+        mock_race.return_value = [
+            _response(), _response(),
+            _response(status_code=412), _response(status_code=412)]
+        gets = self.happy_path_gets(
+            verify_race_winner=_response(role='Operator',
+                                         date=DATE_HEADER))
+        with mock.patch.object(self.sut, 'get', side_effect=gets), \
+                mock.patch.object(
+                    self.sut, 'patch',
+                    side_effect=self.happy_path_patches()):
+            etags.test_etags(self.sut)
+        self.assertEqual(
+            self.result(Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS),
+            [Result.FAIL])
+        msg = self.sut.results[Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS][0]['msg']
+        self.assertIn('are not atomic', msg)
+        self.assertEqual(mock_probe.call_count, 0)
+
+    @mock.patch('redfish_protocol_validator.etags.time.sleep')
+    @mock.patch('redfish_protocol_validator.etags._probe_tag_resolution')
+    @mock.patch('redfish_protocol_validator.etags._race_conditional_writes')
+    def test_race_two_winners_clock_tag_is_named(self, mock_race,
+                                                 mock_probe, mock_sleep):
+        # The race tag matches the service clock, so a rotating probe
+        # outcome is promoted to the clock diagnosis
+        mock_race.return_value = [
+            _response(), _response(),
+            _response(status_code=412), _response(status_code=412)]
+        mock_probe.return_value = ('rotates', 900)
+        gets = self.happy_path_gets(
+            race_read=_response(etag=DATE_EPOCH_ETAG,
+                                body_etag=DATE_EPOCH_ETAG,
+                                role='Operator'),
+            verify_race_winner=_response(role='Operator',
+                                         date=DATE_HEADER))
+        with mock.patch.object(self.sut, 'get', side_effect=gets), \
+                mock.patch.object(
+                    self.sut, 'patch',
+                    side_effect=self.happy_path_patches()):
+            etags.test_etags(self.sut)
+        msg = self.sut.results[Assertion.SEC_ACCOUNTS_SUPPORT_ETAGS][0]['msg']
+        self.assertIn('tracks the service clock', msg)
 
     @mock.patch('redfish_protocol_validator.etags.time.sleep')
     @mock.patch('redfish_protocol_validator.etags._race_conditional_writes')
@@ -509,6 +625,54 @@ class Etags(TestCase):
             self.result(Assertion.PROTO_ETAG_HEADER_AND_PROPERTY),
             [Result.PASS])
         self.assertEqual(self.mock_accounts.delete_account.call_count, 1)
+
+    def probe_with_tags(self, tags):
+        """Run the probe over a scripted sequence of tag reads."""
+        gets = [_response(etag=t, body_etag=t, role='ReadOnly')
+                for t in tags]
+        with mock.patch.object(self.sut, 'get', side_effect=gets), \
+                mock.patch.object(self.sut, 'patch',
+                                  return_value=_response()):
+            return etags._probe_tag_resolution(self.sut, ACCT_URI)
+
+    def test_probe_tag_resolution_coarse(self):
+        # two consecutive writes produce the same tag
+        outcome, gap = self.probe_with_tags(['"T0"', '"T1"', '"T1"'])
+        self.assertEqual(outcome, 'coarse')
+        self.assertIsInstance(gap, int)
+
+    def test_probe_tag_resolution_rotates(self):
+        tags = ['"T%d"' % i for i in range(1 + 2 * etags.PROBE_PAIRS)]
+        outcome, gap = self.probe_with_tags(tags)
+        self.assertEqual(outcome, 'rotates')
+        self.assertIsInstance(gap, int)
+
+    def test_probe_tag_resolution_coarse_on_later_pair(self):
+        # first pair rotates, second pair repeats a tag
+        outcome, _ = self.probe_with_tags(
+            ['"T0"', '"T1"', '"T2"', '"T3"', '"T3"'])
+        self.assertEqual(outcome, 'coarse')
+
+    def test_probe_tag_resolution_inconclusive_on_rejected_write(self):
+        gets = [_response(etag='"T1"', body_etag='"T1"', role='ReadOnly')]
+        with mock.patch.object(self.sut, 'get', side_effect=gets), \
+                mock.patch.object(self.sut, 'patch',
+                                  return_value=_response(status_code=412)):
+            outcome, _ = etags._probe_tag_resolution(self.sut, ACCT_URI)
+        self.assertEqual(outcome, 'inconclusive')
+
+    def test_probe_flips_the_role_away_and_back(self):
+        # a coarse pair ends the probe after exactly two writes
+        tags = ['"T0"', '"T1"', '"T1"']
+        gets = [_response(etag=t, body_etag=t, role='ReadOnly')
+                for t in tags]
+        with mock.patch.object(self.sut, 'get', side_effect=gets), \
+                mock.patch.object(self.sut, 'patch',
+                                  return_value=_response()) as mock_patch:
+            etags._probe_tag_resolution(self.sut, ACCT_URI)
+        roles = [kwargs['json']['RoleId']
+                 for _, kwargs in mock_patch.call_args_list[:2]]
+        self.assertEqual(roles, ['Operator', 'ReadOnly'])
 
 
 if __name__ == '__main__':

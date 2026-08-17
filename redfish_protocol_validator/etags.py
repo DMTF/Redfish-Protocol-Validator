@@ -6,6 +6,7 @@
 import logging
 import threading
 import time
+from email.utils import parsedate_to_datetime
 
 import requests
 
@@ -171,9 +172,163 @@ def _classify_race(statuses):
     return winners, losers_412, losers_other, incomplete
 
 
-def _race_verdict(statuses, classification, race_etag):
+# Write-pairs attempted by the tag-resolution probe; each pair needs the
+# service to cooperate, so one coarse tag is usually caught on the first
+PROBE_PAIRS = 3
+# How far a numeric tag may sit from the response's own clock and still
+# be read as a wall-clock value, covering clock skew and the age of the
+# last write
+CLOCK_TAG_TOLERANCE_SEC = 300
+
+
+def _tag_tracks_the_clock(response, etag):
+    """Report whether the ETag looks like a wall-clock timestamp,
+    by comparing a numeric tag against the response's own Date header.
+
+    A clock tag cannot distinguish writes inside one tick; a non-clock
+    tag changes per write, so shared-tag winners got in because the
+    service let them. Returns None when either value cannot be read or
+    a numeric tag sits too far from the clock to classify.
+    """
+    date_header = response.headers.get('Date')
+    if not date_header or etag is None:
+        return None
+    try:
+        value = int(etag.strip().lstrip('Ww/').strip('"'))
+    except ValueError:
+        # A non-numeric tag is a hash or an opaque string, neither of
+        # which is a clock
+        return False
+    try:
+        served_at = parsedate_to_datetime(date_header).timestamp()
+    except (TypeError, ValueError):
+        return None
+    if abs(value - served_at) <= CLOCK_TAG_TOLERANCE_SEC:
+        return True
+    # Numeric but far from the clock is unknown: it could be a counter,
+    # or a last-modified timestamp on a resource idle longer than the
+    # tolerance
+    return None
+
+
+def _probe_write_and_read(sut: SystemUnderTest, acct_uri, role, etag):
+    """Apply a conditional write, returning (resulting tag, start time)."""
+    started = time.monotonic()
+    response = _patch_role(sut, acct_uri, role, etag)
+    if _succeeded(response):
+        response, new_etag, _ = _get_etags(sut, acct_uri)
+        if _succeeded(response):
+            return new_etag, started
+    return None, started
+
+
+def _probe_write_pair(sut: SystemUnderTest, acct_uri, current_role, etag):
+    """Run one write pair, flipping the role away and back so both
+    writes change the representation and the account ends as it began.
+
+    Returns (outcome, gap_ms, tag to continue from).
+    """
+    first, first_at = _probe_write_and_read(sut, acct_uri,
+                                            _other_role(current_role), etag)
+    if first is None:
+        return 'inconclusive', None, None
+    second, second_at = _probe_write_and_read(sut, acct_uri, current_role,
+                                              first)
+    gap_ms = int((second_at - first_at) * 1000)
+    if second is None:
+        return 'inconclusive', gap_ms, None
+    return ('coarse' if first == second else 'rotates'), gap_ms, second
+
+
+def _probe_tag_resolution(sut: SystemUnderTest, acct_uri):
+    """Determine whether the tag distinguishes two consecutive writes.
+
+    The same tag from two applied writes proves it cannot ('coarse').
+    Distinct tags only show the writes were far enough apart for this
+    tag ('rotates'), since the probe cannot write faster than the
+    service answers; gap_ms records the closest spacing achieved.
+
+    Returns ('coarse'|'rotates'|'inconclusive', gap_ms).
+    """
+    response, etag, _ = _get_etags(sut, acct_uri)
+    if not _succeeded(response) or etag is None:
+        return 'inconclusive', None
+    current_role = _role_of(response)
+    best_gap = None
+    for _ in range(PROBE_PAIRS):
+        outcome, gap_ms, etag = _probe_write_pair(sut, acct_uri,
+                                                  current_role, etag)
+        if gap_ms is not None and (best_gap is None or gap_ms < best_gap):
+            best_gap = gap_ms
+        if outcome != 'rotates':
+            return outcome, best_gap
+    return 'rotates', best_gap
+
+
+def _multi_winner_message(statuses, winners, race_etag, probe):
+    """Return the message naming which failure a multi-winner race is,
+    given the tag-resolution probe's outcome."""
+    prefix = ('%s of %s simultaneous PATCH requests carrying the same '
+              'If-Match value %s were accepted (statuses %s); ' %
+              (len(winners), RACE_WRITERS, race_etag, statuses))
+    outcome, gap_ms = probe
+    if outcome == 'not-a-clock':
+        return (prefix + 'the ETag does not track the service clock, so it '
+                'changes with the write rather than with the time, and it '
+                'would have distinguished these writers had the service '
+                'applied one write before checking the next precondition. '
+                'The precondition check and the write are not atomic; '
+                'writers with differing payloads would lose updates')
+    if outcome == 'coarse':
+        return (prefix + 'a follow-up probe found two writes %s ms apart '
+                'that produced the same ETag, so the tag cannot '
+                'distinguish writes this close together, no matter how the '
+                'service serializes them. An ETag built from a coarse '
+                'value, such as a second-granularity timestamp, behaves '
+                'this way' % gap_ms)
+    if outcome == 'clock':
+        return (prefix + 'the ETag tracks the service clock, so its '
+                'resolution bounds what a precondition can arbitrate and '
+                'writers inside one tick share a tag whatever the service '
+                'does. The tag is the defect this test can name; whether '
+                'the precondition check is also non-atomic is not '
+                'determined')
+    if outcome == 'rotates':
+        return (prefix + 'a follow-up probe saw consecutive writes produce '
+                'different ETags, but the closest it could space two '
+                'writes was %s ms, so it did not test whether the tag '
+                'distinguishes writes closer than that. Either the '
+                'precondition check is not atomic, or the tag is too '
+                'coarse for the interval the racing writers achieved'
+                % gap_ms)
+    return (prefix + 'either the precondition check and the write are not '
+            'atomic, or the tag is too coarse to distinguish writes this '
+            'close together; a follow-up probe could not determine which')
+
+
+def _diagnose_multi_winner(sut: SystemUnderTest, acct_uri, race_etag):
+    """Name the cause of a race that admitted more than one winner:
+    a non-clock tag would have separated the writers, so the failure is
+    atomicity; a clock tag falls to the slower write-pair probe.
+
+    Returns the (outcome, gap_ms) pair _race_verdict() reports on.
+    """
+    response = sut.get(acct_uri)
+    is_clock = _tag_tracks_the_clock(response, race_etag)
+    if is_clock is False:
+        return 'not-a-clock', None
+    outcome, gap_ms = _probe_tag_resolution(sut, acct_uri)
+    if outcome == 'rotates' and is_clock:
+        outcome = 'clock'
+    return outcome, gap_ms
+
+
+def _race_verdict(statuses, classification, race_etag, probe):
     """Return (Result, message) for a race outcome, or None when the race
     produced one clean winner whose write the caller still has to verify.
+
+    probe is the _probe_tag_resolution() outcome, needed only to name
+    which failure a multi-winner race is; pass None otherwise.
     """
     winners, losers_412, losers_other, incomplete = classification
     throttled = [i for i in losers_other
@@ -181,10 +336,7 @@ def _race_verdict(statuses, classification, race_etag):
 
     if len(winners) > 1:
         return (Result.FAIL,
-                '%s of %s simultaneous PATCH requests carrying the same '
-                'If-Match value %s were accepted (statuses %s); at most '
-                'one conditional write may succeed against a single ETag'
-                % (len(winners), RACE_WRITERS, race_etag, statuses))
+                _multi_winner_message(statuses, winners, race_etag, probe))
     if incomplete:
         # A verdict about the connection, not the service
         return (Result.NOT_TESTED,
@@ -499,7 +651,13 @@ def test_concurrent_conditional_writes(sut: SystemUnderTest, acct_uri):
     classification = _classify_race(statuses)
     winners, losers_412, _, _ = classification
 
-    verdict = _race_verdict(statuses, classification, race_etag)
+    if len(winners) > 1:
+        # A failure whether or not the other writers completed; a 202
+        # counts as accepted
+        probe = _diagnose_multi_winner(sut, acct_uri, race_etag)
+    else:
+        probe = None
+    verdict = _race_verdict(statuses, classification, race_etag, probe)
     if verdict is not None:
         result, msg = verdict
         status = statuses[winners[0]] if winners else ''
