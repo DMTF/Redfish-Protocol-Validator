@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.3.1] - 2026-08-21
+- Added ETag write-semantics tests
+- Added support for loading settings from a config file
+
 ## [1.3.0] - 2026-01-09
 - Fixed crash condition where a service returns null for the UserName property of an account
 
