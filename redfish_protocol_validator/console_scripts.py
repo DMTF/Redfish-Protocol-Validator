@@ -220,7 +220,10 @@ def main():
     if args.report_type in ('tsv', 'both'):
         print(report.tsv_report(sut, report_dir, current_time))
     if args.report_type in ('html', 'both'):
-        print(report.html_report(sut, report_dir, current_time, tool_version))
+        print(report.html_report(sut, report_dir, current_time, tool_version,
+                                 vars(args)))
+        print(report.xlsx_report(sut, report_dir, current_time, tool_version,
+                                 vars(args)))
     # exit with status 1 if any assertions failed, 0 otherwise
     sys.exit(int(sut.summary_count(Result.FAIL) > 0))
 

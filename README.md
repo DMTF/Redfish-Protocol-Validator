@@ -28,8 +28,10 @@ Required external packages:
 ```
 aenum
 colorama
+openpyxl
 pyasn1
 pyasn1-modules
+redfish_service_validator>=3.1.6
 requests
 sseclient-py
 urllib3

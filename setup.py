@@ -29,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': ['rf_protocol_validator=redfish_protocol_validator.console_scripts:main']
     },
-    install_requires=["aenum", "colorama", "pyasn1", "pyasn1-modules",
+    install_requires=["aenum", "colorama", "openpyxl", "pyasn1",
+                      "pyasn1-modules", "redfish_service_validator>=3.1.6",
                       "requests>=2.30.0", "sseclient-py", "urllib3"]
 )
