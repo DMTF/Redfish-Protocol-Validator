@@ -28,7 +28,7 @@ from redfish_protocol_validator import utils
 from redfish_protocol_validator.constants import Result
 from redfish_protocol_validator.system_under_test import SystemUnderTest
 
-tool_version = '1.3.1'
+tool_version = '1.3.2'
 
 
 def load_config(config_file):
