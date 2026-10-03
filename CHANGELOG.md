@@ -1,7 +1,7 @@
 # Change Log
 
 ## [1.3.2] - 2026-10-03
-- Updated test reports to align with recent changes to other validator tools- #104
+- Updated test reports to align with recent changes to other validator tools
 
 ## [1.3.1] - 2026-08-21
 - Added ETag write-semantics tests
